@@ -1,0 +1,56 @@
+%namespace SCModManager.SCFormat  //names the namespace of the Parser-class
+%partial 
+
+%parsertype Parser      //names the Parserclass to "Parser"
+%scanbasetype ScanBase  //names the ScanBaseclass to "ScanBase"
+%tokentype Tokens       //names the Tokensenumeration to "Tokens"
+%YYSTYPE SCValue
+
+%token ID
+%token Var
+%token Str
+%token Num
+%token Perc
+%token OBr      
+%token CBr     
+%token Eq
+%token Skip
+
+%% //Grammar Rules Section
+
+program  : /* nothing */
+		 | program Statements
+         ; 
+
+Statements : ID Eq Val   { this.SetKeyValue($1, $3); } 
+		   | Var Eq Val   { this.SetKeyValue($1, $3); } 
+		   | ID Eq Var   { this.SetKeyValue($1, $3); } 
+		   | Var Eq Var   { this.SetKeyValue($1, $3); } 
+		   | Num Eq Var   { this.SetKeyValue($1, $3); } 
+		   | Num Eq Val   { this.SetKeyValue($1, $3); } 
+           | Skip
+           ;
+		     
+Val : ImmVal 
+    | Obj { $$ = this.PopObject(); }
+	| ID
+	;
+	 
+Obj : OBr {this.PushNewObject(null);} ObjStatements CBr 
+    | ID OBr {this.PushNewObject($1);} ObjStatements CBr ;
+
+ImmVal : Str | Num | Perc;
+
+ObjStatements :
+		     | ObjStatements ObjStatement;
+
+ObjStatement : 
+			 | ImmVal { this.SetKeyValue(null, $1);} 
+			 | ID { this.SetKeyValue(null, $1);} 
+			 | Statements;
+
+	
+
+
+
+%% 
