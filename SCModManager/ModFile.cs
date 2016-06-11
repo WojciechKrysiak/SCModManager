@@ -47,7 +47,7 @@ namespace SCModManager
 
                     using (var sr = new StreamReader(mr))
                     {
-                        return new SCModFile(path, parser.Root, sr.ReadToEnd());
+                        return new SCModFile(path, parser.Root, sr.ReadToEnd(), parser.ParseError);
                     }
                 }
 
@@ -77,14 +77,27 @@ namespace SCModManager
 
     public class SCModFile : ModFile
     {
+        private bool parseError;
+
         public SCObject Contents { get; set; }
         public string RawContents { get; set; }
+
+        public bool ParseError
+        {
+            get { return parseError; }
+            set { parseError = value; }
+        }
 
         internal SCModFile(string path, SCObject contents, string rawContents)
             : base(path)
         {
             Contents = contents;
             RawContents = rawContents;
+        }
+
+        public SCModFile(string path, SCObject contents, string rawContents, bool parseError) : this(path, contents, rawContents)
+        {
+            this.parseError = parseError;
         }
     }
 

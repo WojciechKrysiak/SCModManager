@@ -16,10 +16,11 @@ namespace SCModManager.SCFormat
         {
             get
             {
-                Debug.Assert(_currentObjectStack.Count == 1);
                 return _currentObjectStack.Peek();
             }
         }
+
+        public bool ParseError => _currentObjectStack.Count > 1;
 
         public Parser(Scanner scnr) : base(scnr)
         {

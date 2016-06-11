@@ -6,6 +6,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Input;
 using GalaSoft.MvvmLight;
 using GalaSoft.MvvmLight.CommandWpf;
@@ -27,38 +28,45 @@ namespace SCModManager
 
         public ModContext()
         {
-            IEnumerable<string> selectedMods = Enumerable.Empty<string>();
-
-            using (var stream = new FileStream(SettingsPath, FileMode.Open, FileAccess.Read))
+            try
             {
-                var settingsParser = new Parser(new Scanner(stream));
 
-                settingsParser.Parse();
+                IEnumerable<string> selectedMods = Enumerable.Empty<string>();
 
-                _settinsRoot = settingsParser.Root;
-
-                _lastMods = _settinsRoot["last_mods"] as SCObject;
-
-                if (_lastMods != null)
-                    selectedMods = _lastMods.Select(kvp => kvp.Value.ToString()).ToList();
-            }
-
-            foreach (var file in Directory.EnumerateFiles(ModsDir, "*.mod"))
-            {
-                var mod = Mod.Load(file);
-                if (mod != null)
+                using (var stream = new FileStream(SettingsPath, FileMode.Open, FileAccess.Read))
                 {
-                    mod.Selected = selectedMods.Any(sm => sm.Contains(mod.Id));
-                    mod.PropertyChanged += ModOnPropertyChanged ;
-                    _mods.Add(mod);
+                    var settingsParser = new Parser(new Scanner(stream));
+
+                    settingsParser.Parse();
+
+                    _settinsRoot = settingsParser.Root;
+
+                    _lastMods = _settinsRoot["last_mods"] as SCObject;
+
+                    if (_lastMods != null)
+                        selectedMods = _lastMods.Select(kvp => kvp.Value.ToString()).ToList();
                 }
+
+                foreach (var file in Directory.EnumerateFiles(ModsDir, "*.mod"))
+                {
+                    var mod = Mod.Load(file);
+                    if (mod != null)
+                    {
+                        mod.Selected = selectedMods.Any(sm => sm.Contains(mod.Id));
+                        mod.PropertyChanged += ModOnPropertyChanged;
+                        _mods.Add(mod);
+                    }
+                }
+
+                foreach (var mod in Mods)
+                    mod.MarkConflicts(Mods);
+
+                SaveSettingsCommand = new RelayCommand(SaveSettings);
             }
-
-            foreach (var mod in Mods)
-                mod.MarkConflicts(Mods);
-
-            SaveSettingsCommand = new RelayCommand(SaveSettings);
-
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
 
         private void ModOnPropertyChanged(object sender, PropertyChangedEventArgs propertyChangedEventArgs)

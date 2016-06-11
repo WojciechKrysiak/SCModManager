@@ -33,6 +33,7 @@ Statements : ID Op Val   { this.SetKeyValue($1, $2, $3); }
 		   | Var Op Var   { this.SetKeyValue($1, $2, $3); } 
 		   | Num Op Var   { this.SetKeyValue($1, $2, $3); } 
 		   | Num Op Val   { this.SetKeyValue($1, $2, $3); } 
+		   | Str Op Val   { this.SetKeyValue($1, $2, $3); } 
            | Skip
            ;
 		
