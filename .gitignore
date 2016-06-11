@@ -210,3 +210,6 @@ FakesAssemblies/
 GeneratedArtifacts/
 _Pvt_Extensions/
 ModelManifest.xml
+/SCModManager/SCFormat/Parser.cs
+/SCModManager/SCFormat/Scanner.cs
+/SCModManager/SCFormat/Scanner.cs

@@ -15,6 +15,11 @@ Percentage [0-9]+\%
 OpenBrace \{
 CloseBrace \}
 EqSign =
+LeSign <
+GrSign >
+LEqSign <=
+GEqSign >=
+NEqSign !=
 
  
 %% //Rules Section
@@ -28,7 +33,12 @@ EqSign =
 {Percentage}   {yylval = MakePercentage(yytext);return (int)Tokens.Perc;}
 {OpenBrace}    {return (int)Tokens.OBr;}
 {CloseBrace}   {return (int)Tokens.CBr;}
-{EqSign}       {EncounterEq(); return (int)Tokens.Eq;}
+{EqSign}       {yylval = MakeToken(Tokens.Eq); return (int)Tokens.Eq;}
+{LeSign}       {yylval = MakeToken(Tokens.Le); return (int)Tokens.Le;}
+{GrSign}       {yylval = MakeToken(Tokens.Gr); return (int)Tokens.Gr;}
+{LEqSign}      {yylval = MakeToken(Tokens.LEq); return (int)Tokens.LEq;}
+{GEqSign}      {yylval = MakeToken(Tokens.GEq); return (int)Tokens.GEq;}
+{NEqSign}      {yylval = MakeToken(Tokens.NEq); return (int)Tokens.NEq;}
 {Comment}      {return (int)Tokens.Skip;}
 
 

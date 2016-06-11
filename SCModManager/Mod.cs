@@ -1,66 +1,94 @@
-﻿using System;
+﻿using System.Collections.Generic;
 using System.IO;
-using System.Collections.Generic;
 using System.Linq;
+using GalaSoft.MvvmLight;
+using Ionic.Zip;
 using SCModManager.SCFormat;
 
 namespace SCModManager
 {
-    public class Mod
+    public class Mod : ObservableObject
     {
-        public string Name { get; set; }
+        private int conflicts;
+        private bool hasConflict;
+        private string name;
+        private bool selected;
+
+        private Mod(string id)
+        {
+            Id = id;
+        }
+
+        public string Id { get; }
+
+        public string Key => $"mod/{Id}.mod";
+
+        public string Name
+        {
+            get { return name; }
+            set { Set(ref name, value); }
+        }
 
         public List<ModFile> Files { get; set; } = new List<ModFile>();
 
-        public int Conflicts { get; private set; }
-        public bool Selected { get; set; }
-
-        internal static Mod Load(string dir)
+        public int Conflicts
         {
-            var Mod = new Mod();
-            var zip = Directory.EnumerateFiles(dir, "*.zip").FirstOrDefault();
-            if (zip == null)
-            {
-                return null;
-            }
-            
+            get { return conflicts; }
+            private set { Set(ref conflicts, value); }
+        }
 
-            var file = Ionic.Zip.ZipFile.Read(zip);
-            
-            var entry = file.FirstOrDefault(ze => string.Compare(ze.FileName, "descriptor.mod", true) == 0);
+        public bool Selected
+        {
+            get { return selected; }
+            set { Set(ref selected, value); }
+        }
 
-            if (entry == null)
-            {
-                return null;
-            }
+        public bool HasConflict
+        {
+            get { return hasConflict; }
+            private set { Set(ref hasConflict, value); }
+        }
 
-            using (var stream = entry.OpenReader())
+        internal static Mod Load(string modFile)
+        {
+            var id = Path.GetFileName(modFile);
+            var mod = new Mod(id);
+
+            var path = Directory.GetParent(modFile).Parent.FullName;
+
+            string zip = null;
+
+            using (var stream = new FileStream(modFile, FileMode.Open, FileAccess.Read))
             {
                 var parser = new Parser(new Scanner(stream));
 
                 parser.Parse();
-   
-                Mod.Name = parser.Root["name"]?.ToString();
+
+                mod.Name = parser.Root["name"]?.ToString();
+
+                zip = (parser.Root["archive"] as SCString)?.Text;
             }
 
-            foreach(var item in file)
+            var file = ZipFile.Read(Path.Combine(path, zip));
+
+            foreach (var item in file)
             {
-                if (item == entry)
+                if (string.Compare(item.FileName, "descriptor.mod", true) == 0)
                 {
                     continue;
                 }
 
                 using (var stream = item.OpenReader())
                 {
-                    Mod.Files.Add(ModFile.Load(item.FileName, stream));
+                    mod.Files.Add(ModFile.Load(item.FileName, stream));
                 }
             }
-            return Mod;
+            return mod;
         }
 
         public void MarkConflicts(IEnumerable<Mod> allMods)
         {
-            foreach(var mod in allMods)
+            foreach (var mod in allMods)
             {
                 if (mod == this)
                 {
@@ -74,9 +102,9 @@ namespace SCModManager
             }
         }
 
-        bool CheckConflicts(Mod other)
+        private bool CheckConflicts(Mod other)
         {
-            foreach(var file in Files)
+            foreach (var file in Files)
             {
                 if (other.Files.Any(f => string.Compare(f.Path, file.Path, true) == 0))
                 {
@@ -85,6 +113,11 @@ namespace SCModManager
             }
 
             return false;
+        }
+
+        public void SetHasConflictWithMod(Mod other)
+        {
+            HasConflict = this != other && CheckConflicts(other);
         }
     }
 }

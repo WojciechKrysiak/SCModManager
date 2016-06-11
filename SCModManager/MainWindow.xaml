@@ -5,11 +5,11 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:SCModManager"
         mc:Ignorable="d"
-        Title="MainWindow" Height="350" Width="1024">
+        Title="MainWindow" Height="600" Width="800">
     <Grid>
         <Grid.Resources>
             <DataTemplate DataType="{x:Type local:Mod}" x:Key="ModListTemplate">
-                <Grid HorizontalAlignment="Stretch">
+                <Grid x:Name="Container" HorizontalAlignment="Stretch">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="*"/>
@@ -19,6 +19,11 @@
                     <TextBlock Grid.Column="1" Text="{Binding Name}"/>
                     <TextBlock Grid.Column="2" Text="{Binding Conflicts}"/>
                 </Grid>
+                <DataTemplate.Triggers>
+                    <DataTrigger Binding="{Binding HasConflict}" Value="True">
+                        <Setter TargetName="Container" Property="Background" Value="PaleVioletRed"/>
+                    </DataTrigger>
+                </DataTemplate.Triggers>
             </DataTemplate> 
         </Grid.Resources>
         <Grid.ColumnDefinitions>
@@ -27,20 +32,21 @@
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
-        <ListBox ItemsSource="{Binding Mods}"
+        <Button Command="{Binding SaveSettingsCommand}">Save</Button>
+        <ListBox Grid.Column="0" Grid.Row="1" Grid.RowSpan="2"
+                 ItemsSource="{Binding Mods}"
                  SelectedItem="{Binding SelectedMod}"
                  ItemTemplate="{StaticResource ModListTemplate}"
-                 Grid.RowSpan="2"
                  HorizontalContentAlignment="Stretch"/>
-        <ListBox Grid.Column="1"
+        <ListBox Grid.Column="1" Grid.Row="1" Grid.RowSpan="2"
                  ItemsSource="{Binding SelectedMod.Files}"
                  SelectedItem="{Binding SelectedModFile}"
-                 DisplayMemberPath="Path"
-                 Grid.RowSpan="2"/>
-        <TextBox Grid.Column="2" Grid.Row="0" Text="{Binding SelectedModFile.Contents, Mode=OneWay}"/>
-        <TextBox Grid.Column="2" Grid.Row="1" Text="{Binding SelectedModFile.RawContents, Mode=OneWay}"/>
+                 DisplayMemberPath="Path"/>
+        <TextBox Grid.Column="2" Grid.Row="1" Text="{Binding SelectedModFile.Contents, Mode=OneWay}"/>
+        <TextBox Grid.Column="2" Grid.Row="2" Text="{Binding SelectedModFile.RawContents, Mode=OneWay}"/>
     </Grid>
 </Window>

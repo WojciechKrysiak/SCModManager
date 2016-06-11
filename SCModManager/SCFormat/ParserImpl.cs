@@ -26,10 +26,9 @@ namespace SCModManager.SCFormat
             _currentObjectStack.Push(new SCObject());
         }
 
-
-        void SetKeyValue(SCValue key, SCValue value)
+        void SetKeyValue(SCValue key, SCValue cmp, SCValue value)
         {
-            _currentObjectStack.Peek().Add(key, value);
+            _currentObjectStack.Peek().Add(key, cmp, value);
         }
 
         void PushNewObject(SCValue name)

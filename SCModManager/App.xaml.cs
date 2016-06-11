@@ -17,18 +17,6 @@ namespace SCModManager
     {
         public App()
         {
-            var path = @"D:\00_planet_classes.txt";
-
-            using (var mr = new FileStream(path, FileMode.Open, FileAccess.Read))
-            {
-                var parser = new Parser(new Scanner(mr));
-
-                parser.Parse();
-
-                var rr = parser.Root;
-
-                return;
-            }
         }
     }
 }

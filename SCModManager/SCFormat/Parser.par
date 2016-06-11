@@ -14,6 +14,11 @@
 %token OBr      
 %token CBr     
 %token Eq
+%token Le
+%token Gr
+%token LEq
+%token GEq
+%token NEq
 %token Skip
 
 %% //Grammar Rules Section
@@ -22,14 +27,16 @@ program  : /* nothing */
 		 | program Statements
          ; 
 
-Statements : ID Eq Val   { this.SetKeyValue($1, $3); } 
-		   | Var Eq Val   { this.SetKeyValue($1, $3); } 
-		   | ID Eq Var   { this.SetKeyValue($1, $3); } 
-		   | Var Eq Var   { this.SetKeyValue($1, $3); } 
-		   | Num Eq Var   { this.SetKeyValue($1, $3); } 
-		   | Num Eq Val   { this.SetKeyValue($1, $3); } 
+Statements : ID Op Val   { this.SetKeyValue($1, $2, $3); } 
+		   | Var Op Val   { this.SetKeyValue($1,$2, $3); } 
+		   | ID Op Var   { this.SetKeyValue($1, $2, $3); } 
+		   | Var Op Var   { this.SetKeyValue($1, $2, $3); } 
+		   | Num Op Var   { this.SetKeyValue($1, $2, $3); } 
+		   | Num Op Val   { this.SetKeyValue($1, $2, $3); } 
            | Skip
            ;
+		
+Op : Eq | Le | Gr | LEq | GEq| NEq;
 		     
 Val : ImmVal 
     | Obj { $$ = this.PopObject(); }
@@ -45,8 +52,8 @@ ObjStatements :
 		     | ObjStatements ObjStatement;
 
 ObjStatement : 
-			 | ImmVal { this.SetKeyValue(null, $1);} 
-			 | ID { this.SetKeyValue(null, $1);} 
+			 | ImmVal { this.SetKeyValue(null, null, $1);} 
+			 | ID { this.SetKeyValue(null, null, $1);} 
 			 | Statements;
 
 	

@@ -33,9 +33,9 @@ namespace SCModManager.SCFormat
             return new SCPercent(yytext);
         }
 
-        void EncounterEq()
+        SCValue MakeToken(Tokens token)
         {
-            return;
+            return new SCToken(token);
         }
     }
 }
