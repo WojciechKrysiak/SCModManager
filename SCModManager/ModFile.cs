@@ -122,6 +122,8 @@ namespace SCModManager
         public string Contents => "BinaryModFile";
         public string RawContents => Contents;
 
+        public Stream DataStream => new MemoryStream(contents);
+
         byte[] contents;
 
         internal BinaryModFile(string path, byte[] contents)

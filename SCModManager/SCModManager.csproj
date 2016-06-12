@@ -91,12 +91,14 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="ModFile.cs" />
+    <Compile Include="ModVersion.cs" />
     <Compile Include="SCFormat\Parser.cs" />
     <Compile Include="SCFormat\ParserImpl.cs" />
     <Compile Include="SCFormat\ScanBase.cs" />
     <Compile Include="SCFormat\Scanner.cs" />
     <Compile Include="SCFormat\ScannerImpl.cs" />
     <Compile Include="SCFormat\SCValue.cs" />
+    <Compile Include="Ui\NullToVisibilityConverter.cs" />
     <Compile Include="ViewModel\MainViewModel.cs" />
     <Compile Include="ViewModel\ViewModelLocator.cs" />
     <Page Include="MainWindow.xaml">

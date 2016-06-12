@@ -1,6 +1,9 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Windows.Media;
+using System.Windows.Media.Imaging;
 using GalaSoft.MvvmLight;
 using Ionic.Zip;
 using NLog;
@@ -54,16 +57,24 @@ namespace SCModManager
             private set { Set(ref hasConflict, value); }
         }
 
-        internal static Mod Load(string modFile)
+        public string Description { get; private set; }
+
+        public ImageSource Image { get; private set; }
+
+        public ModVersion SupportedVersion { get; private set; }
+        
+
+        internal static Mod Load(string modDescriptor)
         {
-            var id = Path.GetFileName(modFile);
+            var id = Path.GetFileName(modDescriptor);
             var mod = new Mod(id);
 
-            var path = Directory.GetParent(modFile).Parent.FullName;
+            var path = Directory.GetParent(modDescriptor).Parent.FullName;
 
             string zip = null;
-
-            using (var stream = new FileStream(modFile, FileMode.Open, FileAccess.Read))
+            string picture = null;
+            IEnumerable<string> tags;
+            using (var stream = new FileStream(modDescriptor, FileMode.Open, FileAccess.Read))
             {
                 var parser = new Parser(new Scanner(stream));
 
@@ -75,11 +86,22 @@ namespace SCModManager
 
                 if (zip == null)
                 {
-                    Log.Debug($"Zip is null for {modFile}");
+                    Log.Debug($"Zip is null for {modDescriptor}");
                     mod.Name = id;
                     mod.ParseError = true; 
                     return mod;
                 }
+
+                picture = (parser.Root["picture"] as SCString)?.Text;
+
+                tags = (parser.Root["tags"] as SCObject)?.Select(i => (i.Value as SCString)?.Text);
+
+                mod.SupportedVersion = new ModVersion((parser.Root["supported_version"] as SCString)?.Text);
+            }
+
+            if (tags != null)
+            {
+                mod.Description = string.Join(", ", tags.Where(t => t != null));
             }
 
             var file = ZipFile.Read(Path.Combine(path, zip));
@@ -93,13 +115,24 @@ namespace SCModManager
 
                 using (var stream = item.OpenReader())
                 {
-                    mod.Files.Add(ModFile.Load(item.FileName, stream));
+                    var modFile = ModFile.Load(item.FileName, stream);
+                    mod.Files.Add(modFile);
+
+                    if (string.Compare(item.FileName, picture, true) == 0 && modFile is BinaryModFile)
+                    {
+                        var image = new BitmapImage();
+                        image.BeginInit();
+                        image.StreamSource = (modFile as BinaryModFile).DataStream;
+                        image.EndInit();
+                        mod.Image = image;
+                    }
                 }
+
             }
             return mod;
         }
 
-        public void MarkConflicts(IEnumerable<Mod> allMods)
+      public void MarkConflicts(IEnumerable<Mod> allMods)
         {
             foreach (var mod in allMods)
             {
