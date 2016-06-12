@@ -3,12 +3,15 @@ using System.IO;
 using System.Linq;
 using GalaSoft.MvvmLight;
 using Ionic.Zip;
+using NLog;
 using SCModManager.SCFormat;
 
 namespace SCModManager
 {
     public class Mod : ObservableObject
     {
+        private static readonly Logger Log = LogManager.GetCurrentClassLogger();
+
         private int conflicts;
         private bool hasConflict;
         private string name;
@@ -43,6 +46,8 @@ namespace SCModManager
             set { Set(ref selected, value); }
         }
 
+        public bool ParseError { get; set; }
+
         public bool HasConflict
         {
             get { return hasConflict; }
@@ -67,6 +72,14 @@ namespace SCModManager
                 mod.Name = parser.Root["name"]?.ToString();
 
                 zip = (parser.Root["archive"] as SCString)?.Text;
+
+                if (zip == null)
+                {
+                    Log.Debug($"Zip is null for {modFile}");
+                    mod.Name = id;
+                    mod.ParseError = true; 
+                    return mod;
+                }
             }
 
             var file = ZipFile.Read(Path.Combine(path, zip));

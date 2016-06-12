@@ -10,11 +10,14 @@ using System.Windows;
 using System.Windows.Input;
 using GalaSoft.MvvmLight;
 using GalaSoft.MvvmLight.CommandWpf;
+using NLog;
 
 namespace SCModManager
 {
     class ModContext : ObservableObject
     {
+        private static readonly Logger Log = LogManager.GetCurrentClassLogger();
+
         private static readonly string ModsDir = $"{Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)}\\Paradox Interactive\\Stellaris\\mod";
         private static readonly string SettingsPath = $"{Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)}\\Paradox Interactive\\Stellaris\\settings.txt";
 
@@ -49,7 +52,16 @@ namespace SCModManager
 
                 foreach (var file in Directory.EnumerateFiles(ModsDir, "*.mod"))
                 {
-                    var mod = Mod.Load(file);
+                    Mod mod = null;
+                    try
+                    {
+                        mod = Mod.Load(file);
+                    }
+                    catch (Exception exception)
+                    {
+                        Log.Error(exception);
+                    }
+
                     if (mod != null)
                     {
                         mod.Selected = selectedMods.Any(sm => sm.Contains(mod.Id));

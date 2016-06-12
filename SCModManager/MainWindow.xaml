@@ -18,10 +18,16 @@
                     <CheckBox IsChecked="{Binding Selected}"/>
                     <TextBlock Grid.Column="1" Text="{Binding Name}"/>
                     <TextBlock Grid.Column="2" Text="{Binding Conflicts}"/>
+                    <Rectangle Fill="{x:Null}" Grid.Column="0" Grid.ColumnSpan="3" x:Name="Overlay"/>
                 </Grid>
                 <DataTemplate.Triggers>
                     <DataTrigger Binding="{Binding HasConflict}" Value="True">
                         <Setter TargetName="Container" Property="Background" Value="PaleVioletRed"/>
+                    </DataTrigger>
+                    <DataTrigger Binding="{Binding ParseError}" Value="True">
+                        <Setter TargetName="Overlay" Property="Fill" Value="LightGray"/>
+                        <Setter TargetName="Overlay" Property="Opacity" Value="0.3"/>
+                        <Setter TargetName="Overlay" Property="ToolTip" Value="There was an error parsing this mod file."/>
                     </DataTrigger>
                 </DataTemplate.Triggers>
             </DataTemplate> 

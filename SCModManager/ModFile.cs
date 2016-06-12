@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using NLog;
 
 namespace SCModManager
 {
@@ -17,6 +18,8 @@ namespace SCModManager
         private static string[] ImageExtensions = new[] { ".dds", ".png", ".jpg" };
 
         public string Path { get; set; }
+
+        protected static readonly Logger Log = LogManager.GetCurrentClassLogger();
 
 
         protected ModFile(string path)
