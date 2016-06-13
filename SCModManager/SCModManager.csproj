@@ -97,6 +97,7 @@
     <Compile Include="SCFormat\ScannerImpl.cs" />
     <Compile Include="SCFormat\SCValue.cs" />
     <Compile Include="ShiftReduceParserCode.cs" />
+    <Compile Include="Ui\ModConflictToBoolConverter.cs" />
     <Compile Include="Ui\NullToVisibilityConverter.cs" />
     <Compile Include="ViewModel\MainViewModel.cs" />
     <Compile Include="ViewModel\ViewModelLocator.cs" />

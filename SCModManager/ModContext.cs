@@ -33,7 +33,6 @@ namespace SCModManager
         {
             try
             {
-
                 IEnumerable<string> selectedMods = Enumerable.Empty<string>();
 
                 using (var stream = new FileStream(SettingsPath, FileMode.Open, FileAccess.Read))
@@ -152,6 +151,7 @@ namespace SCModManager
         {
             foreach(var mod in Mods)
             {
+                mod.ClearConflicts();
                 mod.SetHasConflictWithMod(SelectedMod);
             }
         }

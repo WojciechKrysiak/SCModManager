@@ -150,20 +150,32 @@ namespace SCModManager
 
         private bool CheckConflicts(Mod other)
         {
-            foreach (var file in Files)
+            var conflicts = other.Files.Where(mf => Directory.GetParent(mf.Path) != null).Join(Files, mf => mf.Path.ToLowerInvariant(), mf => mf.Path.ToLowerInvariant(), Tuple.Create).ToList();
+
+            if (!conflicts.Any())
             {
-                if (other.Files.Any(f => string.Compare(f.Path, file.Path, true) == 0))
-                {
-                    return true;
-                }
+                return false;
             }
 
-            return false;
+            foreach (var conflict in conflicts)
+            {
+                var otherFile = conflict.Item1;
+                var thisFile = conflict.Item2;
+                otherFile.Conflicts.Add(this);
+                thisFile.Conflicts.Add(other);
+            }
+
+            return true;
         }
 
         public void SetHasConflictWithMod(Mod other)
         {
             HasConflict = this != other && CheckConflicts(other);
+        }
+
+        public void ClearConflicts()
+        {
+            Files.ForEach(f => f.Conflicts.Clear());
         }
     }
 }

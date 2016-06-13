@@ -5,11 +5,14 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+
+using GalaSoft.MvvmLight;
+
 using NLog;
 
 namespace SCModManager
 {
-    public class ModFile
+    public class ModFile : ObservableObject
     {
         private static string[] SCExtensions = new[] { ".gfx", ".gui", ".txt" };
 
@@ -19,8 +22,24 @@ namespace SCModManager
 
         public string Path { get; set; }
 
+        public List<Mod> Conflicts { get; } = new List<Mod>();
+
+
+        public bool HasConflicts => Conflicts.Count > 0;
+
         protected static readonly Logger Log = LogManager.GetCurrentClassLogger();
 
+        public void ClearConflicts()
+        {
+            Conflicts.Clear();
+            this.RaisePropertyChanged(nameof(HasConflicts));
+        }
+
+        public void AddConflict(Mod other)
+        {
+            Conflicts.Add(other);
+            this.RaisePropertyChanged(nameof(HasConflicts));
+        }
 
         protected ModFile(string path)
         {

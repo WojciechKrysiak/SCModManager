@@ -9,21 +9,40 @@
         Title="MainWindow" Height="600" Width="1024">
     <Grid>
         <Grid.Resources>
-            <DataTemplate DataType="{x:Type local:Mod}" x:Key="ModListTemplate">
+      <ui:ModConflictToBoolConverter x:Key="ConflictToBool"/>
+      <DataTemplate DataType="{x:Type local:Mod}" x:Key="ModListTemplate">
                 <Grid x:Name="Container" HorizontalAlignment="Stretch">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
-                    <CheckBox IsChecked="{Binding Selected}"/>
+                    <Grid Grid.Column="0" Grid.ColumnSpan="3" >
+                    <Grid.ColumnDefinitions>
+                      <ColumnDefinition Width="*"/>
+                      <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+            <Rectangle Grid.Column="0" Fill="{x:Null}" x:Name="Underlay1"/>
+            <Rectangle Grid.Column="1" Fill="{x:Null}" x:Name="Underlay2"/>
+                    </Grid>
+                    <CheckBox Grid.Column="0" IsChecked="{Binding Selected}"/>
                     <TextBlock Grid.Column="1" Text="{Binding Name}"/>
                     <TextBlock Grid.Column="2" Text="{Binding Conflicts}"/>
                     <Rectangle Fill="{x:Null}" Grid.Column="0" Grid.ColumnSpan="3" x:Name="Overlay"/>
                 </Grid>
                 <DataTemplate.Triggers>
                     <DataTrigger Binding="{Binding HasConflict}" Value="True">
-                        <Setter TargetName="Container" Property="Background" Value="PaleVioletRed"/>
+                        <Setter TargetName="Underlay1" Property="Fill" Value="PaleVioletRed"/>
+                    </DataTrigger>
+                    <DataTrigger Value="True">
+                        <DataTrigger.Binding>
+                          <MultiBinding Converter="{StaticResource ConflictToBool}">
+                            <Binding/>
+                <Binding Path="DataContext.SelectedModFile" RelativeSource="{RelativeSource FindAncestor, AncestorType=local:MainWindow}"/>
+                <Binding Path="DataContext.SelectedMod" RelativeSource="{RelativeSource FindAncestor, AncestorType=local:MainWindow}"/>
+                          </MultiBinding>
+                        </DataTrigger.Binding>
+                        <Setter TargetName="Underlay2" Property="Fill" Value="PaleVioletRed"/>
                     </DataTrigger>
                     <DataTrigger Binding="{Binding ParseError}" Value="True">
                         <Setter TargetName="Overlay" Property="Fill" Value="LightGray"/>
@@ -32,7 +51,22 @@
                     </DataTrigger>
                 </DataTemplate.Triggers>
             </DataTemplate>
-            <ui:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
+        <DataTemplate DataType="{x:Type local:ModFile}" x:Key="ModFileListTemplate">
+            <Grid x:Name="Container" HorizontalAlignment="Stretch">
+                <TextBlock Text="{Binding Path}"/>
+            </Grid>
+        <DataTemplate.Triggers>
+          <DataTrigger Binding="{Binding HasConflicts}" Value="True">
+            <Setter TargetName="Container" Property="Background" Value="PaleVioletRed"/>
+            <Setter TargetName="Container" Property="ToolTip">
+              <Setter.Value>
+                  <ListBox ItemsSource="{Binding Conflicts}" DisplayMemberPath="Name"/>
+              </Setter.Value>
+            </Setter>
+          </DataTrigger>
+        </DataTemplate.Triggers>
+      </DataTemplate>
+              <ui:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
         </Grid.Resources>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto" MinWidth="200"/>
@@ -64,7 +98,7 @@
             <ListBox Grid.Row="2"
                      ItemsSource="{Binding SelectedMod.Files}"
                      SelectedItem="{Binding SelectedModFile}"
-                     DisplayMemberPath="Path"
+                     ItemTemplate="{StaticResource ModFileListTemplate}"
                      VerticalAlignment="Stretch"/>
         </Grid>
         <TextBox Grid.Column="2" Grid.Row="1" Text="{Binding SelectedModFile.Contents, Mode=OneWay}" Visibility="{Binding SelectedModFile, Converter={StaticResource NullToVisibilityConverter}}"/>
