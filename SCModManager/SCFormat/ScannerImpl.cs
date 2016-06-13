@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace SCModManager.SCFormat
 {
-    public partial class Scanner
+    internal partial class Scanner
     {
         SCValue MakeIdentifier(string yytext)
         {

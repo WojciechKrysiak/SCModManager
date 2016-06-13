@@ -63,9 +63,6 @@
       <HintPath>..\packages\NLog.4.3.4\lib\net45\NLog.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="QUT.ShiftReduceParser">
-      <HintPath>..\..\..\..\..\Downloads\gppg-distro-1_5_2\gppg-distro-1_5_2\binaries\QUT.ShiftReduceParser.dll</HintPath>
-    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
     <Reference Include="System.Windows.Interactivity, Version=4.5.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
@@ -90,6 +87,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="GplexBuffers.cs" />
     <Compile Include="ModFile.cs" />
     <Compile Include="ModVersion.cs" />
     <Compile Include="SCFormat\Parser.cs" />
@@ -98,6 +96,7 @@
     <Compile Include="SCFormat\Scanner.cs" />
     <Compile Include="SCFormat\ScannerImpl.cs" />
     <Compile Include="SCFormat\SCValue.cs" />
+    <Compile Include="ShiftReduceParserCode.cs" />
     <Compile Include="Ui\NullToVisibilityConverter.cs" />
     <Compile Include="ViewModel\MainViewModel.cs" />
     <Compile Include="ViewModel\ViewModelLocator.cs" />

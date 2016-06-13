@@ -2,7 +2,7 @@
 
 namespace SCModManager.SCFormat
 {
-    public abstract class ScanBase : AbstractScanner<SCValue, LexLocation>
+    internal abstract class ScanBase : AbstractScanner<SCValue, LexLocation>
     {
         protected virtual bool yywrap() { return true; }
     }

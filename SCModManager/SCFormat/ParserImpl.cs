@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace SCModManager.SCFormat
 {
-    public partial class Parser
+    internal partial class Parser
     {
         List<SCKeyValObject> _currentValues = new List<SCKeyValObject>();
         Stack<SCObject> _currentObjectStack = new Stack<SCObject>();

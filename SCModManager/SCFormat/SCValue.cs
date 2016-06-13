@@ -229,7 +229,7 @@ namespace SCModManager.SCFormat
     {
         Tokens _token;
 
-        public SCToken(Tokens token)
+        internal SCToken(Tokens token)
         {
             this._token = token;
         }

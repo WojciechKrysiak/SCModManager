@@ -1,5 +1,6 @@
 %namespace SCModManager.SCFormat  //names the namespace of the Parser-class
 %partial 
+%visibility internal       //visibility of the types "Tokens","ScanBase","Scanner"
 
 %parsertype Parser      //names the Parserclass to "Parser"
 %scanbasetype ScanBase  //names the ScanBaseclass to "ScanBase"

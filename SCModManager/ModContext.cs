@@ -50,25 +50,34 @@ namespace SCModManager
                         selectedMods = _lastMods.Select(kvp => kvp.Value.ToString()).ToList();
                 }
 
-                foreach (var file in Directory.EnumerateFiles(ModsDir, "*.mod"))
-                {
-                    Mod mod = null;
-                    try
+                if (Directory.Exists(ModsDir))
+                { 
+                    foreach (var file in Directory.EnumerateFiles(ModsDir, "*.mod"))
                     {
-                        mod = Mod.Load(file);
-                    }
-                    catch (Exception exception)
-                    {
-                        Log.Error(exception);
-                    }
+                        Mod mod = null;
+                        try
+                        {
+                            mod = Mod.Load(file);
+                        }
+                        catch (Exception exception)
+                        {
+                            Log.Error(exception);
+                        }
 
-                    if (mod != null)
-                    {
-                        mod.Selected = selectedMods.Any(sm => sm.Contains(mod.Id));
-                        mod.PropertyChanged += ModOnPropertyChanged;
-                        _mods.Add(mod);
+                        if (mod != null)
+                        {
+                            mod.Selected = selectedMods.Any(sm => sm.Contains(mod.Id));
+                            mod.PropertyChanged += ModOnPropertyChanged;
+                            _mods.Add(mod);
+                        }
                     }
                 }
+                else
+                {
+                    MessageBox.Show("No mods installed - nothing to do!");
+                    Application.Current.Shutdown();
+                }
+
 
                 foreach (var mod in Mods)
                     mod.MarkConflicts(Mods);
