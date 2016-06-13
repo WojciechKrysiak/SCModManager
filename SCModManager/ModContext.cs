@@ -135,8 +135,7 @@ namespace SCModManager
             get { return _selectedMod; }
             set
             {
-                if (Set(ref _selectedMod, value))
-                    MarkConflicted();
+                Set(ref _selectedMod, value);
             }
         }
 
@@ -144,16 +143,6 @@ namespace SCModManager
         {
             get { return _selectedModFile; }
             set { Set(ref _selectedModFile, value); }
-        }
-
-
-        private void MarkConflicted()
-        {
-            foreach(var mod in Mods)
-            {
-                mod.ClearConflicts();
-                mod.SetHasConflictWithMod(SelectedMod);
-            }
         }
     }
 }

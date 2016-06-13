@@ -15,8 +15,6 @@ namespace SCModManager
     {
         private static readonly Logger Log = LogManager.GetCurrentClassLogger();
 
-        private int conflicts;
-        private bool hasConflict;
         private string name;
         private bool selected;
 
@@ -35,13 +33,11 @@ namespace SCModManager
             set { Set(ref name, value); }
         }
 
-        public List<ModFile> Files { get; set; } = new List<ModFile>();
+        public List<ModFile> Files { get; } = new List<ModFile>();
 
-        public int Conflicts
-        {
-            get { return conflicts; }
-            private set { Set(ref conflicts, value); }
-        }
+        public List<Mod> Conflicts { get; } = new List<Mod>();
+
+        public int ConflictCount => Conflicts.Count;
 
         public bool Selected
         {
@@ -51,18 +47,11 @@ namespace SCModManager
 
         public bool ParseError { get; set; }
 
-        public bool HasConflict
-        {
-            get { return hasConflict; }
-            private set { Set(ref hasConflict, value); }
-        }
-
         public string Description { get; private set; }
 
         public ImageSource Image { get; private set; }
 
         public ModVersion SupportedVersion { get; private set; }
-        
 
         internal static Mod Load(string modDescriptor)
         {
@@ -88,7 +77,7 @@ namespace SCModManager
                 {
                     Log.Debug($"Zip is null for {modDescriptor}");
                     mod.Name = id;
-                    mod.ParseError = true; 
+                    mod.ParseError = true;
                     return mod;
                 }
 
@@ -132,7 +121,7 @@ namespace SCModManager
             return mod;
         }
 
-      public void MarkConflicts(IEnumerable<Mod> allMods)
+        public void MarkConflicts(IEnumerable<Mod> allMods)
         {
             foreach (var mod in allMods)
             {
@@ -143,14 +132,17 @@ namespace SCModManager
 
                 if (CheckConflicts(mod))
                 {
-                    Conflicts++;
+                    Conflicts.Add(mod);
                 }
             }
         }
 
         private bool CheckConflicts(Mod other)
         {
-            var conflicts = other.Files.Where(mf => Directory.GetParent(mf.Path) != null).Join(Files, mf => mf.Path.ToLowerInvariant(), mf => mf.Path.ToLowerInvariant(), Tuple.Create).ToList();
+            var conflicts =
+                Files.Where(mf => !string.IsNullOrEmpty(Path.GetDirectoryName(mf.Path)))
+                    .Join(other.Files, mf => mf.Path.ToLowerInvariant(), mf => mf.Path.ToLowerInvariant(), (f1, f2) => f1)
+                    .ToList();
 
             if (!conflicts.Any())
             {
@@ -159,23 +151,10 @@ namespace SCModManager
 
             foreach (var conflict in conflicts)
             {
-                var otherFile = conflict.Item1;
-                var thisFile = conflict.Item2;
-                otherFile.Conflicts.Add(this);
-                thisFile.Conflicts.Add(other);
+                conflict.Conflicts.Add(other);
             }
 
             return true;
-        }
-
-        public void SetHasConflictWithMod(Mod other)
-        {
-            HasConflict = this != other && CheckConflicts(other);
-        }
-
-        public void ClearConflicts()
-        {
-            Files.ForEach(f => f.Conflicts.Clear());
         }
     }
 }

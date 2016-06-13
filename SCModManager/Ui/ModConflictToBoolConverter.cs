@@ -10,7 +10,6 @@ namespace SCModManager.Ui
 {
     class ModConflictToBoolConverter : IMultiValueConverter
     {
-
         public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
         {
             if (values?.Length != 3)
@@ -18,11 +17,12 @@ namespace SCModManager.Ui
                 return false;
             }
 
+            var selectedMod = values[2] as Mod;
             var modFile = values[1] as ModFile;
             var mod = values[0] as Mod;
-            if (modFile == null)
+            if (modFile == null || parameter == null)
             {
-                return mod?.HasConflict ?? false;
+                return mod?.Conflicts.Contains(selectedMod) ?? false;
             }
 
             return modFile.Conflicts.Any(m => m == mod);
@@ -31,7 +31,6 @@ namespace SCModManager.Ui
         public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)
         {
             throw new InvalidOperationException("This converter cannot perform reverse conversion.");
-            throw new NotImplementedException();
         }
     }
 }
