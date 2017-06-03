@@ -5,6 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:SCModManager"
         xmlns:ui="clr-namespace:SCModManager.Ui"
+        xmlns:diff="clr-namespace:SCModManager.DiffMerge"
         mc:Ignorable="d"
         Title="MainWindow" Height="600" Width="1024">
     <Grid>
@@ -77,38 +78,54 @@
         </Grid.Resources>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto" MinWidth="200"/>
-            <ColumnDefinition Width="Auto" MinWidth="350"/>
-            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="*" MinWidth="350"/>
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
-        <Button Command="{Binding SaveSettingsCommand}">Save</Button>
-        <ListBox Grid.Column="0" Grid.Row="1" Grid.RowSpan="2"
-                 ItemsSource="{Binding Mods}"
-                 SelectedItem="{Binding SelectedMod}"
-                 ItemTemplate="{StaticResource ModListTemplate}"
-                 HorizontalContentAlignment="Stretch"/>
-        <Grid Grid.Column="1" Grid.Row="1" Grid.RowSpan="2" x:Name="Panel" Visibility="{Binding SelectedMod, Converter={StaticResource NullToVisibilityConverter}}">
+        <Menu Grid.ColumnSpan="3">
+            <Button Command="{Binding SaveSettingsCommand}">Save To Stellaris</Button>
+            <Button Command="{Binding MergeModsCommand}">Merge Selected</Button>
+            <Separator/>
+            
+        </Menu>
+        <DockPanel LastChildFill="True" Grid.Column="0" Grid.Row="1" Grid.RowSpan="2" VerticalAlignment="Stretch">
+            <DockPanel LastChildFill="True" DockPanel.Dock="Top">
+                <Label DockPanel.Dock="Left">Mod list:</Label>
+                <Button DockPanel.Dock="Right" Command="{Binding Duplicate}" ToolTip="Duplicate current selection">+</Button>
+                <Button DockPanel.Dock="Right" Command="{Binding Delete}" ToolTip="Delete current selection">X</Button>
+                <ComboBox ItemsSource="{Binding Selections}" DisplayMemberPath="Key" SelectedItem="{Binding CurrentSelection}"/>
+            </DockPanel>    
+            <ListBox ItemsSource="{Binding Mods}"
+                     SelectedItem="{Binding SelectedMod}"
+                     ItemTemplate="{StaticResource ModListTemplate}"
+                     HorizontalContentAlignment="Stretch"/>
+        </DockPanel>
+        <Grid Grid.Column="1" Grid.Row="0" Grid.RowSpan="3" Grid.ColumnSpan="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
             <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
-            <StackPanel Orientation="Horizontal">
-                <TextBox FontWeight="Bold" Text="Tags"/>
-                <TextBox Text="{Binding SelectedMod.Description, Mode=OneWay}"/>
-            </StackPanel>
-            <Image Grid.Row="1" Source="{Binding SelectedMod.Image, Mode=OneWay}" VerticalAlignment="Stretch" MaxWidth="300" Stretch="Uniform"/>
-            <ListBox Grid.Row="2"
-                     ItemsSource="{Binding SelectedMod.Files}"
-                     SelectedItem="{Binding SelectedModFile}"
-                     ItemTemplate="{StaticResource ModFileListTemplate}"
-                     VerticalAlignment="Stretch"/>
+            <ListBox Grid.Column="0" Visibility="{Binding SelectedMod, Converter={StaticResource NullToVisibilityConverter}}"
+                    ItemsSource="{Binding SelectedMod.Files}"
+                    SelectedItem="{Binding SelectedModFile}"
+                    ItemTemplate="{StaticResource ModFileListTemplate}"
+                    VerticalAlignment="Stretch"/>
+            <ListBox Grid.Column="1"  Visibility="{Binding SelectedModFile, Converter={StaticResource NullToVisibilityConverter}}"
+                    ItemsSource="{Binding SelectedModFile.Conflicts}"
+                    SelectedItem="{Binding SelectedConflict}"
+                    DisplayMemberPath="Name"
+                    VerticalAlignment="Stretch"/>
+
+
+            <diff:MergeViewer DataContext="{Binding ComparisonContext}" Visibility="{Binding ., RelativeSource={RelativeSource Self}, Converter={StaticResource NullToVisibilityConverter}}" IsReadOnly="True" Grid.Column="0" Grid.Row="1" Contents="{Binding Comparison}" Side="Left" Document="{Binding LeftDocument}" FontFamily="Consolas" ShowLineNumbers="True" ScrollOffset="{Binding ScrollOffset}" />
+            <diff:MergeViewer DataContext="{Binding ComparisonContext}" Visibility="{Binding ., RelativeSource={RelativeSource Self}, Converter={StaticResource NullToVisibilityConverter}}" IsReadOnly="True" Grid.Column="1" Grid.Row="1" Contents="{Binding Comparison}" Side="Right" Document="{Binding RightDocument}" FontFamily="Consolas" ShowLineNumbers="True" ScrollOffset="{Binding ScrollOffset}" />
         </Grid>
-        <TextBox Grid.Column="2" Grid.Row="1" Text="{Binding SelectedModFile.Contents, Mode=OneWay}" Visibility="{Binding SelectedModFile, Converter={StaticResource NullToVisibilityConverter}}"/>
-        <TextBox Grid.Column="2" Grid.Row="2" Text="{Binding SelectedModFile.RawContents, Mode=OneWay}" Visibility="{Binding SelectedModFile, Converter={StaticResource NullToVisibilityConverter}}"/>
     </Grid>
 </Window>

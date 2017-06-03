@@ -27,6 +27,31 @@ namespace SCModManager.SCFormat
             Value = value;
         }
 
+        public SCKeyValObject(SCValue key, SCValue value)
+            :this(key, new SCToken(Tokens.Eq),value)
+        {
+        }
+
+        public static SCKeyValObject Create(string value)
+        {
+            return new SCKeyValObject(null, null, new SCString(value));
+        }
+
+        public static SCKeyValObject Create(string key, string value)
+        {
+            var k = new SCIdentifier(key);
+            var t = new SCToken(Tokens.Eq);
+            var v = new SCString(value);
+            return new SCKeyValObject(k, t, v);
+        }
+
+        public static SCKeyValObject Create(string key, SCValue value)
+        {
+            var k = new SCIdentifier(key);
+            var t = new SCToken(Tokens.Eq);
+            return new SCKeyValObject(k, t, value);
+        }
+
         public override string ToString()
         {
             return Key != null ? $"{Key}{Cmp}{Value}" : Value.ToString();
@@ -41,11 +66,59 @@ namespace SCModManager.SCFormat
         {
             get
             {
-                return contents.FirstOrDefault(kv => kv.Key.ToString() == text)?.Value; 
+                return contents.FirstOrDefault(kv => kv.Key.ToString() == text)?.Value;
+            }
+
+            set
+            {
+                var kvo = contents.FirstOrDefault(kv => kv.Key.ToString() == text);
+
+                if (kvo == null)
+                {
+                    contents.Add(new SCKeyValObject(new SCIdentifier(text), new SCToken(Tokens.Eq), value));
+                }
+                else
+                {
+                    var idx = contents.IndexOf(kvo);
+                    contents.Remove(kvo);
+                    contents.Insert(idx, new SCKeyValObject(new SCIdentifier(text), new SCToken(Tokens.Eq), value));
+                }
+            }
+        }
+
+
+        public SCValue this[SCValue val]
+        {
+            get
+            {
+                return contents.FirstOrDefault(kv => kv.Key.ToString() == val.ToString())?.Value;
+            }
+
+            set
+            {
+                var kvo = contents.FirstOrDefault(kv => kv.Key.ToString() == val.ToString());
+
+                if (kvo == null)
+                {
+                    contents.Add(new SCKeyValObject(val, new SCToken(Tokens.Eq), value));
+                }
+                else
+                {
+                    var idx = contents.IndexOf(kvo);
+                    contents.Remove(kvo);
+                    contents.Insert(idx, new SCKeyValObject(val, new SCToken(Tokens.Eq), value));
+                }
             }
         }
 
         private readonly List<SCKeyValObject> contents = new List<SCKeyValObject>();
+
+
+        public void Add(SCKeyValObject obj)
+        {
+            contents.Add(obj);
+        }
+
 
         public void Add(SCValue key, SCValue cmp, SCValue value)
         {
@@ -118,6 +191,28 @@ namespace SCModManager.SCFormat
                 writer.Write(stringBuilder.ToString());
             }
         }
+
+        internal static SCObject Create(List<string> tags)
+        {
+            SCObject res = new SCObject();
+
+            tags.ForEach(t => res.Add(SCKeyValObject.Create(t)));
+            return res;
+        }
+
+        internal static SCObject Create(IEnumerable<KeyValuePair<string, string>> values)
+        {
+            SCObject res = new SCObject();
+            res.contents.AddRange(values.Select(kvp => SCKeyValObject.Create(kvp.Key, kvp.Value)));
+            return res;
+        }
+
+        internal static SCObject Create(IEnumerable<SCKeyValObject> values)
+        {
+            SCObject res = new SCObject();
+            res.contents.AddRange(values.Select(kvp => new SCKeyValObject(kvp.Key, new SCToken(Tokens.Eq), kvp.Value)));
+            return res;
+        }
     }
 
     public class SCIdentifier : SCValue
@@ -158,7 +253,7 @@ namespace SCModManager.SCFormat
 
         public SCString(string text) 
         {
-            Text = text;
+            Text = text.Trim('"');
         }
 
         public override string ToString()

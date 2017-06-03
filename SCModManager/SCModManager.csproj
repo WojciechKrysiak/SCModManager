@@ -9,11 +9,12 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>SCModManager</RootNamespace>
     <AssemblyName>SCModManager</AssemblyName>
-    <TargetFrameworkVersion>v4.6</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <ProjectTypeGuids>{60dc8134-eba5-43b8-bcc9-bb4bc16c2548};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
     <WarningLevel>4</WarningLevel>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -24,6 +25,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <UseVSHostingProcess>false</UseVSHostingProcess>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -35,6 +37,14 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Diff.Match.Patch, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Diff.Match.Patch.2.0.1\lib\net45\Diff.Match.Patch.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="FSharp.Core, Version=4.4.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\FSharp.Core.4.0.0.1\lib\net40\FSharp.Core.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="GalaSoft.MvvmLight, Version=5.3.0.19026, Culture=neutral, PublicKeyToken=e7570ab207bcb616, processorArchitecture=MSIL">
       <HintPath>..\packages\MvvmLightLibs.5.3.0.0\lib\net45\GalaSoft.MvvmLight.dll</HintPath>
       <Private>True</Private>
@@ -45,6 +55,10 @@
     </Reference>
     <Reference Include="GalaSoft.MvvmLight.Platform, Version=5.3.0.19032, Culture=neutral, PublicKeyToken=5f873c45e98af8a1, processorArchitecture=MSIL">
       <HintPath>..\packages\MvvmLightLibs.5.3.0.0\lib\net45\GalaSoft.MvvmLight.Platform.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="ICSharpCode.AvalonEdit, Version=5.0.3.0, Culture=neutral, PublicKeyToken=9cc39be672370310, processorArchitecture=MSIL">
+      <HintPath>..\packages\AvalonEdit.5.0.3\lib\Net40\ICSharpCode.AvalonEdit.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="Ionic.Zip, Version=1.9.8.0, Culture=neutral, PublicKeyToken=6583c7c814667745, processorArchitecture=MSIL">
@@ -87,9 +101,23 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="ComparisonContext.cs" />
+    <Compile Include="DiffMerge\Colorizer.cs" />
+    <Compile Include="DiffMerge\CompareRes.cs" />
+    <Compile Include="DiffMerge\ReadOnlyProvider.cs" />
     <Compile Include="GplexBuffers.cs" />
+    <Compile Include="DiffMerge\Merge.xaml.cs">
+      <DependentUpon>Merge.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="DiffMerge\MergedMod.cs" />
+    <Compile Include="DiffMerge\MergeProcess.cs" />
+    <Compile Include="DiffMerge\MergeViewer.cs" />
     <Compile Include="ModFile.cs" />
     <Compile Include="ModVersion.cs" />
+    <Compile Include="NameConfirm.xaml.cs">
+      <DependentUpon>NameConfirm.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="NameConfirmVM.cs" />
     <Compile Include="SCFormat\Parser.cs" />
     <Compile Include="SCFormat\ParserImpl.cs" />
     <Compile Include="SCFormat\ScanBase.cs" />
@@ -97,6 +125,7 @@
     <Compile Include="SCFormat\ScannerImpl.cs" />
     <Compile Include="SCFormat\SCValue.cs" />
     <Compile Include="ShiftReduceParserCode.cs" />
+    <Compile Include="TypeBasedDataTemplateSelector.cs" />
     <Compile Include="Ui\ModConflictToBoolConverter.cs" />
     <Compile Include="Ui\NullToVisibilityConverter.cs" />
     <Compile Include="ViewModel\MainViewModel.cs" />
@@ -113,6 +142,14 @@
       <DependentUpon>MainWindow.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Page Include="DiffMerge\Merge.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="NameConfirm.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Mod.cs" />

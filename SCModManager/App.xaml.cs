@@ -20,6 +20,9 @@ namespace SCModManager
     {
         public App()
         {
+            this.DispatcherUnhandledException += App_DispatcherUnhandledException;
+            AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
+
             var config = new LoggingConfiguration();
 
             var fileTarget = new FileTarget();
@@ -32,6 +35,16 @@ namespace SCModManager
             config.LoggingRules.Add(rule);
 
             LogManager.Configuration = config;
+        }
+
+        private void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
+        {
+            return;
+        }
+
+        private void App_DispatcherUnhandledException(object sender, System.Windows.Threading.DispatcherUnhandledExceptionEventArgs e)
+        {
+            return;
         }
     }
 }

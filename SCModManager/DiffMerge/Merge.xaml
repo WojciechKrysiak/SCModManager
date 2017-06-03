@@ -1,0 +1,88 @@
+﻿<Window x:Class="SCModManager.Merge"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:SCModManager"
+        xmlns:diff="clr-namespace:SCModManager.DiffMerge"
+        xmlns:ui="clr-namespace:SCModManager.Ui"
+        xmlns:avalon="http://icsharpcode.net/sharpdevelop/avalonedit"
+        mc:Ignorable="d"
+        Title="Merge" Height="800" Width="1024"
+        x:Name="MergeWindow">
+    <Grid>
+        <Grid.Resources>
+            <local:TypeBasedDataTemplateSelector x:Key="ModFileTemplateSelector">
+                <DataTemplate DataType="{x:Type local:ModToProcess}">
+                    <DockPanel x:Name="Container" HorizontalAlignment="Stretch" LastChildFill="True">
+                        <TextBlock Text="{Binding Description}"/>
+                    </DockPanel>
+                </DataTemplate>
+                <DataTemplate DataType="{x:Type local:ModFile}">
+                    <Grid x:Name="Container" HorizontalAlignment="Stretch">
+                        <TextBlock Text="{Binding Path}"/>
+                    </Grid>
+                </DataTemplate>
+            </local:TypeBasedDataTemplateSelector>
+            <ui:NullToVisibilityConverter x:Key="NullToVis"/>
+     
+        </Grid.Resources>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="3*"/>
+            <ColumnDefinition Width="8*"/>
+        </Grid.ColumnDefinitions>
+        <Button Command="{Binding Save}">Save</Button>
+        <StackPanel Orientation="Horizontal" Grid.Column="1">
+            <Label>Mod name:</Label>
+            <TextBox Width="100" Text="{Binding Result.Name}"/>
+        </StackPanel>
+        <ListBox Grid.Column="0" Grid.Row="1"
+                     ItemsSource="{Binding ModFiles}"
+                     SelectedItem="{Binding SelectedModFile}"
+                     ItemTemplateSelector="{StaticResource ModFileTemplateSelector}"
+                     VerticalAlignment="Stretch"/>
+        <Grid Grid.Column="1" Grid.Row="1" DataContext="{Binding CurrentProcess}"
+              Visibility="{Binding DataContext, RelativeSource={RelativeSource Self}, Converter={StaticResource NullToVis}}">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <ComboBox Grid.Column="0" Grid.Row="0" ItemsSource="{Binding LeftSelection}" SelectedItem="{Binding Left}" DisplayMemberPath="SourceMod.Name"/>
+            <ComboBox Grid.Column="1" Grid.Row="0"  ItemsSource="{Binding RightSelection}" SelectedItem="{Binding Right}" DisplayMemberPath="SourceMod.Name"/>
+
+            <diff:MergeViewer IsReadOnly="True" Grid.Column="0" Grid.Row="1" Contents="{Binding Comparison}" Side="Left" Document="{Binding LeftDocument}" FontFamily="Consolas" ShowLineNumbers="True" ScrollOffset="{Binding ScrollOffset}" />
+
+            <diff:MergeViewer IsReadOnly="True" Grid.Column="1" Grid.Row="1"  Document="{Binding RightDocument}" Contents="{Binding Comparison}" Side="Right" FontFamily="Consolas" ShowLineNumbers="True" ScrollOffset="{Binding ScrollOffset}" />
+            
+            <DockPanel Grid.Column="0" Grid.Row="2" Grid.ColumnSpan="2" HorizontalAlignment="Center" LastChildFill="True">
+                <StackPanel DockPanel.Dock="Left">
+                    <Button Command="{Binding DataContext.LeftBefore, ElementName=MergeWindow}" CommandParameter="{Binding Left}" >Left as new file before</Button>
+                    <Button Command="{Binding DataContext.LeftAfter, ElementName=MergeWindow}"  CommandParameter="{Binding Left}">Left as new file after</Button>
+                </StackPanel>
+                <StackPanel DockPanel.Dock="Right">
+                    <Button Command="{Binding DataContext.RightBefore, ElementName=MergeWindow}" CommandParameter="{Binding Right}">Right as new file before</Button>
+                    <Button Command="{Binding DataContext.RightAfter, ElementName=MergeWindow}"  CommandParameter="{Binding Right}">Right as new file after</Button>
+                </StackPanel >
+                <StackPanel Orientation="Horizontal" >
+                    <Button Command="{Binding PickLeft}">Pick left</Button>
+                    <Button Command="{Binding SaveMerge}">Save</Button>
+                    <Button Command="{Binding PickRight}">Pick right</Button>
+                 </StackPanel>
+            </DockPanel>
+
+            <diff:MergeViewer Grid.Column="0" Grid.Row="3" Grid.ColumnSpan="2"  Document="{Binding ResultDocument}" Contents="{Binding Comparison}" Side="Result" FontFamily="Consolas" ShowLineNumbers="True" ScrollOffset="{Binding ScrollOffset}" />
+
+        </Grid>
+    </Grid>
+</Window>
