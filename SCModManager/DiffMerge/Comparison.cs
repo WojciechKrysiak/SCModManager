@@ -1,16 +1,13 @@
 ﻿using DiffMatchPatch;
-using GalaSoft.MvvmLight;
 using GalaSoft.MvvmLight.Command;
+using ICSharpCode.AvalonEdit.Document;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
 using System.Windows.Input;
-using ICSharpCode.AvalonEdit.Document;
 
-namespace SCModManager
+namespace SCModManager.DiffMerge
 {
     public enum Side
     {

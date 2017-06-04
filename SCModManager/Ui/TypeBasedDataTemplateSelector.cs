@@ -9,7 +9,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Markup;
 
-namespace SCModManager
+namespace SCModManager.Ui
 {
     [ContentProperty("Content")]
 

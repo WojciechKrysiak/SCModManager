@@ -12,7 +12,7 @@ using NLog;
 using Ionic.Zip;
 using System.Text.RegularExpressions;
 
-namespace SCModManager
+namespace SCModManager.ModData
 {
     public abstract class ModFile : ObservableObject
     {

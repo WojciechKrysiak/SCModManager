@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SCModManager.ModData;
+using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;

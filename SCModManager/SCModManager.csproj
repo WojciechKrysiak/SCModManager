@@ -101,19 +101,18 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Compile Include="ComparisonContext.cs" />
+    <Compile Include="DiffMerge\ComparisonContext.cs" />
     <Compile Include="DiffMerge\Colorizer.cs" />
-    <Compile Include="DiffMerge\CompareRes.cs" />
+    <Compile Include="DiffMerge\Comparison.cs" />
     <Compile Include="DiffMerge\ReadOnlyProvider.cs" />
-    <Compile Include="GplexBuffers.cs" />
+    <Compile Include="SCFormat\Parser\GplexBuffers.cs" />
     <Compile Include="DiffMerge\Merge.xaml.cs">
       <DependentUpon>Merge.xaml</DependentUpon>
     </Compile>
-    <Compile Include="DiffMerge\MergedMod.cs" />
+    <Compile Include="DiffMerge\ModMergeContext.cs" />
     <Compile Include="DiffMerge\MergeProcess.cs" />
     <Compile Include="DiffMerge\MergeViewer.cs" />
-    <Compile Include="ModFile.cs" />
-    <Compile Include="ModVersion.cs" />
+    <Compile Include="ModData\ModFile.cs" />
     <Compile Include="NameConfirm.xaml.cs">
       <DependentUpon>NameConfirm.xaml</DependentUpon>
     </Compile>
@@ -124,8 +123,8 @@
     <Compile Include="SCFormat\Scanner.cs" />
     <Compile Include="SCFormat\ScannerImpl.cs" />
     <Compile Include="SCFormat\SCValue.cs" />
-    <Compile Include="ShiftReduceParserCode.cs" />
-    <Compile Include="TypeBasedDataTemplateSelector.cs" />
+    <Compile Include="SCFormat\Parser\ShiftReduceParserCode.cs" />
+    <Compile Include="Ui\TypeBasedDataTemplateSelector.cs" />
     <Compile Include="Ui\ModConflictToBoolConverter.cs" />
     <Compile Include="Ui\NullToVisibilityConverter.cs" />
     <Compile Include="ViewModel\MainViewModel.cs" />
@@ -152,7 +151,7 @@
     </Page>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Mod.cs" />
+    <Compile Include="ModData\Mod.cs" />
     <Compile Include="ModContext.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
       <SubType>Code</SubType>

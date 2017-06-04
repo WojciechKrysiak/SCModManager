@@ -12,7 +12,7 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 
-namespace SCModManager
+namespace SCModManager.DiffMerge
 {
     /// <summary>
     /// Interaction logic for Merge.xaml

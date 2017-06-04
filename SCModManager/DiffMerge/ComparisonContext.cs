@@ -1,13 +1,9 @@
 ﻿using GalaSoft.MvvmLight;
 using ICSharpCode.AvalonEdit.Document;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using SCModManager.ModData;
 using System.Windows;
 
-namespace SCModManager
+namespace SCModManager.DiffMerge
 {
     class ComparisonContext : ObservableObject
     {

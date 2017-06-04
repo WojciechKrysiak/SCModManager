@@ -12,6 +12,8 @@ using GalaSoft.MvvmLight;
 using GalaSoft.MvvmLight.CommandWpf;
 using NLog;
 using Ionic.Zip;
+using SCModManager.DiffMerge;
+using SCModManager.ModData;
 
 namespace SCModManager
 {
@@ -27,7 +29,7 @@ namespace SCModManager
 
         private readonly SCObject _savedSelectionsDocument;
 
-        readonly List<Mod> _mods = new List<Mod>();
+        private List<Mod> _mods = new List<Mod>();
 
         Mod _selectedMod;
         ModFile _selectedModFile;
@@ -104,12 +106,10 @@ namespace SCModManager
 
                 SortAndUpdate();
 
-                CurrentSelection = Selections.FirstOrDefault(kvo => ((kvo.Key as SCString).Text == "Stellaris selection"));
-
                 SaveSettingsCommand = new RelayCommand(SaveSettings);
-                MergeModsCommand = new RelayCommand(MergeMods);
+                MergeModsCommand = new RelayCommand(MergeMods, () => _mods.Count(m => m.Selected) > 1);
                 Duplicate = new RelayCommand(DoDuplicate);
-                Delete = new RelayCommand(DoDelete,() => Selections.Count() > 1);
+                Delete = new RelayCommand(DoDelete, DoModsNeedToBeMerged);
             }
             catch (Exception ex)
             {
@@ -117,11 +117,21 @@ namespace SCModManager
             }
         }
 
+        private bool DoModsNeedToBeMerged()
+        {
+            var selectedMods = _mods.Where(m => m.Selected).ToList();
+
+            if (selectedMods.Count < 2)
+            {
+                return false;
+            }
+
+            return selectedMods.SelectMany(m => m.Conflicts).Any(m2 => selectedMods.Contains(m2));
+        }
+
         private void SortAndUpdate()
         {
-            var sorted = Mods.OrderBy(m => m.Name).ToList();
-            _mods.Clear();
-            _mods.AddRange(sorted);
+            _mods = Mods.OrderBy(m => m.Name).ToList();
             RaisePropertyChanged(nameof(Mods));
         }
 
@@ -222,6 +232,7 @@ namespace SCModManager
 
         private void MergeWindow_Closed(object sender, EventArgs e)
         {
+            mergeWindow.Closed -= MergeWindow_Closed;
             mergeWindow = null;
         }
 
@@ -280,6 +291,7 @@ namespace SCModManager
                     (CurrentSelection.Value as SCObject).Remove(selected);
                 }
                 SaveSelection();
+                MergeModsCommand?.RaiseCanExecuteChanged();
             }
         }
 
@@ -287,7 +299,8 @@ namespace SCModManager
         {
             try
             {
-                _savedSelectionsDocument["SavedToStellaris"] = new SCString(CurrentSelection.Key.ToString()); 
+                _savedSelectionsDocument["SavedToStellaris"] = new SCString(CurrentSelection.Key.ToString());
+                SaveSelection();
 
                 _settingsRoot["last_mods"] = CurrentSelection.Value;
 
@@ -366,6 +379,6 @@ namespace SCModManager
             }
         }
 
-        public ICommand MergeModsCommand { get; }
+        public RelayCommand MergeModsCommand { get; }
     }
 }

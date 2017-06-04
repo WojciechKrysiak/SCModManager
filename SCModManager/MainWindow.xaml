@@ -5,14 +5,16 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:SCModManager"
         xmlns:ui="clr-namespace:SCModManager.Ui"
+        xmlns:modData="clr-namespace:SCModManager.ModData"
         xmlns:diff="clr-namespace:SCModManager.DiffMerge"
         mc:Ignorable="d"
-        Title="MainWindow" Height="600" Width="1024">
+        Title="MainWindow" Height="800" Width="1024">
     <Grid>
         <Grid.Resources>
             <ui:ModConflictToBoolConverter x:Key="ConflictToBool"/>
-            <DataTemplate DataType="{x:Type local:Mod}" x:Key="ModListTemplate">
-                <Grid x:Name="Container" HorizontalAlignment="Stretch">
+            <DataTemplate DataType="{x:Type modData:Mod}" x:Key="ModListTemplate">
+                <Border BorderThickness="0 1" BorderBrush="Gray">
+                <Grid x:Name="Container" HorizontalAlignment="Stretch" Margin="0 5">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="*"/>
@@ -26,11 +28,12 @@
                         <Rectangle Grid.Column="0" Fill="{x:Null}" x:Name="Underlay1"/>
                         <Rectangle Grid.Column="1" Fill="{x:Null}" x:Name="Underlay2"/>
                     </Grid>
-                    <CheckBox Grid.Column="0" IsChecked="{Binding Selected}"/>
+                    <CheckBox Margin="0 0 5 0" Grid.Column="0" IsChecked="{Binding Selected}"/>
                     <TextBlock Grid.Column="1" Text="{Binding Name}"/>
-                    <TextBlock Grid.Column="2" Text="{Binding ConflictCount}"/>
+                    <TextBlock Margin="5 0" Grid.Column="2" Text="{Binding ConflictCount}"/>
                     <Rectangle Fill="{x:Null}" Grid.Column="0" Grid.ColumnSpan="3" x:Name="Overlay"/>
                 </Grid>
+                </Border>
                 <DataTemplate.Triggers>
                     <DataTrigger Value="True">
                         <DataTrigger.Binding>
@@ -59,8 +62,8 @@
                     </DataTrigger>
                 </DataTemplate.Triggers>
             </DataTemplate>
-            <DataTemplate DataType="{x:Type local:ModFile}" x:Key="ModFileListTemplate">
-                <Grid x:Name="Container" HorizontalAlignment="Stretch">
+            <DataTemplate DataType="{x:Type modData:ModFile}" x:Key="ModFileListTemplate">
+                <Grid x:Name="Container" HorizontalAlignment="Stretch" Margin="5">
                     <TextBlock Text="{Binding Path}"/>
                 </Grid>
                 <DataTemplate.Triggers>
@@ -74,6 +77,16 @@
                     </DataTrigger>
                 </DataTemplate.Triggers>
             </DataTemplate>
+            <DataTemplate DataType="{x:Type modData:ModFile}" x:Key="ConflictModItemTemplate">
+                    <Grid x:Name="Container" HorizontalAlignment="Stretch" Margin="5">
+                        <TextBlock Text="{Binding Name}"/>
+                    </Grid>
+            </DataTemplate>
+            <Style x:Key="ListBoxItemStyle" TargetType="{x:Type ListBoxItem}">
+                <Setter Property="HorizontalAlignment" Value="Stretch"/>
+                <Setter Property="BorderBrush" Value="Gray"/>
+                <Setter Property="BorderThickness" Value="0 0 0 1"/>
+            </Style>
             <ui:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
         </Grid.Resources>
         <Grid.ColumnDefinitions>
@@ -85,23 +98,28 @@
             <RowDefinition Height="*"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
-        <Menu Grid.ColumnSpan="3">
+        <Menu>
             <Button Command="{Binding SaveSettingsCommand}">Save To Stellaris</Button>
             <Button Command="{Binding MergeModsCommand}">Merge Selected</Button>
-            <Separator/>
             
         </Menu>
         <DockPanel LastChildFill="True" Grid.Column="0" Grid.Row="1" Grid.RowSpan="2" VerticalAlignment="Stretch">
             <DockPanel LastChildFill="True" DockPanel.Dock="Top">
                 <Label DockPanel.Dock="Left">Mod list:</Label>
-                <Button DockPanel.Dock="Right" Command="{Binding Duplicate}" ToolTip="Duplicate current selection">+</Button>
-                <Button DockPanel.Dock="Right" Command="{Binding Delete}" ToolTip="Delete current selection">X</Button>
-                <ComboBox ItemsSource="{Binding Selections}" DisplayMemberPath="Key" SelectedItem="{Binding CurrentSelection}"/>
-            </DockPanel>    
+                <Button DockPanel.Dock="Right" Command="{Binding Duplicate}" ToolTip="Duplicate current selection" MinWidth="20">+</Button>
+                <Button DockPanel.Dock="Right" Command="{Binding Delete}" ToolTip="Delete current selection" MinWidth="20">X</Button>
+                <ComboBox ItemsSource="{Binding Selections}" DisplayMemberPath="Key.Text" SelectedItem="{Binding CurrentSelection}"/>
+            </DockPanel>
             <ListBox ItemsSource="{Binding Mods}"
                      SelectedItem="{Binding SelectedMod}"
                      ItemTemplate="{StaticResource ModListTemplate}"
-                     HorizontalContentAlignment="Stretch"/>
+                     HorizontalContentAlignment="Stretch">
+                <ListBox.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <StackPanel Orientation="Vertical"/>
+                    </ItemsPanelTemplate>
+                </ListBox.ItemsPanel>
+            </ListBox>
         </DockPanel>
         <Grid Grid.Column="1" Grid.Row="0" Grid.RowSpan="3" Grid.ColumnSpan="2">
             <Grid.ColumnDefinitions>
@@ -109,23 +127,31 @@
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
             <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
-            <ListBox Grid.Column="0" Visibility="{Binding SelectedMod, Converter={StaticResource NullToVisibilityConverter}}"
+            <Label>Files in mod:</Label>
+            <ListBox Grid.Column="0" Grid.Row="1" Visibility="{Binding SelectedMod, Converter={StaticResource NullToVisibilityConverter}}"
                     ItemsSource="{Binding SelectedMod.Files}"
                     SelectedItem="{Binding SelectedModFile}"
                     ItemTemplate="{StaticResource ModFileListTemplate}"
+                    ItemContainerStyle="{StaticResource ListBoxItemStyle}"
                     VerticalAlignment="Stretch"/>
-            <ListBox Grid.Column="1"  Visibility="{Binding SelectedModFile, Converter={StaticResource NullToVisibilityConverter}}"
+            
+            <Label Grid.Column="1" Grid.Row="0">Conflicting mod for file:</Label>
+            <ListBox Grid.Column="1" Grid.Row="1" Visibility="{Binding SelectedModFile, Converter={StaticResource NullToVisibilityConverter}}"
                     ItemsSource="{Binding SelectedModFile.Conflicts}"
                     SelectedItem="{Binding SelectedConflict}"
-                    DisplayMemberPath="Name"
+                    ItemTemplate="{StaticResource ConflictModItemTemplate}"
+                    ItemContainerStyle="{StaticResource ListBoxItemStyle}"
                     VerticalAlignment="Stretch"/>
 
-
-            <diff:MergeViewer DataContext="{Binding ComparisonContext}" Visibility="{Binding ., RelativeSource={RelativeSource Self}, Converter={StaticResource NullToVisibilityConverter}}" IsReadOnly="True" Grid.Column="0" Grid.Row="1" Contents="{Binding Comparison}" Side="Left" Document="{Binding LeftDocument}" FontFamily="Consolas" ShowLineNumbers="True" ScrollOffset="{Binding ScrollOffset}" />
-            <diff:MergeViewer DataContext="{Binding ComparisonContext}" Visibility="{Binding ., RelativeSource={RelativeSource Self}, Converter={StaticResource NullToVisibilityConverter}}" IsReadOnly="True" Grid.Column="1" Grid.Row="1" Contents="{Binding Comparison}" Side="Right" Document="{Binding RightDocument}" FontFamily="Consolas" ShowLineNumbers="True" ScrollOffset="{Binding ScrollOffset}" />
+            <Label Grid.Column="0" Grid.Row="2">File in selected mod:</Label>
+            <diff:MergeViewer DataContext="{Binding ComparisonContext}" Visibility="{Binding ., RelativeSource={RelativeSource Self}, Converter={StaticResource NullToVisibilityConverter}}" IsReadOnly="True" Grid.Column="0" Grid.Row="3" Contents="{Binding Comparison}" Side="Left" Document="{Binding LeftDocument}" FontFamily="Consolas" ShowLineNumbers="True" ScrollOffset="{Binding ScrollOffset}" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" />
+            <Label Grid.Column="1" Grid.Row="2">File in conflicting mod:</Label>
+            <diff:MergeViewer DataContext="{Binding ComparisonContext}" Visibility="{Binding ., RelativeSource={RelativeSource Self}, Converter={StaticResource NullToVisibilityConverter}}" IsReadOnly="True" Grid.Column="1" Grid.Row="3" Contents="{Binding Comparison}" Side="Right" Document="{Binding RightDocument}" FontFamily="Consolas" ShowLineNumbers="True" ScrollOffset="{Binding ScrollOffset}" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" />
         </Grid>
     </Grid>
 </Window>

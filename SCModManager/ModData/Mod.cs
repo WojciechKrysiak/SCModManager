@@ -9,7 +9,7 @@ using Ionic.Zip;
 using NLog;
 using SCModManager.SCFormat;
 
-namespace SCModManager
+namespace SCModManager.ModData
 {
     public class Mod : ObservableObject
     {

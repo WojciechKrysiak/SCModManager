@@ -1,20 +1,14 @@
-﻿using DiffMatchPatch;
-using GalaSoft.MvvmLight;
+﻿using GalaSoft.MvvmLight;
+using GalaSoft.MvvmLight.Command;
+using ICSharpCode.AvalonEdit.Document;
+using SCModManager.ModData;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Input;
 
-using GalaSoft.MvvmLight.Command;
-using ICSharpCode.AvalonEdit.Document;
-using ICSharpCode.AvalonEdit;
-using ICSharpCode.AvalonEdit.Highlighting;
-using ICSharpCode.AvalonEdit.Rendering;
-using System.Windows;
-
-namespace SCModManager
+namespace SCModManager.DiffMerge
 {
     public class MergeProcess : ObservableObject
     {

@@ -1,6 +1,6 @@
 ﻿using GalaSoft.MvvmLight;
 using GalaSoft.MvvmLight.Command;
-using SCModManager.SCFormat;
+using SCModManager.ModData;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -8,9 +8,9 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Windows.Input;
 
-namespace SCModManager
+namespace SCModManager.DiffMerge
 {
-   
+
     class ModToProcess : ObservableObject
     {
         public ModFile File { get; }
@@ -123,7 +123,20 @@ namespace SCModManager
 
         private void SaveAction()
         {
-            saveAction(this);
+            var confirm = new NameConfirm();
+            var confirmVM = new NameConfirmVM(result.Name);
+            confirmVM.ShouldClose += (o, b) =>
+            {
+                if (b)
+                {
+                    result.Name= confirmVM.Name;
+                    saveAction(this);
+                }
+                confirm.Close();
+            };
+
+            confirm.DataContext = confirmVM;
+            confirm.ShowDialog();
         }
 
         private List<ModNameParse> GetMatchingFiles(ModNameParse modFile)
