@@ -34,6 +34,13 @@ namespace SCModManager
         Mod _selectedMod;
         ModFile _selectedModFile;
 
+        public ICommand SaveSettingsCommand { get; }
+        public ICommand Duplicate { get; }
+        public RelayCommand Delete { get; }
+        public RelayCommand MergeModsCommand { get; }
+
+        public IEnumerable<Mod> Mods => _mods;
+
         public SCObject Selections => (_savedSelectionsDocument["Selections"] as SCObject);
 
         public SCKeyValObject CurrentSelection
@@ -63,6 +70,48 @@ namespace SCModManager
                 RaisePropertyChanged();
             }
         }
+
+        public Mod SelectedMod
+        {
+            get { return _selectedMod; }
+            set
+            {
+                Set(ref _selectedMod, value);
+            }
+        }
+
+        public ModFile SelectedModFile
+        {
+            get { return _selectedModFile; }
+            set
+            {
+                Set(ref _selectedModFile, value);
+                SelectedConflict = null;
+            }
+        }
+
+        public Mod SelectedConflict
+        {
+            get { return _selectedModConflict; }
+            set
+            {
+                Set(ref _selectedModConflict, value);
+                if (_selectedModConflict != null)
+                    ComparisonContext = new ComparisonContext(SelectedModFile, _selectedModConflict.Files.FirstOrDefault(mf => mf.Path == SelectedModFile.Path));
+                else
+                    ComparisonContext = null;
+            }
+        }
+
+        public ComparisonContext ComparisonContext
+        {
+            get { return _comparisonContext; }
+            set
+            {
+                Set(ref _comparisonContext, value);
+            }
+        }
+
 
         public ModContext()
         {
@@ -107,9 +156,9 @@ namespace SCModManager
                 SortAndUpdate();
 
                 SaveSettingsCommand = new RelayCommand(SaveSettings);
-                MergeModsCommand = new RelayCommand(MergeMods, () => _mods.Count(m => m.Selected) > 1);
+                MergeModsCommand = new RelayCommand(MergeMods, DoModsNeedToBeMerged);
                 Duplicate = new RelayCommand(DoDuplicate);
-                Delete = new RelayCommand(DoDelete, DoModsNeedToBeMerged);
+                Delete = new RelayCommand(DoDelete, () => Selections.Count() > 1);
             }
             catch (Exception ex)
             {
@@ -177,7 +226,6 @@ namespace SCModManager
                 MessageBox.Show("No mods installed - nothing to do!");
                 Application.Current.Shutdown();
             }
-            RaisePropertyChanged(nameof(Mods));
         }
 
         public void MarkConflicts()
@@ -267,7 +315,6 @@ namespace SCModManager
                 var fn = Path.Combine(path, modFile.Path);
 
                 modFile.Save(fn);
-                
             }
 
             LoadMods();
@@ -283,7 +330,8 @@ namespace SCModManager
                 var mod = sender as Mod;
                 if (mod.Selected)
                 {
-                    (CurrentSelection.Value as SCObject).Add(SCKeyValObject.Create(mod.Key));
+                    if (!(CurrentSelection.Value as SCObject).Any(kvp => (kvp.Value as SCString)?.Text == mod.Key))
+                        (CurrentSelection.Value as SCObject).Add(SCKeyValObject.Create(mod.Key));
                 }
                 else
                 {
@@ -332,53 +380,5 @@ namespace SCModManager
             catch
             { }
         }
-
-        public ICommand SaveSettingsCommand { get; }
-        public ICommand Duplicate { get; }
-        public RelayCommand Delete { get; }
-
-        public IEnumerable<Mod> Mods => _mods;
-
-        public Mod SelectedMod
-        {
-            get { return _selectedMod; }
-            set
-            {
-                Set(ref _selectedMod, value);
-            }
-        }
-
-        public ModFile SelectedModFile
-        {
-            get { return _selectedModFile; }
-            set {
-                Set(ref _selectedModFile, value);
-                SelectedConflict = null;
-            }
-        }
-
-
-        public Mod SelectedConflict
-        {
-            get { return _selectedModConflict; }
-            set {
-                Set(ref _selectedModConflict, value);
-                if (_selectedModConflict != null)
-                    ComparisonContext = new ComparisonContext(SelectedModFile, _selectedModConflict.Files.FirstOrDefault(mf => mf.Path == SelectedModFile.Path));
-                else
-                    ComparisonContext = null;
-            }
-        }
-
-        public ComparisonContext ComparisonContext
-        {
-            get { return _comparisonContext; }
-            set
-            {
-                Set(ref _comparisonContext, value);
-            }
-        }
-
-        public RelayCommand MergeModsCommand { get; }
     }
 }
