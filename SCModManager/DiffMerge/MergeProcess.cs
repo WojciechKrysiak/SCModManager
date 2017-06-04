@@ -30,7 +30,6 @@ namespace SCModManager.DiffMerge
             }
         }
 
-
         public IEnumerable<ModFile> LeftSelection
         {
             get {

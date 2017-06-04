@@ -189,7 +189,6 @@ namespace SCModManager.DiffMerge
 
         bool _isSelected;
 
-
         bool hasLeft;
         bool hasRight;
 
@@ -198,7 +197,6 @@ namespace SCModManager.DiffMerge
 
         public ResultBlock PrevBlock { get; private set; }
         public ResultBlock NextBlock { get; set; }
-
 
         public bool IsSelected
         {
@@ -236,6 +234,11 @@ namespace SCModManager.DiffMerge
             }
             return true;
         }
+
+        public ICommand TakeLeft { get; }
+        public ICommand TakeRight { get; }
+        public ICommand TakeLeftThenRight { get; }
+        public ICommand TakeRightThenLeft { get; }
 
         private ResultBlock(ResultBlock previous)
         {
@@ -324,11 +327,6 @@ namespace SCModManager.DiffMerge
 
             IsConflict = true;
         }
-
-        public ICommand TakeLeft { get; }
-        public ICommand TakeRight { get; }
-        public ICommand TakeLeftThenRight { get; }
-        public ICommand TakeRightThenLeft { get; }
 
         public void ResolveAs(Side side)
         {

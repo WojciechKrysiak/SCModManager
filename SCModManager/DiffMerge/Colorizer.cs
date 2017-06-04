@@ -35,7 +35,7 @@ namespace SCModManager.DiffMerge
                 {
                     if (current.Block.IsConflict)
                     {
-                        this.ChangeLinePart(start, end, (vle) => vle.BackgroundBrush = Brushes.Fuchsia);
+                        this.ChangeLinePart(start, end, (vle) => vle.BackgroundBrush = Brushes.PaleVioletRed);
                     }
                     else if (current.Block.HasSide(Side))
                     {

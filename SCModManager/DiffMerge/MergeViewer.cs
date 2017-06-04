@@ -10,7 +10,13 @@ namespace SCModManager.DiffMerge
     public class MergeViewer : TextEditor
     {
         public static DependencyProperty ScrollOffsetProperty = DependencyProperty.Register("ScrollOffset", typeof(Vector), typeof(MergeViewer), new FrameworkPropertyMetadata(new Vector(), FrameworkPropertyMetadataOptions.BindsTwoWayByDefault, ScrollOffsetPropertyChanged));
-    
+
+        public Vector ScrollOffset
+        {
+            get { return (Vector)GetValue(ScrollOffsetProperty); }
+            set { SetValue(ScrollOffsetProperty, value); }
+        }
+
         private static void ScrollOffsetPropertyChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             var v = (Vector)e.NewValue;
@@ -20,13 +26,6 @@ namespace SCModManager.DiffMerge
             mv.suspendScroll = true;
             mv.TextArea.TextView.MakeVisible(rect);
         }
-
-        public Vector ScrollOffset
-        {
-             get { return (Vector)GetValue(ScrollOffsetProperty); }
-             set { SetValue(ScrollOffsetProperty, value); }
-        }
-
 
         public static DependencyProperty ContentsProperty = DependencyProperty.Register("Contents", typeof(Comparison), typeof(MergeViewer), new FrameworkPropertyMetadata(null, ContentsChanged));
 
@@ -70,11 +69,6 @@ namespace SCModManager.DiffMerge
 
         }
 
-        private void RedrawRequested(object sender, EventArgs e)
-        {
-            TextArea.TextView.Redraw();
-        }
-
         public static DependencyProperty SideProperty = DependencyProperty.Register("Side", typeof(Side), typeof(MergeViewer), new PropertyMetadata(Side.Left, SideChanged));
 
         public Side Side
@@ -106,6 +100,11 @@ namespace SCModManager.DiffMerge
                 mv.readonlyProvider.Side = v;
         }
 
+        ResultBlock selectedBlock;
+        private Colorizer colorizer;
+        private ReadOnlyProvider readonlyProvider;
+        private bool suspendScroll;
+
         public MergeViewer()
         {
             TextArea.TextView.ScrollOffsetChanged += TextView_ScrollOffsetChanged; ;
@@ -118,6 +117,11 @@ namespace SCModManager.DiffMerge
                 ScrollOffset = TextArea.TextView.ScrollOffset;
             }
             suspendScroll = false;
+        }
+
+        private void RedrawRequested(object sender, EventArgs e)
+        {
+            TextArea.TextView.Redraw();
         }
 
         protected override void OnContextMenuOpening(ContextMenuEventArgs e)
@@ -154,8 +158,6 @@ namespace SCModManager.DiffMerge
             base.OnContextMenuOpening(e);
         }
 
-        ResultBlock selectedBlock;
-
         protected override void OnPreviewMouseUp(MouseButtonEventArgs e)
         {
             var vpos = e.GetPosition(this);
@@ -185,9 +187,5 @@ namespace SCModManager.DiffMerge
             var offfs = this.CaretOffset;
             base.OnTextInput(e);
         }
-
-        private Colorizer colorizer;
-        private ReadOnlyProvider readonlyProvider;
-        private bool suspendScroll;
     }
 }

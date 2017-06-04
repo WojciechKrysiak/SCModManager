@@ -8,7 +8,7 @@
         xmlns:modData="clr-namespace:SCModManager.ModData"
         xmlns:diff="clr-namespace:SCModManager.DiffMerge"
         mc:Ignorable="d"
-        Title="MainWindow" Height="800" Width="1024">
+        Title="SC Mod Manager" Height="800" Width="1024">
     <Grid>
         <Grid.Resources>
             <ui:ModConflictToBoolConverter x:Key="ConflictToBool"/>
