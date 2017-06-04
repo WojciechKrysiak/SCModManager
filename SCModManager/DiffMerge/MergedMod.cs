@@ -1,60 +1,16 @@
 ﻿using GalaSoft.MvvmLight;
 using GalaSoft.MvvmLight.Command;
-using Ionic.Zip;
+using SCModManager.SCFormat;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using System.Windows.Input;
 
 namespace SCModManager
 {
-    class MergedMod : Mod
-    {
-        public MergedMod(string name, IEnumerable<Mod> source)
-            : base($"Merged")
-        {
-            Name = name;
-
-            _source = source.ToList();
-
-            SupportedVersion = SupportedVersion.Combine(source.Select(s => s.SupportedVersion));
-
-
-            var modGroups = source.SelectMany(m => m.Files).GroupBy(mf => mf.Path);
-
-            foreach (var group in modGroups)
-            {
-                if (group.Count() == 1)
-                {
-                    Files.Add(group.First());
-                }
-                else
-                {
-                    Files.Add(new MergedModFile(group.Key, group, this));
-                }
-            }
-        }
-
-        public override string FileName 
-        {
-            get
-            {
-                return Name;
-            }
-
-            protected set
-            {
-                throw new NotImplementedException();
-            }
-        }
-
-        private IEnumerable<Mod> _source;
-    }
-
+   
     class ModToProcess : ObservableObject
     {
         public ModFile File { get; }
@@ -188,6 +144,8 @@ namespace SCModManager
 
             var surroundings = GetMatchingFiles(match);
 
+            match = surroundings.First(mnp => mnp.Path == match.Path);
+
             var idx = surroundings.IndexOf(match);
 
             if (match.Prefix == 0)
@@ -235,6 +193,8 @@ namespace SCModManager
             }
 
             var surroundings = GetMatchingFiles(match);
+
+            match = surroundings.First(mnp => mnp.Path == match.Path);
 
             var idx = surroundings.IndexOf(match);
 

@@ -20,6 +20,8 @@ namespace SCModManager
 
         private static string[] CodeExtensions = new[] { ".lua" };
 
+        private static string[] LocalisationExtensions = new[] { ".yml" };
+
         private static string[] ImageExtensions = new[] { ".dds", ".png", ".jpg" };
 
         public string Path { get; set; }
@@ -149,6 +151,17 @@ namespace SCModManager
                 }
             }
 
+            if (LocalisationExtensions.Contains(System.IO.Path.GetExtension(path).ToLower()))
+            {
+                using (var stream = item.OpenReader())
+                {
+                    using (var sr = new StreamReader(stream))
+                    {
+                        return new LocalisationFile(path, NormalizeLineEndings(sr.ReadToEnd()), sourceMod);
+                    }
+                }
+            }
+
             return new BinaryModFile(item, sourceMod);
         }
 
@@ -207,6 +220,31 @@ namespace SCModManager
             entry.AddEntry(Path, RawContents);
         }
     }
+
+    public class LocalisationFile : ModFile
+    {
+        public string Contents { get; set; }
+
+        public override string RawContents => Contents;
+
+        internal LocalisationFile(string path, string contents, Mod sourceMod)
+            : base(path, sourceMod)
+        {
+            Contents = contents;
+        }
+
+        internal override void Save(ZipFile entry)
+        {
+            entry.AddEntry(Path, RawContents, Encoding.UTF8);
+        }
+
+        internal override void Save(string fn)
+        {
+            File.WriteAllText(fn, RawContents, Encoding.UTF8);
+        }
+    }
+
+
 
     public class BinaryModFile : ModFile
     {
@@ -286,6 +324,11 @@ namespace SCModManager
         internal override void Save(ZipFile entry)
         {
             entry.AddEntry(Path, RawContents);
+        }
+        
+        internal override void Save(string fn)
+        {
+            File.WriteAllText(fn, RawContents, Encoding.UTF8);
         }
     }
 }

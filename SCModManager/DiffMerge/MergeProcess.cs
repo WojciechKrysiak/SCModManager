@@ -68,18 +68,6 @@ namespace SCModManager
                 Set(ref _comparison, value);
             }
         }
-
-        string _resultString;
-
-        public string Result
-        {
-            get { return _resultString; }
-            set
-            {
-                _resultString = value;
-            }
-        }
-
         public IEnumerable<ModFile> RightSelection
         {
             get
@@ -128,9 +116,15 @@ namespace SCModManager
         {
             var block = Comparison.GetBlockContainingOffset(e.Offset, Side.Result);
 
-            var delta = e.Offset - block.Offset;
+            if (block != null)
+            {
+                var delta = e.Offset - block.Offset;
 
-            block.Block.Update(delta, e);
+                block.Block.Update(delta, e);
+            } else
+            {
+                Comparison.Append(e.InsertedText.Text);
+            }
         }
 
         public void Remove(ModFile toRemove)
@@ -286,7 +280,7 @@ namespace SCModManager
 
         private void DoSaveMerge()
         {
-            file.SaveResult(Result);
+            file.SaveResult(ResultDocument.Text);
             _result = file;
 
             file.SourceFiles.Remove(Right);

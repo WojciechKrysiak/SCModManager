@@ -91,8 +91,7 @@ namespace SCModManager
                     selectionParser.Parse();
 
                     _savedSelectionsDocument = selectionParser.Root;
-                    var selectionIdx = _savedSelectionsDocument["CurrentSelection"] as SCString;
-
+                    var selectionIdx = _savedSelectionsDocument["SavedToStellaris"] as SCString;
                     if (selectionIdx != null)
                     {
                         var selection = new SCKeyValObject(selectionIdx, _settingsRoot["last_mods"]);
@@ -103,10 +102,7 @@ namespace SCModManager
 
                 MarkConflicts();
 
-
-                var sorted = Mods.OrderBy(m => m.Name).ToList();
-                _mods.Clear();
-                _mods.AddRange(sorted);
+                SortAndUpdate();
 
                 CurrentSelection = Selections.FirstOrDefault(kvo => ((kvo.Key as SCString).Text == "Stellaris selection"));
 
@@ -119,6 +115,14 @@ namespace SCModManager
             {
                 MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
+        }
+
+        private void SortAndUpdate()
+        {
+            var sorted = Mods.OrderBy(m => m.Name).ToList();
+            _mods.Clear();
+            _mods.AddRange(sorted);
+            RaisePropertyChanged(nameof(Mods));
         }
 
         private void DoDelete()
@@ -231,6 +235,9 @@ namespace SCModManager
             {
                 if (MessageBox.Show("Overwrite existing mod?", "Overwrite mod", MessageBoxButton.OKCancel) == MessageBoxResult.Cancel)
                     return;
+                foreach(var file in Directory.EnumerateFiles(path, "*.*", SearchOption.AllDirectories))
+                    File.Delete(file);
+
                 Directory.Delete(path, true);
                 File.Delete(descPath);
             }
@@ -255,6 +262,7 @@ namespace SCModManager
             LoadMods();
             MarkConflicts();
             mergeWindow.Close();
+            SortAndUpdate();
         }
 
         private void ModOnPropertyChanged(object sender, PropertyChangedEventArgs propertyChangedEventArgs)
@@ -279,6 +287,8 @@ namespace SCModManager
         {
             try
             {
+                _savedSelectionsDocument["SavedToStellaris"] = new SCString(CurrentSelection.Key.ToString()); 
+
                 _settingsRoot["last_mods"] = CurrentSelection.Value;
 
                 var backup = Path.ChangeExtension(SettingsPath, "bak");

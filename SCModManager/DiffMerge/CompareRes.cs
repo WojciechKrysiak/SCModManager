@@ -140,6 +140,19 @@ namespace SCModManager
 
             return -1;
         }
+
+        internal void Append(string insertedText)
+        {
+            var block = Root;
+            while(block?.NextBlock != null)
+            {
+                block = block.NextBlock;
+            }
+
+            var newBlock = new ResultBlock(insertedText, block);
+
+        }
+
         public event EventHandler RedrawRequested;
         public event EventHandler<RebuildRequestEventArgs> RebuildRequested;
     }

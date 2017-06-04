@@ -66,7 +66,7 @@ namespace SCModManager
             var id = Path.GetFileName(modDescriptor);
             var mod = new Mod(id);
 
-            var path = Directory.GetParent(modDescriptor).FullName;
+            var path = Directory.GetParent(modDescriptor).Parent.FullName;
 
             string zip = null;
             IEnumerable<string> tags;
@@ -80,16 +80,21 @@ namespace SCModManager
 
                 zip = (parser.Root["archive"] as SCString)?.Text;
 
+                if (zip != null)
+                {
+                    mod.FileName = zip;
+                } else
+                {
+                    zip = (parser.Root["path"] as SCString)?.Text;
+                }
+
                 if (zip == null)
                 {
                     Log.Debug($"Zip is null for {modDescriptor}");
                     mod.Name = id;
                     mod.ParseError = true;
                     return mod;
-                } else
-                {
-                    mod.FileName = zip;
-                }
+                } 
 
                 mod.PictureName = (parser.Root["picture"] as SCString)?.Text;
 
@@ -143,20 +148,22 @@ namespace SCModManager
             return mod;
         }
 
+        protected virtual SCKeyValObject SCName => SCKeyValObject.Create("name", Name);
+        protected virtual SCKeyValObject SCFileName => SCKeyValObject.Create("archive", FileName);
+        protected virtual SCKeyValObject SCTags => new SCKeyValObject(new SCIdentifier("tags"), SCObject.Create(Tags));
+        protected virtual SCKeyValObject SCSupportedVersion => new SCKeyValObject(new SCIdentifier("supported_version"), new SCString(SupportedVersion.ToString()));
 
         public IEnumerable<SCKeyValObject> DescriptorContents => ToDescriptor();
 
         public IEnumerable<SCKeyValObject> ToDescriptor()
         {
-            yield return SCKeyValObject.Create("name", Name);
-            yield return SCKeyValObject.Create("archive", FileName);
-            yield return new SCKeyValObject(new SCIdentifier("tags"), SCObject.Create(Tags));
+            yield return SCName;
+            yield return SCFileName;
+            yield return SCTags;
             if (!string.IsNullOrEmpty(PictureName))
                 yield return new SCKeyValObject(new SCIdentifier("picture"), new SCString(PictureName));
-            if (!string.IsNullOrEmpty(PictureName))
-                yield return new SCKeyValObject(new SCIdentifier("remote_file_id"), new SCString(Id));
 
-            yield return new SCKeyValObject(new SCIdentifier("supported_version"), new SCString(SupportedVersion.ToString()));
+            yield return SCSupportedVersion;
         }
 
         public void MarkConflicts(IEnumerable<Mod> allMods)
@@ -259,5 +266,50 @@ namespace SCModManager
             return $"{mj}.{mi}.{pa}";
         }
 
+    }
+
+    class MergedMod : Mod
+    {
+        public MergedMod(string name, IEnumerable<Mod> source)
+            : base($"Merged")
+        {
+            Name = name;
+
+            _source = source.ToList();
+
+            SupportedVersion = SupportedVersion.Combine(source.Select(s => s.SupportedVersion));
+
+
+            var modGroups = source.SelectMany(m => m.Files).GroupBy(mf => mf.Path);
+
+            foreach (var group in modGroups)
+            {
+                if (group.Count() == 1)
+                {
+                    Files.Add(group.First());
+                }
+                else
+                {
+                    Files.Add(new MergedModFile(group.Key, group, this));
+                }
+            }
+        }
+
+        public override string FileName
+        {
+            get
+            {
+                return Name;
+            }
+
+            protected set
+            {
+                throw new NotImplementedException();
+            }
+        }
+
+        private IEnumerable<Mod> _source;
+
+        protected override SCKeyValObject SCFileName => SCKeyValObject.Create("path", $"mod/{FileName}");
     }
 }

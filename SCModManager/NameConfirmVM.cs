@@ -27,9 +27,9 @@ namespace SCModManager
 
         public NameConfirmVM(string name)
         {
-            Name = name;
             Ok = new RelayCommand(() => ShouldClose?.Invoke(this, true), () => _name.Length > 0);
             Cancel = new RelayCommand(() => ShouldClose?.Invoke(this, false));
+            Name = name;
         }
 
         public event EventHandler<bool> ShouldClose;
