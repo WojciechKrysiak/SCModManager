@@ -311,5 +311,7 @@ namespace SCModManager.ModData
         private IEnumerable<Mod> _source;
 
         protected override SCKeyValObject SCFileName => SCKeyValObject.Create("path", $"mod/{FileName}");
+
+        protected override SCKeyValObject SCTags => new SCKeyValObject(new SCIdentifier("tags"), SCObject.Create(_source.SelectMany(m => m.Tags).Distinct().ToList()));
     }
 }

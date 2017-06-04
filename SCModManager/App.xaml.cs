@@ -39,12 +39,12 @@ namespace SCModManager
 
         private void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
-            return;
+            LogManager.GetLogger("App").Log(LogLevel.Fatal, e.ExceptionObject as Exception);
         }
 
         private void App_DispatcherUnhandledException(object sender, System.Windows.Threading.DispatcherUnhandledExceptionEventArgs e)
         {
-            return;
+            LogManager.GetLogger("App").Log(LogLevel.Fatal, e.Exception);
         }
     }
 }
