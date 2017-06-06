@@ -8,19 +8,20 @@
         xmlns:ui="clr-namespace:SCModManager.Ui"
         xmlns:modData="clr-namespace:SCModManager.ModData"
         xmlns:avalon="http://icsharpcode.net/sharpdevelop/avalonedit"
+        xmlns:fa="http://schemas.fontawesome.io/icons/"
         mc:Ignorable="d"
         Title="Merge" Height="800" Width="1024"
         x:Name="MergeWindow">
     <Grid>
         <Grid.Resources>
-            <ui:TypeBasedDataTemplateSelector x:Key="ModFileTemplateSelector">
+            <!--<ui:TypeBasedDataTemplateSelector x:Key="ModFileTemplateSelector">
                 <DataTemplate DataType="{x:Type diff:ModToProcess}">
                     <DockPanel x:Name="Container" HorizontalAlignment="Stretch" LastChildFill="True">
                         <TextBlock Margin="5 0" Text="{Binding File.SourceFileCount, FallbackValue={x:Null}}" DockPanel.Dock="Right"/>
                         <TextBlock Margin="5 0" Text="{Binding File.Path}" TextTrimming="CharacterEllipsis"/>
                     </DockPanel>
                 </DataTemplate>
-            </ui:TypeBasedDataTemplateSelector>
+            </ui:TypeBasedDataTemplateSelector>-->
             <Style x:Key="ListBoxItemStyle" TargetType="{x:Type ListBoxItem}">
                 <Setter Property="HorizontalAlignment" Value="Stretch"/>
                 <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
@@ -29,8 +30,16 @@
                 <Setter Property="Margin" Value="0 3"/>
                 <Setter Property="Width" Value="{Binding ActualWidth, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ScrollContentPresenter}}}"/>
             </Style>
+
+            <Style x:Key="TreeViewItemStyle" TargetType="{x:Type TreeViewItem}">
+                <Setter Property="HorizontalAlignment" Value="Stretch"/>
+                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                <Setter Property="Margin" Value="0 3"/>
+                <Setter Property="Width" Value="{Binding ActualWidth, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ItemsPresenter}}}"/>
+            </Style>
             <ui:NullToVisibilityConverter x:Key="NullToVis"/>
-     
+            <ui:ExactTypeConverter x:Key="ExactTypeConverter"/>
+
         </Grid.Resources>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -41,15 +50,53 @@
             <ColumnDefinition Width="8*"/>
         </Grid.ColumnDefinitions>
         <Button Command="{Binding Save}">Save</Button>
-
-        <ListBox Grid.Column="0" Grid.Row="1"
+        <ui:MVVMTreeView Grid.Column="0" Grid.Row="1" 
+                    ItemsSource="{Binding ModFileTree}"
+                    Selected="{Binding SelectedModFile, Mode=OneWayToSource, Converter={StaticResource ExactTypeConverter}}"
+                    VerticalAlignment="Stretch"
+                    ItemContainerStyle="{StaticResource TreeViewItemStyle}">
+            <TreeView.Resources>
+                <HierarchicalDataTemplate DataType="{x:Type modData:ModDirectory}" ItemsSource="{Binding Files}">
+                    <StackPanel Orientation="Vertical">
+                        <StackPanel Orientation="Horizontal">
+                            <fa:FontAwesome Icon="Folder" VerticalAlignment="Center" Margin="0 0 3 0" x:Name="FolderIcon" Opacity="0.4"/>
+                            <TextBlock Text="{Binding Filename}" VerticalAlignment="Center" x:Name="FolderName" Opacity="0.4"/>
+                        </StackPanel>
+                    </StackPanel>
+                    <HierarchicalDataTemplate.Triggers>
+                        <DataTrigger Binding="{Binding HasConflicts}" Value="True">
+                            <Setter Property="Opacity" Value="1" TargetName="FolderIcon"/>
+                            <Setter Property="Opacity" Value="1" TargetName="FolderName"/>
+                        </DataTrigger>
+                        <DataTrigger Binding="{Binding AllConflicts}" Value="True">
+                            <Setter Property="Background" Value="PaleVioletRed" TargetName="FolderName"/>
+                        </DataTrigger>
+                    </HierarchicalDataTemplate.Triggers>
+                </HierarchicalDataTemplate>
+                <DataTemplate DataType="{x:Type modData:ModFile}">
+                    <DockPanel x:Name="Container" HorizontalAlignment="Stretch" LastChildFill="True">
+                        <fa:FontAwesome Icon="File" VerticalAlignment="Center" Margin="0 0 3 0" Opacity="0.4" x:Name="FileIcon" DockPanel.Dock="Left"/>
+                        <TextBlock Margin="5 0" Text="{Binding File.SourceFileCount, FallbackValue={x:Null}}" DockPanel.Dock="Right"/>
+                        <TextBlock Text="{Binding Filename}" VerticalAlignment="Center" x:Name="FileName" Opacity="0.4"/>
+                    </DockPanel>
+                    <DataTemplate.Triggers>
+                        <DataTrigger Binding="{Binding HasConflicts}" Value="True">
+                            <Setter Property="Opacity" Value="1" TargetName="FileName"/>
+                            <Setter Property="Background" Value="PaleVioletRed" TargetName="FileIcon"/>
+                            <Setter Property="Background" Value="PaleVioletRed" TargetName="FileName"/>
+                        </DataTrigger>
+                    </DataTemplate.Triggers>
+                </DataTemplate>
+            </TreeView.Resources>
+        </ui:MVVMTreeView>
+        <!--<ListBox Grid.Column="0" Grid.Row="1"
                      ItemsSource="{Binding ModFiles}"
                      SelectedItem="{Binding SelectedModFile}"
                      ItemTemplateSelector="{StaticResource ModFileTemplateSelector}"
                      ItemContainerStyle="{StaticResource ListBoxItemStyle}"
                      VerticalAlignment="Stretch"
                      HorizontalAlignment="Stretch"
-                     />
+                     />-->
 
         <Grid Grid.Column="1" Grid.Row="0" Grid.RowSpan="2" DataContext="{Binding CurrentProcess}"
               Visibility="{Binding DataContext, RelativeSource={RelativeSource Self}, Converter={StaticResource NullToVis}}">

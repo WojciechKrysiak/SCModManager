@@ -77,6 +77,20 @@ namespace SCModManager
             set
             {
                 Set(ref _selectedMod, value);
+                RaisePropertyChanged(nameof(SelectedModFileTree));
+            }
+        }
+
+        public IEnumerable<ModFileReference> SelectedModFileTree
+        {
+            get
+            {
+                if (SelectedMod != null)
+                {
+                    var mfr = new ModDirectory(string.Empty, 0, SelectedMod?.Files);
+                    return mfr.Files;
+                }
+                return null;
             }
         }
 
@@ -145,8 +159,9 @@ namespace SCModManager
                     var selectionIdx = _savedSelectionsDocument["SavedToStellaris"] as SCString;
                     if (selectionIdx != null)
                     {
-                        var selection = new SCKeyValObject(selectionIdx, _settingsRoot["last_mods"]);
-                        Selections[selectionIdx] = _settingsRoot["last_mods"];
+                        var stellaris_selection = _settingsRoot["last_mods"] ?? new SCObject();
+                        var selection = new SCKeyValObject(selectionIdx, stellaris_selection);
+                        Selections[selectionIdx] = stellaris_selection;
                         CurrentSelection = selection;
                     }
                 }

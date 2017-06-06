@@ -279,7 +279,6 @@ namespace SCModManager.ModData
 
             SupportedVersion = SupportedVersion.Combine(source.Select(s => s.SupportedVersion));
 
-
             var modGroups = source.SelectMany(m => m.Files).GroupBy(mf => mf.Path);
 
             foreach (var group in modGroups)

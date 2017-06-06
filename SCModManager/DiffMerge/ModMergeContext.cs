@@ -10,58 +10,26 @@ using System.Windows.Input;
 
 namespace SCModManager.DiffMerge
 {
-
-    class ModToProcess : ObservableObject
-    {
-        public ModFile File { get; }
-
-        public string Description
-        {
-            get
-            {
-                if (File is MergedModFile)
-                {
-                    int maxCnt = (File as MergedModFile).SourceFileCount;
-                    return $"{File.Path}({maxCnt})";
-                }
-                else
-                    return File.Path;
-            }
-
-        }
-
-        public bool HasConflict => (File as MergedModFile)?.SourceFileCount >= 2;
-
-        MergeProcess _process;
-
-        public MergeProcess Process
-        {
-            get
-            {
-                var mf = File as MergedModFile;
-                if (mf == null)
-                    return null;
-
-                return _process ?? (_process = new MergeProcess(mf));
-            }
-        }
-
-        public ModToProcess(ModFile file)
-        {
-            File = file;
-        }
-    }
-
     class ModMergeContext : ObservableObject
     {
         public List<Mod> BaseMods { get; }
-        private ModToProcess _selected;
+        private ModFile _selected;
 
-        private List<ModToProcess> modFiles = new List<ModToProcess>();
+        private List<ModFile> modFiles = new List<ModFile>();
 
-        public IEnumerable<ModToProcess> ModFiles => modFiles.Where(mf => mf.HasConflict);
+        // public IEnumerable<ModToProcess> ModFiles => modFiles.Where(mf => mf.HasConflict);
+        Dictionary<ModFile, MergeProcess> _currentProcesses = new Dictionary<ModFile, MergeProcess>();
+           
+        public IEnumerable<ModFileReference> ModFileTree
+        {
+            get
+            {
+                var mfr = new ModDirectory(string.Empty, 0, modFiles);
+                return mfr.Files;
+            }
+        }
 
-        public ModToProcess SelectedModFile
+        public ModFile SelectedModFile
         {
             get { return _selected; }
             set
@@ -71,9 +39,7 @@ namespace SCModManager.DiffMerge
                     CurrentProcess.FileResolved -= CurrentProcess_FileResolved;
                 }
 
-                _selected = value;
-
-                RaisePropertyChanged(nameof(SelectedModFile));
+                Set(ref _selected, value);
 
                 if (CurrentProcess != null)
                 {
@@ -86,15 +52,32 @@ namespace SCModManager.DiffMerge
 
         private void CurrentProcess_FileResolved(object sender, EventArgs e)
         {
-            if (!SelectedModFile.HasConflict)
+            if (!_selected.HasConflicts)
             {
+                _currentProcesses.Remove(_selected);
                 SelectedModFile = null;
             }
-            RaisePropertyChanged(nameof(modFiles));
+            //RaisePropertyChanged(nameof(modFiles));
             Save.RaiseCanExecuteChanged();
         }
 
-        public MergeProcess CurrentProcess => _selected?.Process;
+        public MergeProcess CurrentProcess
+        {
+            get
+            {
+                if (_selected?.HasConflicts ?? false)
+                {
+                    if (!_currentProcesses.ContainsKey(_selected))
+                    {
+                        _currentProcesses.Add(_selected, new MergeProcess(_selected as MergedModFile));
+                    }
+
+                    return _currentProcesses[_selected];
+                }
+                return null;
+
+            }
+        }
 
         private MergedMod result;
 
@@ -108,7 +91,7 @@ namespace SCModManager.DiffMerge
 
             result = new MergedMod("Merge result", BaseMods);
 
-            modFiles.AddRange(result.Files.Select(f => new ModToProcess(f)));
+            modFiles.AddRange(result.Files);
 
             LeftBefore = new RelayCommand<ModFile>(DoBefore);
             LeftAfter = new RelayCommand<ModFile>(DoAfter);
@@ -116,7 +99,7 @@ namespace SCModManager.DiffMerge
             RightAfter = new RelayCommand<ModFile>(DoAfter);
 
             saveAction = save;
-            Save = new RelayCommand(SaveAction, () => !modFiles.Any(mf => mf.HasConflict));
+            Save = new RelayCommand(SaveAction, () => !modFiles.Any(mf => mf.HasConflicts));
         }
 
         private Action<ModMergeContext> saveAction;
@@ -141,7 +124,7 @@ namespace SCModManager.DiffMerge
 
         private List<ModNameParse> GetMatchingFiles(ModNameParse modFile)
         {
-            return modFiles.Select(mftp => ModNameParse.Parse(mftp.File)).Where(mft => modFile.Filename == mft?.Filename).OrderBy(r => r.Prefix).ToList();
+            return modFiles.Select(mf => ModNameParse.Parse(mf)).Where(mft => modFile.Filename == mft?.Filename).OrderBy(r => r.Prefix).ToList();
         }
 
         public ICommand LeftBefore { get; }
@@ -173,8 +156,6 @@ namespace SCModManager.DiffMerge
                     {
                         tmpPrefix = surroundings[i].Prefix;
                         surroundings[i].Prefix++;
-                        
-                        modFiles.First(mtp => mtp.File == surroundings[i].File).RaisePropertyChanged(nameof(ModToProcess.Description));
                     }
                     else
                         break;
@@ -189,7 +170,7 @@ namespace SCModManager.DiffMerge
 
             modFile.Path = match.Path;
 
-            modFiles.Add(new ModToProcess(modFile));
+            modFiles.Add(modFile);
 
             return;
         }
@@ -223,8 +204,6 @@ namespace SCModManager.DiffMerge
                     {
                         tmpPrefix = surroundings[i].Prefix;
                         surroundings[i].Prefix--;
-
-                        modFiles.First(mtp => mtp.File == surroundings[i].File).RaisePropertyChanged(nameof(ModToProcess.Description));
                     }
                     else
                         break;
@@ -239,7 +218,7 @@ namespace SCModManager.DiffMerge
 
             modFile.Path = match.Path;
 
-            modFiles.Add(new ModToProcess(modFile));
+            modFiles.Add(modFile);
 
             return;
         }
