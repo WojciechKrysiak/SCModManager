@@ -17,17 +17,14 @@ namespace SCModManager.DiffMerge
 
         private List<ModFile> modFiles = new List<ModFile>();
 
+        private Action<ModMergeContext> saveAction;
+
         // public IEnumerable<ModToProcess> ModFiles => modFiles.Where(mf => mf.HasConflict);
         Dictionary<ModFile, MergeProcess> _currentProcesses = new Dictionary<ModFile, MergeProcess>();
-           
-        public IEnumerable<ModFileReference> ModFileTree
-        {
-            get
-            {
-                var mfr = new ModDirectory(string.Empty, 0, modFiles);
-                return mfr.Files;
-            }
-        }
+
+        private IEnumerable<ModFileReference> _modFileTree;
+
+        public IEnumerable<ModFileReference> ModFileTree => _modFileTree;
 
         public ModFile SelectedModFile
         {
@@ -100,9 +97,18 @@ namespace SCModManager.DiffMerge
 
             saveAction = save;
             Save = new RelayCommand(SaveAction, () => !modFiles.Any(mf => mf.HasConflicts));
+
+            _modFileTree = new ModDirectory(string.Empty, 0, modFiles, ReferenceHasConflicts).Files;
         }
 
-        private Action<ModMergeContext> saveAction;
+        private static bool ReferenceHasConflicts(ModFileReference mf)
+        {
+            if (mf is ModDirectory || mf is MergedModFile) 
+            {
+                return mf.HasConflicts;
+            }
+            return false;
+        }
 
         private void SaveAction()
         {

@@ -87,7 +87,7 @@ namespace SCModManager
             {
                 if (SelectedMod != null)
                 {
-                    var mfr = new ModDirectory(string.Empty, 0, SelectedMod?.Files);
+                    var mfr = new ModDirectory(string.Empty, 0, SelectedMod?.Files, mf => mf.HasConflicts);
                     return mfr.Files;
                 }
                 return null;

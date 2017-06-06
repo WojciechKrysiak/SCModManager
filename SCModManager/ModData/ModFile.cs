@@ -29,21 +29,24 @@ namespace SCModManager.ModData
 
         public IEnumerable<ModFileReference> Files { get; }
 
-        public bool AllConflicfts => Files.All(f => f.HasConflicts);
+        public bool AllConflicfts => Files.All(_hasConflict);
 
-        public bool NoConflicts => !Files.Any(f => f.HasConflicts);
+        public bool NoConflicts => !Files.Any(_hasConflict);
 
-        public override bool HasConflicts => Files.Any(f => f.HasConflicts);
+        public override bool HasConflicts => Files.Any(_hasConflict);
 
-        public ModDirectory(string name, int level, IEnumerable<ModFile> source)
+        private Func<ModFileReference, bool> _hasConflict;
+
+        public ModDirectory(string name, int level, IEnumerable<ModFile> source, Func<ModFileReference, bool> hasConflict)
         {
             Filename = name;
+            _hasConflict = hasConflict;
 
             var kids = source.Select(m => Tuple.Create(m.Path.Split(System.IO.Path.DirectorySeparatorChar, System.IO.Path.AltDirectorySeparatorChar), m));
             List<ModFileReference> result = new List<ModFileReference>();
             foreach (var kid in kids.Where(t => t.Item1.Length > level + 2).GroupBy(k => k.Item1[level + 1]).OrderBy(g => g.Key))
             {
-                result.Add(new ModDirectory(kid.Key, level + 1, kid.Select(k => k.Item2)));
+                result.Add(new ModDirectory(kid.Key, level + 1, kid.Select(k => k.Item2), hasConflict));
             }
 
             foreach (var kid in kids.Where(t => t.Item1.Length == level + 2))
