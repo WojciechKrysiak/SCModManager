@@ -136,7 +136,7 @@ namespace SCModManager.ModData
                 {
                     if (string.Compare(Path.GetFileName(item), "descriptor.mod", true) != 0)
                     {
-                        var refPath = new Uri(mPath).MakeRelativeUri(new Uri(item)).OriginalString;
+                        var refPath = Uri.UnescapeDataString(new Uri(mPath).MakeRelativeUri(new Uri(item)).OriginalString);
                         var modFile = ModFile.Load(refPath, mPath, mod);
                         mod.Files.Add(modFile);
                     }
