@@ -14,36 +14,39 @@ using System.Text.RegularExpressions;
 
 namespace SCModManager.ModData
 {
-    public abstract class ModFileReference : ObservableObject
+    public abstract class ModFileHolder : ObservableObject
     {
-        public string Path { get; set; }
-
-        public abstract string Filename { get; }
+        public string Filename { get; protected set; }
 
         public abstract bool HasConflicts {get;}
+
+        protected Func<ModFile, bool> _hasConflict;
+
+        protected ModFileHolder(string name, Func<ModFile, bool> hasConflict)
+        {
+            Filename = name;
+            _hasConflict = hasConflict;
+        }
     }
 
-    public class ModDirectory : ModFileReference
+    public class ModDirectory : ModFileHolder
     {
-        public override string Filename { get; }
+        public IEnumerable<ModFileHolder> Files { get; }
 
-        public IEnumerable<ModFileReference> Files { get; }
+        public bool AllConflicfts => Files.All(f => f.HasConflicts);
 
-        public bool AllConflicfts => Files.All(_hasConflict);
+        public bool NoConflicts => !Files.Any(f => f.HasConflicts);
 
-        public bool NoConflicts => !Files.Any(_hasConflict);
+        public override bool HasConflicts => Files.Any(f => f.HasConflicts);
 
-        public override bool HasConflicts => Files.Any(_hasConflict);
-
-        private Func<ModFileReference, bool> _hasConflict;
-
-        public ModDirectory(string name, int level, IEnumerable<ModFile> source, Func<ModFileReference, bool> hasConflict)
+        public ModDirectory(string name, int level, IEnumerable<ModFile> source, Func<ModFile, bool> hasConflict)
+            :base(name, hasConflict)
         {
             Filename = name;
             _hasConflict = hasConflict;
 
             var kids = source.Select(m => Tuple.Create(m.Path.Split(System.IO.Path.DirectorySeparatorChar, System.IO.Path.AltDirectorySeparatorChar), m));
-            List<ModFileReference> result = new List<ModFileReference>();
+            List<ModFileHolder> result = new List<ModFileHolder>();
             foreach (var kid in kids.Where(t => t.Item1.Length > level + 2).GroupBy(k => k.Item1[level + 1]).OrderBy(g => g.Key))
             {
                 result.Add(new ModDirectory(kid.Key, level + 1, kid.Select(k => k.Item2), hasConflict));
@@ -51,13 +54,26 @@ namespace SCModManager.ModData
 
             foreach (var kid in kids.Where(t => t.Item1.Length == level + 2))
             {
-                result.Add(kid.Item2);
+                result.Add(new ModFileEntry(kid.Item1.Last(), kid.Item2, hasConflict));
             }
             Files = result;
         }
     }
 
-    public abstract class ModFile : ModFileReference
+    public class ModFileEntry : ModFileHolder
+    {
+        public ModFile File { get; }
+
+        public override bool HasConflicts => _hasConflict(File);
+
+        public ModFileEntry(string name, ModFile item, Func<ModFile, bool> hasConflict) 
+            : base(name, hasConflict)
+        {
+            File = item;
+        }
+    }
+
+    public abstract class ModFile 
     {
         private static string[] SCExtensions = new[] { ".gfx", ".gui", ".txt" };
 
@@ -67,28 +83,14 @@ namespace SCModManager.ModData
 
         private static string[] ImageExtensions = new[] { ".dds", ".png", ".jpg" };
 
+        public string Path { get; set; }
+
         public string Directory => System.IO.Path.GetDirectoryName(Path);
-        public override string Filename => System.IO.Path.GetFileName(Path);
-
-        public List<Mod> Conflicts { get; } = new List<Mod>();
-
-        public override bool HasConflicts => Conflicts.Count > 0;
+        public string Filename => System.IO.Path.GetFileName(Path);
 
         protected static readonly Logger Log = LogManager.GetCurrentClassLogger();
 
         public Mod SourceMod { get; }
-
-        public void ClearConflicts()
-        {
-            Conflicts.Clear();
-            this.RaisePropertyChanged(nameof(HasConflicts));
-        }
-
-        public void AddConflict(Mod other)
-        {
-            Conflicts.Add(other);
-            this.RaisePropertyChanged(nameof(HasConflicts));
-        }
 
         protected ModFile(string path, Mod sourceMod)
         {
@@ -97,7 +99,6 @@ namespace SCModManager.ModData
         }
 
         public abstract string RawContents { get; }
-
 
         internal static ModFile Load(string refPath, string basePath, Mod sourceMod)
         {
@@ -348,8 +349,6 @@ namespace SCModManager.ModData
         }
 
         public int SourceFileCount => SourceFiles.Count;
-
-        public override bool HasConflicts => SourceFileCount > 1;
 
         public bool Resolved { get; set; }
 

@@ -22,9 +22,9 @@ namespace SCModManager.DiffMerge
         // public IEnumerable<ModToProcess> ModFiles => modFiles.Where(mf => mf.HasConflict);
         Dictionary<ModFile, MergeProcess> _currentProcesses = new Dictionary<ModFile, MergeProcess>();
 
-        private IEnumerable<ModFileReference> _modFileTree;
+        private IEnumerable<ModFileHolder> _modFileTree;
 
-        public IEnumerable<ModFileReference> ModFileTree => _modFileTree;
+        public IEnumerable<ModFileHolder> ModFileTree => _modFileTree;
 
         public ModFile SelectedModFile
         {
@@ -49,7 +49,7 @@ namespace SCModManager.DiffMerge
 
         private void CurrentProcess_FileResolved(object sender, EventArgs e)
         {
-            if (!_selected.HasConflicts)
+            if (!ReferenceHasConflicts(_selected))
             {
                 _currentProcesses.Remove(_selected);
                 SelectedModFile = null;
@@ -62,7 +62,7 @@ namespace SCModManager.DiffMerge
         {
             get
             {
-                if (_selected?.HasConflicts ?? false)
+                if (ReferenceHasConflicts(_selected))
                 {
                     if (!_currentProcesses.ContainsKey(_selected))
                     {
@@ -96,18 +96,14 @@ namespace SCModManager.DiffMerge
             RightAfter = new RelayCommand<ModFile>(DoAfter);
 
             saveAction = save;
-            Save = new RelayCommand(SaveAction, () => !modFiles.Any(mf => mf.HasConflicts));
+            Save = new RelayCommand(SaveAction, () => !modFiles.Any(ReferenceHasConflicts));
 
             _modFileTree = new ModDirectory(string.Empty, 0, modFiles, ReferenceHasConflicts).Files;
         }
 
-        private static bool ReferenceHasConflicts(ModFileReference mf)
+        private static bool ReferenceHasConflicts(ModFile mf)
         {
-            if (mf is ModDirectory || mf is MergedModFile) 
-            {
-                return mf.HasConflicts;
-            }
-            return false;
+            return (mf as MergedModFile)?.SourceFileCount > 1;
         }
 
         private void SaveAction()

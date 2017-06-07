@@ -17,13 +17,50 @@ using SCModManager.ModData;
 
 namespace SCModManager
 {
+
+    internal class ModConflictSelection : ObservableObject 
+    {
+        private Mod _mod;
+        private bool _selected;
+        private IEnumerable<Mod> _conflictingMods;
+
+        public Mod Mod => _mod;
+
+        public string Name => _mod.Name;
+
+        public int ConflictCount => _conflictingMods.Count();
+
+        public IEnumerable<Mod> ConflictingMods => _conflictingMods;
+
+        public bool HasConflict => ConflictCount > 0;
+
+        public bool ParseError => _mod.ParseError;
+
+        public IEnumerable<ModFile> Files => _mod.Files;
+
+        public bool Selected
+        {
+            get { return _selected; }
+            set { Set(ref _selected, value); }
+        }
+
+        public ModConflictSelection(Mod mod, IEnumerable<Mod> conflictingMods, bool selected)
+        {
+            _mod = mod;
+            _selected = selected;
+            _conflictingMods = conflictingMods;
+        }
+    }
+
     class ModContext : ObservableObject
     {
         private static readonly Logger Log = LogManager.GetCurrentClassLogger();
 
-        private static readonly string ModsDir = $"{Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)}\\Paradox Interactive\\Stellaris\\mod";
-        private static readonly string SettingsPath = $"{Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)}\\Paradox Interactive\\Stellaris\\settings.txt";
-        private static readonly string SavedSelections = $"{Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)}\\Paradox Interactive\\Stellaris\\saved_selections.txt";
+        private static readonly string BasePath = $"{Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)}\\Paradox Interactive\\Stellaris";
+
+        private static readonly string ModsDir = $"{BasePath}\\mod";
+        private static readonly string SettingsPath = $"{BasePath}\\settings.txt";
+        private static readonly string SavedSelections = $"{BasePath}\\saved_selections.txt";
 
         private readonly SCObject _settingsRoot;
 
@@ -31,7 +68,6 @@ namespace SCModManager
 
         private List<Mod> _mods = new List<Mod>();
 
-        Mod _selectedMod;
         ModFile _selectedModFile;
 
         public ICommand SaveSettingsCommand { get; }
@@ -40,6 +76,15 @@ namespace SCModManager
         public RelayCommand MergeModsCommand { get; }
 
         public IEnumerable<Mod> Mods => _mods;
+
+        List<ModConflictSelection> _conflicts;
+
+        public IEnumerable<ModConflictSelection> ModConflicts => _conflicts; 
+
+        private IEnumerable<Mod> CalculateConflicts(Mod mod, List<Mod> _mods)
+        {
+            return _mods.Except(new[] { mod }).Where(m => m.Files.Any(mf => mod.Files.Any(mff => mff.Path == mf.Path))).ToList();
+        } 
 
         public SCObject Selections => (_savedSelectionsDocument["Selections"] as SCObject);
 
@@ -60,38 +105,43 @@ namespace SCModManager
 
                 var obj = value.Value as SCObject;
                 
-                if (obj != null)
+                if (obj != null && _conflicts != null)
                 {
-                    foreach (var mod in _mods)
+                    foreach (var conflict in _conflicts)
                     {
-                        mod.Selected = obj?.Any(kvp => (kvp.Value as SCString)?.Text == mod.Key) ?? false;
+                        conflict.Selected = obj?.Any(kvp => (kvp.Value as SCString)?.Text == conflict.Mod.Key) ?? false;
                     }
                 }
                 RaisePropertyChanged();
             }
         }
 
-        public Mod SelectedMod
+        public ModConflictSelection SelectedModConflict
         {
-            get { return _selectedMod; }
+            get { return _selectedModConflict; }
             set
             {
-                Set(ref _selectedMod, value);
+                Set(ref _selectedModConflict, value);
                 RaisePropertyChanged(nameof(SelectedModFileTree));
             }
         }
 
-        public IEnumerable<ModFileReference> SelectedModFileTree
+        public IEnumerable<ModFileHolder> SelectedModFileTree
         {
             get
             {
-                if (SelectedMod != null)
+                if (_selectedModConflict != null)
                 {
-                    var mfr = new ModDirectory(string.Empty, 0, SelectedMod?.Files, mf => mf.HasConflicts);
+                    var mfr = new ModDirectory(string.Empty, 0, _selectedModConflict.Files, ModFileHasConflicts);
                     return mfr.Files;
                 }
                 return null;
             }
+        }
+
+        private bool ModFileHasConflicts(ModFile modFile)
+        {
+            return _mods.Except(new[] { modFile.SourceMod }).SelectMany(m => m.Files).Any(mf => mf.Path == modFile.Path);
         }
 
         public ModFile SelectedModFile
@@ -101,17 +151,20 @@ namespace SCModManager
             {
                 Set(ref _selectedModFile, value);
                 SelectedConflict = null;
+                RaisePropertyChanged(nameof(SelectedConflictMods));
             }
         }
 
+        public IEnumerable<Mod> SelectedConflictMods => SelectedModConflict?.ConflictingMods.Where(m => m.Files.Any(mf => mf.Path == SelectedModFile?.Path));
+
         public Mod SelectedConflict
         {
-            get { return _selectedModConflict; }
+            get { return _selectedConflict; }
             set
             {
-                Set(ref _selectedModConflict, value);
-                if (_selectedModConflict != null)
-                    ComparisonContext = new ComparisonContext(SelectedModFile, _selectedModConflict.Files.FirstOrDefault(mf => mf.Path == SelectedModFile.Path));
+                Set(ref _selectedConflict, value);
+                if (_selectedConflict != null)
+                    ComparisonContext = new ComparisonContext(SelectedModFile, _selectedConflict.Files.FirstOrDefault(mf => mf.Path == SelectedModFile.Path));
                 else
                     ComparisonContext = null;
             }
@@ -166,8 +219,6 @@ namespace SCModManager
                     }
                 }
 
-                MarkConflicts();
-
                 SortAndUpdate();
 
                 SaveSettingsCommand = new RelayCommand(SaveSettings);
@@ -183,19 +234,22 @@ namespace SCModManager
 
         private bool DoModsNeedToBeMerged()
         {
-            var selectedMods = _mods.Where(m => m.Selected).ToList();
+            var selectedMods = _conflicts.Where(c => c.Selected).Select(c => c.Mod).ToList();
 
             if (selectedMods.Count < 2)
             {
                 return false;
             }
 
-            return selectedMods.SelectMany(m => m.Conflicts).Any(m2 => selectedMods.Contains(m2));
+            return selectedMods.Any(sm => CalculateConflicts(sm, selectedMods).Count() > 0);
         }
 
         private void SortAndUpdate()
         {
             _mods = Mods.OrderBy(m => m.Name).ToList();
+            _conflicts?.ForEach(mod => mod.PropertyChanged -= ModOnPropertyChanged);
+            _conflicts = _mods.Select(m => new ModConflictSelection(m, CalculateConflicts(m, _mods), IsSelected(m))).ToList();
+            _conflicts.ForEach(mod => mod.PropertyChanged += ModOnPropertyChanged);
             RaisePropertyChanged(nameof(Mods));
         }
 
@@ -214,16 +268,22 @@ namespace SCModManager
 
         public void LoadMods()
         {
-            _mods?.ForEach(m => m.PropertyChanged -= ModOnPropertyChanged);
-            _mods.Clear();
             if (Directory.Exists(ModsDir))
             {
                 foreach (var file in Directory.EnumerateFiles(ModsDir, "*.mod"))
                 {
+                    var fileName = Path.GetFileName(file);
+
+                    if (_mods.Any(m => m.Id == fileName))
+                    {
+                        continue;
+                    }
+
                     Mod mod = null;
                     try
                     {
                         mod = Mod.Load(file);
+                        mod.LoadFiles(BasePath);
                     }
                     catch (Exception exception)
                     {
@@ -240,15 +300,6 @@ namespace SCModManager
             {
                 MessageBox.Show("No mods installed - nothing to do!");
                 Application.Current.Shutdown();
-            }
-        }
-
-        public void MarkConflicts()
-        {
-            foreach (var mod in Mods)
-            {
-                mod.MarkConflicts(Mods);
-                mod.PropertyChanged += ModOnPropertyChanged;
             }
         }
 
@@ -282,14 +333,15 @@ namespace SCModManager
         }
 
         private Window mergeWindow;
-        private Mod _selectedModConflict;
+        private ModConflictSelection _selectedModConflict;
         private ComparisonContext _comparisonContext;
+        private Mod _selectedConflict;
 
         private void MergeMods()
         {
             mergeWindow = new Merge();
             mergeWindow.Closed += MergeWindow_Closed;
-            mergeWindow.DataContext = new ModMergeContext(_mods.Where(m => m.Selected), SaveMergedMod);
+            mergeWindow.DataContext = new ModMergeContext(_conflicts.Where(m => m.Selected).Select(m=>m.Mod), SaveMergedMod);
             mergeWindow.ShowDialog();
         }
 
@@ -333,17 +385,22 @@ namespace SCModManager
             }
 
             LoadMods();
-            MarkConflicts();
             mergeWindow.Close();
             SortAndUpdate();
         }
 
+        private bool IsSelected(Mod mod)
+        {
+            return (CurrentSelection?.Value as SCObject)?.Any(kvp => (kvp.Value as SCString)?.Text == mod.Key) ?? false;
+        }
+
         private void ModOnPropertyChanged(object sender, PropertyChangedEventArgs propertyChangedEventArgs)
         {
-            if (propertyChangedEventArgs.PropertyName == nameof(Mod.Selected))
+            if (propertyChangedEventArgs.PropertyName == nameof(ModConflictSelection.Selected))
             {
-                var mod = sender as Mod;
-                if (mod.Selected)
+                var modConflict = sender as ModConflictSelection;
+                var mod = modConflict.Mod;
+                if (modConflict.Selected)
                 {
                     if (!(CurrentSelection.Value as SCObject).Any(kvp => (kvp.Value as SCString)?.Text == mod.Key))
                         (CurrentSelection.Value as SCObject).Add(SCKeyValObject.Create(mod.Key));

@@ -20,7 +20,7 @@ namespace SCModManager.Ui
         {
             if (SelectedItem != null)
             {
-                SetValue(SelectedProperty, SelectedItem);
+                SetValue(SelectedProperty, SelectedValue);
             }
         }
 

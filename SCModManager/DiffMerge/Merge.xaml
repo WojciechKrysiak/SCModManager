@@ -53,6 +53,7 @@
         <ui:MVVMTreeView Grid.Column="0" Grid.Row="1" 
                     ItemsSource="{Binding ModFileTree}"
                     Selected="{Binding SelectedModFile, Mode=OneWayToSource, Converter={StaticResource ExactTypeConverter}}"
+                    SelectedValuePath="File"
                     VerticalAlignment="Stretch"
                     ItemContainerStyle="{StaticResource TreeViewItemStyle}">
             <TreeView.Resources>
@@ -73,7 +74,7 @@
                         </DataTrigger>
                     </HierarchicalDataTemplate.Triggers>
                 </HierarchicalDataTemplate>
-                <DataTemplate DataType="{x:Type modData:ModFile}">
+                <DataTemplate DataType="{x:Type modData:ModFileEntry}">
                     <DockPanel x:Name="Container" HorizontalAlignment="Stretch" LastChildFill="True">
                         <fa:FontAwesome Icon="File" VerticalAlignment="Center" Margin="0 0 3 0" Opacity="0.4" x:Name="FileIcon" DockPanel.Dock="Left"/>
                         <TextBlock Margin="5 0" Text="{Binding File.SourceFileCount, FallbackValue={x:Null}}" DockPanel.Dock="Right"/>

@@ -11,12 +11,13 @@ using SCModManager.SCFormat;
 
 namespace SCModManager.ModData
 {
-    public class Mod : ObservableObject
+    public class Mod
     {
         private static readonly Logger Log = LogManager.GetCurrentClassLogger();
 
-        private string name;
-        private bool selected;
+        private string archive;
+
+        private string folder;
 
         protected Mod(string id)
         {
@@ -27,27 +28,13 @@ namespace SCModManager.ModData
 
         public string Key => $"mod/{Id}";
 
-        public string Name
-        {
-            get { return name; }
-            set { Set(ref name, value); }
-        }
+        public string Name { get; set; }
 
         public List<ModFile> Files { get; } = new List<ModFile>();
 
         public List<string> Tags { get; } = new List<string>();
 
-        public virtual string FileName { get; protected set; }
-
-        public List<Mod> Conflicts { get; } = new List<Mod>();
-
-        public int ConflictCount => Conflicts.Count;
-
-        public bool Selected
-        {
-            get { return selected; }
-            set { Set(ref selected, value); }
-        }
+        public virtual string FileName => archive;
 
         public bool ParseError { get; set; }
 
@@ -66,9 +53,6 @@ namespace SCModManager.ModData
             var id = Path.GetFileName(modDescriptor);
             var mod = new Mod(id);
 
-            var path = Directory.GetParent(modDescriptor).Parent.FullName;
-
-            string zip = null;
             IEnumerable<string> tags;
             using (var stream = new FileStream(modDescriptor, FileMode.Open, FileAccess.Read))
             {
@@ -78,23 +62,17 @@ namespace SCModManager.ModData
 
                 mod.Name = parser.Root["name"]?.ToString();
 
-                zip = (parser.Root["archive"] as SCString)?.Text;
+                mod.archive = (parser.Root["archive"] as SCString)?.Text;
+                mod.folder = (parser.Root["path"] as SCString)?.Text;
 
-                if (zip != null)
+                if (string.IsNullOrEmpty(mod.archive) &&
+                    string.IsNullOrEmpty(mod.folder))
                 {
-                    mod.FileName = zip;
-                } else
-                {
-                    zip = (parser.Root["path"] as SCString)?.Text;
-                }
-
-                if (zip == null)
-                {
-                    Log.Debug($"Zip is null for {modDescriptor}");
+                    Log.Debug($"Both archive and folder for {modDescriptor} are empty");
                     mod.Name = id;
                     mod.ParseError = true;
                     return mod;
-                } 
+                }
 
                 mod.PictureName = (parser.Root["picture"] as SCString)?.Text;
 
@@ -109,8 +87,13 @@ namespace SCModManager.ModData
                 mod.Description = string.Join(", ", tags.Where(t => t != null));
                 mod.Tags.AddRange(tags.Where(t => t != null));
             }
+            return mod;
+        }
+        
 
-            var mPath = Path.Combine(path, zip);
+        public void LoadFiles(string basePath)
+        {
+            var mPath = Path.Combine(basePath, archive ?? folder);
 
             if (Path.GetExtension(mPath) == ".zip")
             {
@@ -123,8 +106,8 @@ namespace SCModManager.ModData
                         continue;
                     }
 
-                    var modFile = ModFile.Load(item, mod);
-                    mod.Files.Add(modFile);
+                    var modFile = ModFile.Load(item, this);
+                    Files.Add(modFile);
 
                 }
             } 
@@ -137,15 +120,12 @@ namespace SCModManager.ModData
                     if (string.Compare(Path.GetFileName(item), "descriptor.mod", true) != 0)
                     {
                         var refPath = Uri.UnescapeDataString(new Uri(mPath).MakeRelativeUri(new Uri(item)).OriginalString);
-                        var modFile = ModFile.Load(refPath, mPath, mod);
-                        mod.Files.Add(modFile);
+                        var modFile = ModFile.Load(refPath, mPath, this);
+                        Files.Add(modFile);
                     }
                 }
 
             }
-
-
-            return mod;
         }
 
         protected virtual SCKeyValObject SCName => SCKeyValObject.Create("name", Name);
@@ -164,42 +144,6 @@ namespace SCModManager.ModData
                 yield return new SCKeyValObject(new SCIdentifier("picture"), new SCString(PictureName));
 
             yield return SCSupportedVersion;
-        }
-
-        public void MarkConflicts(IEnumerable<Mod> allMods)
-        {
-            foreach (var mod in allMods)
-            {
-                if (mod == this)
-                {
-                    continue;
-                }
-
-                if (CheckConflicts(mod))
-                {
-                    Conflicts.Add(mod);
-                }
-            }
-        }
-
-        private bool CheckConflicts(Mod other)
-        {
-            var conflicts =
-                Files.Where(mf => !string.IsNullOrEmpty(Path.GetDirectoryName(mf.Path)))
-                    .Join(other.Files, mf => mf.Path.ToLowerInvariant(), mf => mf.Path.ToLowerInvariant(), (f1, f2) => f1)
-                    .ToList();
-
-            if (!conflicts.Any())
-            {
-                return false;
-            }
-
-            foreach (var conflict in conflicts)
-            {
-                conflict.Conflicts.Add(other);
-            }
-
-            return true;
         }
     }
 
@@ -299,11 +243,6 @@ namespace SCModManager.ModData
             get
             {
                 return Name;
-            }
-
-            protected set
-            {
-                throw new NotImplementedException();
             }
         }
 

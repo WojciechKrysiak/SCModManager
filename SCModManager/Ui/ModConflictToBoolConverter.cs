@@ -13,20 +13,19 @@ namespace SCModManager.Ui
     {
         public object Convert(object[] values, Type targetType, object parameter, CultureInfo culture)
         {
-            if (values?.Length != 3)
+            if (values?.Length != 2)
             {
                 return false;
             }
 
-            var selectedMod = values[2] as Mod;
-            var modFile = values[1] as ModFile;
-            var mod = values[0] as Mod;
-            if (modFile == null || parameter == null)
+            var selectedMod = values[1] as ModConflictSelection;
+            var mod = values[0] as ModConflictSelection;
+            if (selectedMod != null && mod != null && selectedMod != mod)
             {
-                return mod?.Conflicts.Contains(selectedMod) ?? false;
+                return mod.Files.Any(mf => selectedMod.Files.Any(mff => mff.Path == mf.Path));
             }
 
-            return modFile.Conflicts.Any(m => m == mod);
+            return false;
         }
 
         public object[] ConvertBack(object value, Type[] targetTypes, object parameter, CultureInfo culture)

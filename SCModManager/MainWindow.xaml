@@ -13,48 +13,30 @@
     <Grid>
         <Grid.Resources>
             <ui:ModConflictToBoolConverter x:Key="ConflictToBool"/>
-            <DataTemplate DataType="{x:Type modData:Mod}" x:Key="ModListTemplate">
-                <Border BorderThickness="0 1" BorderBrush="Gray">
-                <Grid x:Name="Container" HorizontalAlignment="Stretch" Margin="0 5">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-                    <Grid Grid.Column="0" Grid.ColumnSpan="3" >
+            <DataTemplate DataType="{x:Type local:ModConflictSelection}" x:Key="ModListTemplate">
+                <Border BorderThickness="0 0 1 0" BorderBrush="Gray">
+                    <Grid x:Name="Container" HorizontalAlignment="Stretch" Margin="0 5">
                         <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
-                        <Rectangle Grid.Column="0" Fill="{x:Null}" x:Name="Underlay1"/>
-                        <Rectangle Grid.Column="1" Fill="{x:Null}" x:Name="Underlay2"/>
+                        <Rectangle Grid.Column="1" Fill="{x:Null}" x:Name="Underlay"/>
+                        <CheckBox Margin="0 0 5 0" Grid.Column="0" IsChecked="{Binding Selected}"/>
+                        <TextBlock Grid.Column="1" Text="{Binding Name}"/>
+                        <TextBlock Margin="5 0" Grid.Column="2" Text="{Binding ConflictCount}"/>
+                        <Rectangle Fill="{x:Null}" Grid.Column="0" Grid.ColumnSpan="3" x:Name="Overlay"/>
                     </Grid>
-                    <CheckBox Margin="0 0 5 0" Grid.Column="0" IsChecked="{Binding Selected}"/>
-                    <TextBlock Grid.Column="1" Text="{Binding Name}"/>
-                    <TextBlock Margin="5 0" Grid.Column="2" Text="{Binding ConflictCount}"/>
-                    <Rectangle Fill="{x:Null}" Grid.Column="0" Grid.ColumnSpan="3" x:Name="Overlay"/>
-                </Grid>
                 </Border>
                 <DataTemplate.Triggers>
                     <DataTrigger Value="True">
                         <DataTrigger.Binding>
                             <MultiBinding Converter="{StaticResource ConflictToBool}">
                                 <Binding/>
-                                <Binding Path="DataContext.SelectedModFile" RelativeSource="{RelativeSource FindAncestor, AncestorType=local:MainWindow}"/>
-                                <Binding Path="DataContext.SelectedMod" RelativeSource="{RelativeSource FindAncestor, AncestorType=local:MainWindow}"/>
+                                <Binding Path="DataContext.SelectedModConflict" RelativeSource="{RelativeSource FindAncestor, AncestorType=local:MainWindow}"/>
                             </MultiBinding>
                         </DataTrigger.Binding>
-                        <Setter TargetName="Underlay1" Property="Fill" Value="PaleVioletRed"/>
-                    </DataTrigger>
-                    <DataTrigger Value="True">
-                        <DataTrigger.Binding>
-                            <MultiBinding Converter="{StaticResource ConflictToBool}" ConverterParameter="True">
-                                <Binding/>
-                                <Binding Path="DataContext.SelectedModFile" RelativeSource="{RelativeSource FindAncestor, AncestorType=local:MainWindow}"/>
-                                <Binding Path="DataContext.SelectedMod" RelativeSource="{RelativeSource FindAncestor, AncestorType=local:MainWindow}"/>
-                            </MultiBinding>
-                        </DataTrigger.Binding>
-                        <Setter TargetName="Underlay2" Property="Fill" Value="PaleVioletRed"/>
+                        <Setter TargetName="Underlay" Property="Fill" Value="PaleVioletRed"/>
                     </DataTrigger>
                     <DataTrigger Binding="{Binding ParseError}" Value="True">
                         <Setter TargetName="Overlay" Property="Fill" Value="LightGray"/>
@@ -114,8 +96,8 @@
                 <Button DockPanel.Dock="Right" Command="{Binding Delete}" ToolTip="Delete current selection" MinWidth="20">X</Button>
                 <ComboBox ItemsSource="{Binding Selections}" DisplayMemberPath="Key.Text" SelectedItem="{Binding CurrentSelection}"/>
             </DockPanel>
-            <ListBox ItemsSource="{Binding Mods}"
-                     SelectedItem="{Binding SelectedMod}"
+            <ListBox ItemsSource="{Binding ModConflicts}"
+                     SelectedItem="{Binding SelectedModConflict}"
                      ItemTemplate="{StaticResource ModListTemplate}"
                      HorizontalContentAlignment="Stretch">
                 <ListBox.ItemsPanel>
@@ -140,6 +122,7 @@
             <ui:MVVMTreeView Grid.Column="0" Grid.Row="1" Visibility="{Binding SelectedMod, Converter={StaticResource NullToVisibilityConverter}}"
                     ItemsSource="{Binding SelectedModFileTree}"
                     Selected="{Binding SelectedModFile, Mode=OneWayToSource, Converter={StaticResource ExactTypeConverter}}"
+                    SelectedValuePath="File"
                     VerticalAlignment="Stretch">
                 <TreeView.Resources>
                     <HierarchicalDataTemplate DataType="{x:Type modData:ModDirectory}" ItemsSource="{Binding Files}">
@@ -159,7 +142,7 @@
                             </DataTrigger>
                         </HierarchicalDataTemplate.Triggers>
                     </HierarchicalDataTemplate>
-                    <DataTemplate DataType="{x:Type modData:ModFile}">
+                    <DataTemplate DataType="{x:Type modData:ModFileEntry}">
                         <StackPanel Orientation="Horizontal">
                             <fa:FontAwesome Icon="File" VerticalAlignment="Center" Margin="0 0 3 0" Opacity="0.4" x:Name="FileIcon"/>
                             <TextBlock Text="{Binding Filename}" VerticalAlignment="Center" x:Name="FileName" Opacity="0.4"/>
@@ -185,7 +168,7 @@
             
             <Label Grid.Column="1" Grid.Row="0">Conflicting mod for file:</Label>
             <ListBox Grid.Column="1" Grid.Row="1" Visibility="{Binding SelectedModFile, Converter={StaticResource NullToVisibilityConverter}}"
-                    ItemsSource="{Binding SelectedModFile.Conflicts}"
+                    ItemsSource="{Binding SelectedConflictMods}"
                     SelectedItem="{Binding SelectedConflict}"
                     ItemTemplate="{StaticResource ConflictModItemTemplate}"
                     ItemContainerStyle="{StaticResource ListBoxItemStyle}"
