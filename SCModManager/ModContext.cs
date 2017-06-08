@@ -250,7 +250,7 @@ namespace SCModManager
             _conflicts?.ForEach(mod => mod.PropertyChanged -= ModOnPropertyChanged);
             _conflicts = _mods.Select(m => new ModConflictSelection(m, CalculateConflicts(m, _mods), IsSelected(m))).ToList();
             _conflicts.ForEach(mod => mod.PropertyChanged += ModOnPropertyChanged);
-            RaisePropertyChanged(nameof(Mods));
+            RaisePropertyChanged(nameof(ModConflicts));
         }
 
         private void DoDelete()

@@ -49,12 +49,15 @@ namespace SCModManager.DiffMerge
 
         private void CurrentProcess_FileResolved(object sender, EventArgs e)
         {
+            var selected = _selected;
             if (!ReferenceHasConflicts(_selected))
             {
                 _currentProcesses.Remove(_selected);
                 SelectedModFile = null;
             }
-            //RaisePropertyChanged(nameof(modFiles));
+
+            UpdateModList();
+
             Save.RaiseCanExecuteChanged();
         }
 
@@ -114,7 +117,7 @@ namespace SCModManager.DiffMerge
             {
                 if (b)
                 {
-                    result.Name= confirmVM.Name;
+                    result.Name = confirmVM.Name;
                     saveAction(this);
                 }
                 confirm.Close();
@@ -174,6 +177,8 @@ namespace SCModManager.DiffMerge
 
             modFiles.Add(modFile);
 
+            UpdateModList();
+
             return;
         }
 
@@ -222,12 +227,23 @@ namespace SCModManager.DiffMerge
 
             modFiles.Add(modFile);
 
+            UpdateModList();
+
             return;
         }
 
         public ICommand RightBefore { get; }
 
         public ICommand RightAfter { get; }
+
+
+        private void UpdateModList()
+        {
+            _modFileTree = new ModDirectory(string.Empty, 0, modFiles, ReferenceHasConflicts).Files;
+
+            RaisePropertyChanged(nameof(ModFileTree));
+
+        }
 
         private class ModNameParse
         {

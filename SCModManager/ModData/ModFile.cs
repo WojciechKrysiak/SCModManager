@@ -31,6 +31,8 @@ namespace SCModManager.ModData
 
     public class ModDirectory : ModFileHolder
     {
+        private static char[] Separators = new[] { System.IO.Path.DirectorySeparatorChar, System.IO.Path.AltDirectorySeparatorChar };
+
         public IEnumerable<ModFileHolder> Files { get; }
 
         public bool AllConflicfts => Files.All(f => f.HasConflicts);
@@ -45,7 +47,7 @@ namespace SCModManager.ModData
             Filename = name;
             _hasConflict = hasConflict;
 
-            var kids = source.Select(m => Tuple.Create(m.Path.Split(System.IO.Path.DirectorySeparatorChar, System.IO.Path.AltDirectorySeparatorChar), m));
+            var kids = source.Select(m => Tuple.Create(m.Path.Split(Separators), m));
             List<ModFileHolder> result = new List<ModFileHolder>();
             foreach (var kid in kids.Where(t => t.Item1.Length > level + 2).GroupBy(k => k.Item1[level + 1]).OrderBy(g => g.Key))
             {
