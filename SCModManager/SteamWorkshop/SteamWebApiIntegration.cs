@@ -61,12 +61,6 @@ namespace SCModManager.SteamWorkshop
                                     if (modDict.ContainsKey(descriptor.PublishedFileId))
                                     {
                                         modDict[descriptor.PublishedFileId].RemoteDescriptor = descriptor;
-                                        if (!Directory.Exists("descs"))
-                                        {
-                                            Directory.CreateDirectory("descs");
-                                        }
-                                        string name = descriptor.PublishedFileId;
-                                        File.WriteAllText($".\\descs\\{name}.txt", descriptor.Description);
                                     }
                                 }
                             }
