@@ -8,16 +8,18 @@ using GalaSoft.MvvmLight;
 using Ionic.Zip;
 using NLog;
 using SCModManager.SCFormat;
+using SCModManager.SteamWorkshop;
 
 namespace SCModManager.ModData
 {
-    public class Mod
+    public class Mod : ObservableObject
     {
         private static readonly Logger Log = LogManager.GetCurrentClassLogger();
 
         private string archive;
 
         private string folder;
+        private SteamWorkshopDescriptor _remoteDescriptor;
 
         protected Mod(string id)
         {
@@ -89,7 +91,7 @@ namespace SCModManager.ModData
             }
             return mod;
         }
-        
+
 
         public void LoadFiles(string basePath)
         {
@@ -110,7 +112,7 @@ namespace SCModManager.ModData
                     Files.Add(modFile);
 
                 }
-            } 
+            }
             else
             {
                 mPath = mPath + "\\";
@@ -134,6 +136,12 @@ namespace SCModManager.ModData
         protected virtual SCKeyValObject SCSupportedVersion => new SCKeyValObject(new SCIdentifier("supported_version"), new SCString(SupportedVersion.ToString()));
 
         public IEnumerable<SCKeyValObject> DescriptorContents => ToDescriptor();
+
+        public SteamWorkshopDescriptor RemoteDescriptor
+        {
+            get { return _remoteDescriptor; }
+            set { Set(ref _remoteDescriptor, value); }
+        }
 
         public IEnumerable<SCKeyValObject> ToDescriptor()
         {
@@ -184,13 +192,15 @@ namespace SCModManager.ModData
                     ma = s.Major;
                     mi = Int32.MaxValue;
                     pa = Int32.MaxValue;
-                } else if (ma == s.Major)
+                }
+                else if (ma == s.Major)
                 {
                     if (mi > s.Minor)
                     {
                         mi = s.Minor;
                         pa = Int32.MaxValue;
-                    } else
+                    }
+                    else
                     {
                         if (pa > s.Patch)
                             pa = s.Patch;
@@ -203,8 +213,8 @@ namespace SCModManager.ModData
 
         public override string ToString()
         {
-            var mj = Major < Int32.MaxValue  ? Major.ToString() : "*";
-            var mi = Minor < Int32.MaxValue  ? Minor.ToString() : "*";
+            var mj = Major < Int32.MaxValue ? Major.ToString() : "*";
+            var mi = Minor < Int32.MaxValue ? Minor.ToString() : "*";
             var pa = Patch < Int32.MaxValue ? Patch.ToString() : "*";
 
             return $"{mj}.{mi}.{pa}";

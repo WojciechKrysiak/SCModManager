@@ -102,7 +102,20 @@ namespace SCModManager.DiffMerge
             PickRight = new RelayCommand(DoPickRight);
             SaveMerge = new RelayCommand(DoSaveMerge, AreAllConflictsResolved);
 
+            Reset = new RelayCommand(DoReset);
+
             _resultDocument.Changed += _resultDocument_Changed;
+        }
+
+        public ICommand Reset { get; }
+        
+
+        private void DoReset()
+        {
+            Left = null;
+            Left = LeftSelection.First();
+            Right = null;
+            Right = RightSelection.First();
         }
 
         private void _resultDocument_Changed(object sender, DocumentChangeEventArgs e)

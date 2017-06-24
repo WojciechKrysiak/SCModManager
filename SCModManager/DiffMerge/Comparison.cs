@@ -340,7 +340,7 @@ namespace SCModManager.DiffMerge
                 {
                     NextBlock.PrevBlock = PrevBlock;
                 }
-                RebuildRequested?.Invoke(this, null);
+                RebuildRequested?.Invoke(this, new RebuildRequestEventArgs(this));
             }
             else
             {

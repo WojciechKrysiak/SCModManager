@@ -1,0 +1,101 @@
+﻿using Newtonsoft.Json;
+using SCModManager.ModData;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Net;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace SCModManager.SteamWorkshop
+{
+    static class SteamWebApiIntegration
+    {
+        static string requestPath = "/ISteamRemoteStorage/GetPublishedFileDetails/v1/";
+
+        static HttpClient client = new HttpClient()
+        {
+            BaseAddress = new Uri("https://api.steampowered.com/")
+        };
+
+        static SteamWebApiIntegration()
+        {
+            client.DefaultRequestHeaders.Accept.Clear();
+            client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+        }
+
+
+        public static async Task LoadModDescriptors(IEnumerable<Mod> mods, Action<string> onError)
+        {
+            var modDict = mods.Where(m => !String.IsNullOrEmpty(m.RemoteFileId)).ToDictionary(m => m.RemoteFileId, m => m);
+
+            string[] modIds = modDict.Select(kvp => kvp.Key).ToArray();
+
+            var content = new FormUrlEncodedContent(
+                new[] { new KeyValuePair<string, string>("itemcount", modIds.Length.ToString()) }.Concat(
+                    modIds.Select((mi, i) => new KeyValuePair<string, string>($"publishedfileids[{i}]", mi)))
+                );
+
+            var serializer = new JsonSerializer();
+            
+            HttpResponseMessage response = await client.PostAsync(requestPath, content);
+            if (response.IsSuccessStatusCode)
+            {
+                await response.Content.ReadAsStringAsync().ContinueWith(ts =>
+                {
+                    if (ts.IsCompleted)
+                    {
+                        using (var tr = new StringReader(ts.Result))
+                        {
+                            using (var reader = new JsonTextReader(tr))
+                            {
+                                var result = serializer.Deserialize<WorkshopResponseHeader>(reader);
+
+                                var descriptors = result.Response.PublishedFileDetails;
+
+                                foreach (var descriptor in descriptors)
+                                {
+                                    if (modDict.ContainsKey(descriptor.PublishedFileId))
+                                    {
+                                        modDict[descriptor.PublishedFileId].RemoteDescriptor = descriptor;
+                                        if (!Directory.Exists("descs"))
+                                        {
+                                            Directory.CreateDirectory("descs");
+                                        }
+                                        string name = descriptor.PublishedFileId;
+                                        File.WriteAllText($".\\descs\\{name}.txt", descriptor.Description);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                );
+            } else
+            {
+                onError(response.ToString());
+            }
+        }
+
+        private class WorkshopResponseHeader
+        {
+            [JsonProperty("response")]
+            public WorkshopResponseMetadata Response { get; set; }
+        }
+
+        private class WorkshopResponseMetadata
+        {
+            [JsonProperty("result")]
+            public int Result { get; set; }
+
+            [JsonProperty("resultcount")]
+            public int ResultCount { get; set; }
+
+            [JsonProperty("publishedfiledetails")]
+            public SteamWorkshopDescriptor[] PublishedFileDetails { get; set; }
+        }
+    }
+}

@@ -14,14 +14,6 @@
         x:Name="MergeWindow">
     <Grid>
         <Grid.Resources>
-            <!--<ui:TypeBasedDataTemplateSelector x:Key="ModFileTemplateSelector">
-                <DataTemplate DataType="{x:Type diff:ModToProcess}">
-                    <DockPanel x:Name="Container" HorizontalAlignment="Stretch" LastChildFill="True">
-                        <TextBlock Margin="5 0" Text="{Binding File.SourceFileCount, FallbackValue={x:Null}}" DockPanel.Dock="Right"/>
-                        <TextBlock Margin="5 0" Text="{Binding File.Path}" TextTrimming="CharacterEllipsis"/>
-                    </DockPanel>
-                </DataTemplate>
-            </ui:TypeBasedDataTemplateSelector>-->
             <Style x:Key="ListBoxItemStyle" TargetType="{x:Type ListBoxItem}">
                 <Setter Property="HorizontalAlignment" Value="Stretch"/>
                 <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
@@ -30,18 +22,29 @@
                 <Setter Property="Margin" Value="0 3"/>
                 <Setter Property="Width" Value="{Binding ActualWidth, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ScrollContentPresenter}}}"/>
             </Style>
+            <ui:MultiBoolImplToVisibilityConverter x:Key="MultiBoolToVis"/>
 
             <Style x:Key="TreeViewItemStyle" TargetType="{x:Type TreeViewItem}">
                 <Setter Property="HorizontalAlignment" Value="Stretch"/>
                 <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
                 <Setter Property="Margin" Value="0 3"/>
                 <Setter Property="Width" Value="{Binding ActualWidth, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type ItemsPresenter}}}"/>
+                <Setter Property="Visibility">
+                    <Setter.Value>
+                        <MultiBinding Converter="{StaticResource MultiBoolToVis}">
+                            <Binding Path="IsChecked" ElementName="ShowOnlyConflicts"/>
+                            <Binding Path="HasConflicts"/>
+                        </MultiBinding>
+                    </Setter.Value>
+                </Setter>
             </Style>
             <ui:NullToVisibilityConverter x:Key="NullToVis"/>
             <ui:ExactTypeConverter x:Key="ExactTypeConverter"/>
-
+            <BooleanToVisibilityConverter x:Key="BoolToVisConverter"/>
+            
         </Grid.Resources>
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
@@ -50,7 +53,9 @@
             <ColumnDefinition Width="8*"/>
         </Grid.ColumnDefinitions>
         <Button Command="{Binding Save}">Save</Button>
-        <ui:MVVMTreeView Grid.Column="0" Grid.Row="1" 
+        <CheckBox x:Name="ShowOnlyConflicts" Grid.Column="0" Grid.Row="1" IsChecked="{Binding OnlyConflicts}">Show only conflicts</CheckBox>
+        
+        <ui:MVVMTreeView Grid.Column="0" Grid.Row="2" 
                     ItemsSource="{Binding ModFileTree}"
                     Selected="{Binding SelectedModFile, Mode=OneWayToSource, Converter={StaticResource ExactTypeConverter}}"
                     SelectedValuePath="File"
@@ -90,19 +95,11 @@
                 </DataTemplate>
             </TreeView.Resources>
         </ui:MVVMTreeView>
-        <!--<ListBox Grid.Column="0" Grid.Row="1"
-                     ItemsSource="{Binding ModFiles}"
-                     SelectedItem="{Binding SelectedModFile}"
-                     ItemTemplateSelector="{StaticResource ModFileTemplateSelector}"
-                     ItemContainerStyle="{StaticResource ListBoxItemStyle}"
-                     VerticalAlignment="Stretch"
-                     HorizontalAlignment="Stretch"
-                     />-->
-
-        <Grid Grid.Column="1" Grid.Row="0" Grid.RowSpan="2" DataContext="{Binding CurrentProcess}"
+        <Grid Grid.Column="1" Grid.Row="0" Grid.RowSpan="3" DataContext="{Binding CurrentProcess}"
               Visibility="{Binding DataContext, RelativeSource={RelativeSource Self}, Converter={StaticResource NullToVis}}">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
             <Grid.RowDefinitions>
@@ -116,16 +113,19 @@
                 <Label>Left file</Label>
                 <ComboBox ItemsSource="{Binding LeftSelection}" SelectedItem="{Binding Left}" DisplayMemberPath="SourceMod.Name"/>
             </DockPanel>
-            <DockPanel Grid.Column="1" Grid.Row="0"  LastChildFill="True">
+            
+            <Button Grid.Column="1" Grid.Row="0"  Content="U" Command="{Binding Reset}"/>
+
+            <DockPanel Grid.Column="2" Grid.Row="0"  LastChildFill="True">
                 <Label>Right file</Label>
                 <ComboBox ItemsSource="{Binding RightSelection}" SelectedItem="{Binding Right}" DisplayMemberPath="SourceMod.Name"/>
             </DockPanel>
 
             <diff:MergeViewer IsReadOnly="True" Grid.Column="0" Grid.Row="1" Contents="{Binding Comparison}" Side="Left" Document="{Binding LeftDocument}" FontFamily="Consolas" ShowLineNumbers="True" ScrollOffset="{Binding ScrollOffset}" />
 
-            <diff:MergeViewer IsReadOnly="True" Grid.Column="1" Grid.Row="1"  Document="{Binding RightDocument}" Contents="{Binding Comparison}" Side="Right" FontFamily="Consolas" ShowLineNumbers="True" ScrollOffset="{Binding ScrollOffset}" />
+            <diff:MergeViewer IsReadOnly="True" Grid.Column="2" Grid.Row="1"  Document="{Binding RightDocument}" Contents="{Binding Comparison}" Side="Right" FontFamily="Consolas" ShowLineNumbers="True" ScrollOffset="{Binding ScrollOffset}" />
             
-            <DockPanel Grid.Column="0" Grid.Row="2" Grid.ColumnSpan="2" HorizontalAlignment="Stretch" LastChildFill="True">
+            <DockPanel Grid.Column="0" Grid.Row="2" Grid.ColumnSpan="3" HorizontalAlignment="Stretch" LastChildFill="True">
                 <StackPanel DockPanel.Dock="Left">
                     <Button Command="{Binding DataContext.LeftBefore, ElementName=MergeWindow}" CommandParameter="{Binding Left}">Left as new file before</Button>
                     <Button Command="{Binding DataContext.LeftAfter, ElementName=MergeWindow}"  CommandParameter="{Binding Left}">Left as new file after</Button>
@@ -141,7 +141,7 @@
                  </StackPanel>
             </DockPanel>
 
-            <diff:MergeViewer Grid.Column="0" Grid.Row="3" Grid.ColumnSpan="2"  Document="{Binding ResultDocument}" Contents="{Binding Comparison}" Side="Result" FontFamily="Consolas" ShowLineNumbers="True" ScrollOffset="{Binding ScrollOffset}" />
+            <diff:MergeViewer Grid.Column="0" Grid.Row="3" Grid.ColumnSpan="3"  Document="{Binding ResultDocument}" Contents="{Binding Comparison}" Side="Result" FontFamily="Consolas" ShowLineNumbers="True" ScrollOffset="{Binding ScrollOffset}" />
 
         </Grid>
     </Grid>

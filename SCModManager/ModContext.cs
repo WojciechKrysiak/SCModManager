@@ -14,6 +14,9 @@ using NLog;
 using Ionic.Zip;
 using SCModManager.DiffMerge;
 using SCModManager.ModData;
+using SCModManager.SteamWorkshop;
+using System.Threading;
+using System.Linq.Expressions;
 
 namespace SCModManager
 {
@@ -179,6 +182,24 @@ namespace SCModManager
             }
         }
 
+        public string ErrorReason
+        {
+            get { return _errorReason; }
+            set
+            {
+                Set(ref _errorReason, value);
+                ConflictMode = true;
+            }
+        }
+
+        public bool ConflictMode
+        {
+            get { return _conflictsMode; }
+            set
+            {
+                Set(ref _conflictsMode, value);
+            }
+        }
 
         public ModContext()
         {
@@ -225,11 +246,20 @@ namespace SCModManager
                 MergeModsCommand = new RelayCommand(MergeMods, DoModsNeedToBeMerged);
                 Duplicate = new RelayCommand(DoDuplicate);
                 Delete = new RelayCommand(DoDelete, () => Selections.Count() > 1);
+
+
+                SteamWebApiIntegration.LoadModDescriptors(Mods, ConnectionError);
+
             }
             catch (Exception ex)
             {
                 MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
             }
+        }
+
+        private void ConnectionError(string obj)
+        {
+            ErrorReason = obj;
         }
 
         private bool DoModsNeedToBeMerged()
@@ -336,6 +366,8 @@ namespace SCModManager
         private ModConflictSelection _selectedModConflict;
         private ComparisonContext _comparisonContext;
         private Mod _selectedConflict;
+        private string _errorReason;
+        private bool _conflictsMode;
 
         private void MergeMods()
         {

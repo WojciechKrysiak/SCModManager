@@ -15,6 +15,8 @@ namespace SCModManager.DiffMerge
         public List<Mod> BaseMods { get; }
         private ModFile _selected;
 
+        private  bool onlyConflicts;
+
         private List<ModFile> modFiles = new List<ModFile>();
 
         private Action<ModMergeContext> saveAction;
@@ -77,6 +79,12 @@ namespace SCModManager.DiffMerge
                 return null;
 
             }
+        }
+
+        public bool OnlyConflicts
+        {
+            get { return onlyConflicts; }
+            set { Set(ref onlyConflicts, value); }
         }
 
         private MergedMod result;
