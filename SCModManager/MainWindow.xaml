@@ -336,7 +336,7 @@
         </Grid>
         <Border Grid.Column="1" Grid.Row="1" Grid.RowSpan="2" Grid.ColumnSpan="2"  VerticalAlignment="Stretch" Background="#262626" >
         <ScrollViewer  Visibility="{Binding IsChecked, ElementName=MergeMode, Converter={StaticResource BoolToVisConverterInverse}}" HorizontalAlignment="Center" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" Padding="40">
-            <Grid DataContext="{Binding SelectedModConflict.Mod}" TextBlock.Foreground="#8F98A0" >
+            <Grid DataContext="{Binding SelectedModConflict.Mod}" TextBlock.Foreground="#8F98A0" Visibility="{Binding ., Converter={StaticResource NullToVisibilityConverter}}" >
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="269"/>
                     <ColumnDefinition Width="400"/>

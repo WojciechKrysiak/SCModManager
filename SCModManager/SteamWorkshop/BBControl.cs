@@ -175,7 +175,12 @@ namespace SCModManager.SteamWorkshop
 
         private void Parse()
         {
-            if (String.IsNullOrEmpty(BBCode)) return;
+            if (String.IsNullOrEmpty(BBCode))
+            {
+                this.Content = string.Empty;
+                return;
+            }
+
 
             XmlDocument doc = new XmlDocument();
 

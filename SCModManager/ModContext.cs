@@ -248,7 +248,6 @@ namespace SCModManager
                 Delete = new RelayCommand(DoDelete, () => Selections.Count() > 1);
 
 
-                SteamWebApiIntegration.LoadModDescriptors(Mods, ConnectionError);
 
             }
             catch (Exception ex)
@@ -300,6 +299,8 @@ namespace SCModManager
         {
             if (Directory.Exists(ModsDir))
             {
+                var modsToLoad = new List<Mod>();
+
                 foreach (var file in Directory.EnumerateFiles(ModsDir, "*.mod"))
                 {
                     var fileName = Path.GetFileName(file);
@@ -323,8 +324,11 @@ namespace SCModManager
                     if (mod != null)
                     {
                         _mods.Add(mod);
+                        modsToLoad.Add(mod);
                     }
                 }
+
+                SteamWebApiIntegration.LoadModDescriptors(modsToLoad, ConnectionError);
             }
             else
             {
