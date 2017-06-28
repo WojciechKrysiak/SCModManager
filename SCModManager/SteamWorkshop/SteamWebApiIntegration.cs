@@ -9,6 +9,7 @@ using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
+using NLog;
 
 namespace SCModManager.SteamWorkshop
 {
@@ -16,7 +17,9 @@ namespace SCModManager.SteamWorkshop
     {
         static string requestPath = "/ISteamRemoteStorage/GetPublishedFileDetails/v1/";
 
-        static HttpClient client = new HttpClient()
+        private static readonly Logger Log = LogManager.GetCurrentClassLogger();
+
+        static readonly HttpClient client = new HttpClient()
         {
             BaseAddress = new Uri("https://api.steampowered.com/")
         };
@@ -26,7 +29,6 @@ namespace SCModManager.SteamWorkshop
             client.DefaultRequestHeaders.Accept.Clear();
             client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
         }
-
 
         public static async Task LoadModDescriptors(IEnumerable<Mod> mods, Action<string> onError)
         {
@@ -40,8 +42,18 @@ namespace SCModManager.SteamWorkshop
                 );
 
             var serializer = new JsonSerializer();
-            
-            HttpResponseMessage response = await client.PostAsync(requestPath, content);
+            HttpResponseMessage response;
+            try
+            {
+                response = await client.PostAsync(requestPath, content);
+            }
+            catch (Exception ex)
+            {
+                Log.Log(LogLevel.Warn, ex);
+                onError(ex.Message);
+                return;
+            }
+
             if (response.IsSuccessStatusCode)
             {
                 await response.Content.ReadAsStringAsync().ContinueWith(ts =>

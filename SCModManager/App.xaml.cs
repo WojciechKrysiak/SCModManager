@@ -37,6 +37,20 @@ namespace SCModManager
             LogManager.Configuration = config;
         }
 
+        protected override void OnStartup(StartupEventArgs e)
+        {
+            base.OnStartup(e);
+
+            var viewModel = new ModContext();
+            if (!viewModel.Initialize())
+            {
+                return;
+            }
+
+            MainWindow = new MainWindow {DataContext = viewModel};
+            MainWindow.Show();
+        }
+
         private void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
         {
             LogManager.GetLogger("App").Log(LogLevel.Fatal, e.ExceptionObject as Exception);

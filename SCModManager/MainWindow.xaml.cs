@@ -23,7 +23,6 @@ namespace SCModManager
         public MainWindow()
         {
             InitializeComponent();
-            DataContext = new ModContext();
         }
     }
 }

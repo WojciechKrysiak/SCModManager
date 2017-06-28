@@ -9,11 +9,24 @@
         xmlns:diff="clr-namespace:SCModManager.DiffMerge"
         xmlns:fa="http://schemas.fontawesome.io/icons/"
         xmlns:sw="clr-namespace:SCModManager.SteamWorkshop"
-        
         mc:Ignorable="d"
+        d:DataContext="{d:DesignInstance Type={x:Type local:ModContext}"
         Title="SC Mod Manager" Height="800" Width="1154">
+    <Window.Resources>
+        <ResourceDictionary>
+            <ui:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
+            <ui:BooleanToVisibilityConverter x:Key="BoolToVisConverter"/>
+            <ui:BooleanToVisibilityConverter x:Key="BoolToVisConverterInverse" Inverse="true"/>
+            <ui:BoolNegatingConverter x:Key="NegateValue"/>
+            <ui:ExactTypeConverter x:Key="ExactTypeConverter"/>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="Views/WorkshopPanel.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Window.Resources>
     <Grid x:Name="Root">
         <Grid.Resources>
+
             <ui:ModConflictToBoolConverter x:Key="ConflictToBool"/>
             <DataTemplate DataType="{x:Type local:ModConflictSelection}" x:Key="ModListTemplate">
                 <Border BorderThickness="0 0 1 0" BorderBrush="Gray">
@@ -72,158 +85,8 @@
                 <Setter Property="BorderBrush" Value="Gray"/>
                 <Setter Property="BorderThickness" Value="0 0 0 1"/>
             </Style>
-            <ui:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
-            <ui:BooleanToVisibilityConverter x:Key="BoolToVisConverter"/>
-            <ui:BooleanToVisibilityConverter x:Key="BoolToVisConverterInverse" Inverse="true"/>
-            <ui:BoolNegatingConverter x:Key="NegateValue"/>
-
-            <ui:ExactTypeConverter x:Key="ExactTypeConverter"/>
-            <sw:TagDictionary x:Key="defaultTags" 
-                              RootChildTags="b,i,u,strike,h1,url,img,spoiler,noparse,list,olist,table"
-                              DefaultChildTags="b,i,u,strike,h1,url,img,spoiler,noparse">
-                <sw:Tag x:Key="b" NodeName="Bold"/>
-                <sw:Tag x:Key="i" NodeName="Italic"/>
-                <sw:Tag x:Key="u" NodeName="Underline"/>
-                <sw:Tag x:Key="strike" NodeName="Span">
-                    <sw:Tag.Attributes>
-                        <sw:Attribute Name="Style" Value="{}{DynamicResource Strikethrough}"/>
-                    </sw:Tag.Attributes>
-                </sw:Tag >
-                <sw:Tag x:Key="h1" NodeName="Span">
-                    <sw:Tag.Attributes>
-                        <sw:Attribute Name="FontSize" Value="15"/>
-                        <sw:Attribute Name="Foreground" Value="#FF5AA9D6"/>
-                    </sw:Tag.Attributes>
-                </sw:Tag>
-                <sw:Tag x:Key="url" NodeName="Hyperlink">
-                    <sw:Tag.Attributes>
-                        <sw:Attribute Name="NavigateUri" Value="$parameter"/>
-                    </sw:Tag.Attributes>
-                </sw:Tag>
-                <sw:Tag x:Key="img" NodeName="Image" ContentTemplate="">
-                    <sw:Tag.Attributes>
-                        <sw:Attribute Name="Source" Value="$content"/>
-                        <sw:Attribute Name="Stretch" Value="None"/>
-                    </sw:Tag.Attributes>
-                </sw:Tag>
-                <sw:Tag x:Key="spoiler" NodeName="InlineUIContainer">
-                    <sw:Tag NodeName="TextBlock">
-                        <sw:Tag.Attributes>
-                            <sw:Attribute Name="Style" Value="{}{DynamicResource Spoiler}"/>
-                        </sw:Tag.Attributes>
-                    </sw:Tag>
-                </sw:Tag >
-                <sw:Tag x:Key="noparse" NodeName="Span"/>
-                <sw:Tag x:Key="list" NodeName="List" IsBlockLevel="True" NoTextContent="True" Regex="\[(?&lt;tag&gt;\*)\](?&lt;ts&gt;)(?&lt;content&gt;.+?)(\r\n|\n\r|\n|\r|\z)(?&lt;-ts&gt;)">
-                    <sw:Tag.Attributes>
-                        <sw:Attribute Name="Style" Value="{}{DynamicResource List}"/>
-                    </sw:Tag.Attributes>
-                    <sw:Tag.ChildTags>
-                        <sw:Tag x:Key="*" NodeName="ListItem" SupportedChildTags="b,i,u,strike,h1,url,img,spoiler,noparse">
-                            <sw:Tag NodeName="Paragraph">
-                                <sw:Tag.Attributes>
-                                    <sw:Attribute Name="Style" Value="{}{DynamicResource ListItem}"/>
-                                </sw:Tag.Attributes>
-                            </sw:Tag>
-                        </sw:Tag>
-                    </sw:Tag.ChildTags>
-                </sw:Tag>
-                <sw:Tag x:Key="olist"  NodeName="List" IsBlockLevel="True" NoTextContent="True" Regex="\[(?&lt;tag&gt;\*)\](?&lt;ts&gt;)(?&lt;content&gt;.+?)(\r\n|\n\r|\n|\r|\z)(?&lt;-ts&gt;)">
-                    <sw:Tag.Attributes>
-                        <sw:Attribute Name="Style" Value="{}{DynamicResource OrderedList}"/>
-                    </sw:Tag.Attributes>
-                    <sw:Tag.ChildTags>
-                        <sw:Tag x:Key="*" NodeName="ListItem" SupportedChildTags="b,i,u,strike,h1,url,img,spoiler,noparse">
-                            <sw:Tag NodeName="Paragraph">
-                                <sw:Tag.Attributes>
-                                    <sw:Attribute Name="Style" Value="{}{DynamicResource OrderedListItem}"/>
-                                </sw:Tag.Attributes>
-                            </sw:Tag>
-                        </sw:Tag>
-                    </sw:Tag.ChildTags>
-                </sw:Tag>
-                <sw:Tag x:Key="table" NodeName="Table" IsBlockLevel="True" NoTextContent="True">
-                    <sw:Tag.Attributes>
-                        <sw:Attribute Name="Style" Value="{}{DynamicResource Table}"/>
-                    </sw:Tag.Attributes>
-                    <sw:Tag.ChildTags>
-                        <sw:Tag x:Key="tr" NodeName="TableRowGroup" NoTextContent="True" >
-                            <sw:Tag NodeName="TableRow"/>
-
-                            <sw:Tag.ChildTags>
-                                <sw:Tag x:Key="td" NodeName="TableCell" SupportedChildTags="b,i,u,strike,h1,url,img,spoiler,noparse">
-                                    <sw:Tag.Attributes>
-                                        <sw:Attribute Name="Style" Value="{}{DynamicResource TableCell}"/>
-                                    </sw:Tag.Attributes>
-                                    <sw:Tag NodeName="Paragraph">
-
-                                    </sw:Tag>
-                                </sw:Tag>
-                                <sw:Tag x:Key="th" NodeName="TableCell" SupportedChildTags="b,i,u,strike,h1,url,img,spoiler,noparse">
-                                    <sw:Tag.Attributes>
-                                        <sw:Attribute Name="Style" Value="{}{DynamicResource TableHeader}"/>
-                                    </sw:Tag.Attributes>
-                                    <sw:Tag NodeName="Paragraph">
-
-                                    </sw:Tag>
-                                </sw:Tag>
-                            </sw:Tag.ChildTags>
-                        </sw:Tag>
-                    </sw:Tag.ChildTags>
-                </sw:Tag>
-            </sw:TagDictionary>
-            <Style x:Key="BlockBase" TargetType="{x:Type Block}" >
-                <Setter Property="Margin" Value="0"/>
-            </Style>
-
-            <Style x:Key="List" TargetType="{x:Type List}"  BasedOn="{StaticResource BlockBase}">
-                <Setter Property="Margin" Value="0 0 0 0"/>
-                <Setter Property="Padding" Value="22 0 0 0"/>
-            </Style>
-
-            <Style x:Key="OrderedList" TargetType="{x:Type List}" BasedOn="{StaticResource BlockBase}">
-                <Setter Property="Margin" Value="10 0 0 0"/>
-                <Setter Property="MarkerStyle" Value="Decimal"/>
-            </Style>
-
-            <Style x:Key="Strikethrough" TargetType="{x:Type Span}">
-                <Setter Property="TextDecorations" Value="Strikethrough"/>
-            </Style>
-
-            <Style x:Key="ListItem" TargetType="{x:Type Paragraph}" BasedOn="{StaticResource BlockBase}">
-            </Style>
-
-            <Style x:Key="OrderedListItem" TargetType="{x:Type Paragraph}" BasedOn="{StaticResource BlockBase}">
-            </Style>
-
-            <Style x:Key="Spoiler" TargetType="{x:Type TextBlock}">
-                <Setter Property="Background" Value="Black"/>
-                <Setter Property="Foreground" Value="Black"/>
-                <Style.Triggers>
-                    <Trigger Property="IsMouseOver" Value="True">
-                        <Setter Property="Foreground" Value="#8F98A0"/>
-                    </Trigger>
-                </Style.Triggers>
-            </Style>
 
 
-            <Style x:Key="TableRow" TargetType="{x:Type TableRow}">
-
-            </Style>
-
-            <Style x:Key="Table" TargetType="{x:Type Table}" BasedOn="{StaticResource BlockBase}">
-                <Setter Property="CellSpacing" Value="0"/>
-                <Setter Property="FontSize" Value="12px"/>
-            </Style>
-
-            <Style x:Key="TableCell" TargetType="{x:Type TableCell}">
-                <Setter Property="BorderBrush" Value="#4d4d4d"/>
-                <Setter Property="BorderThickness" Value="1"/>
-                <Setter Property="Padding" Value="4"/>
-            </Style>
-            <Style x:Key="TableHeader" TargetType="{x:Type TableCell}" BasedOn="{StaticResource TableCell}">
-                <Setter Property="FontWeight" Value="Bold"/>
-            </Style>
         </Grid.Resources>
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="Auto" MinWidth="200"/>
@@ -244,7 +107,6 @@
             <Button Command="{Binding MergeModsCommand}">Merge Selected</Button>
             <ToggleButton x:Name="MergeMode" IsEnabled="{Binding IsVisible, ElementName=CommsError, Converter={StaticResource NegateValue}}" IsChecked="{Binding ConflictMode}">Preview conflicts</ToggleButton>
 
-
             <MenuItem HorizontalAlignment="Right" ToolTip="{Binding ErrorReason}" Visibility="{Binding ErrorReason, Converter={StaticResource NullToVisibilityConverter} }" x:Name="CommsError"
                       Header="Can't download mod data!">
                 <MenuItem.Icon>
@@ -255,8 +117,12 @@
         <DockPanel LastChildFill="True" Grid.Column="0" Grid.Row="1" Grid.RowSpan="2" VerticalAlignment="Stretch">
             <DockPanel LastChildFill="True" DockPanel.Dock="Top">
                 <Label DockPanel.Dock="Left">Mod list:</Label>
-                <Button DockPanel.Dock="Right" Command="{Binding Duplicate}" ToolTip="Duplicate current selection" MinWidth="20">+</Button>
-                <Button DockPanel.Dock="Right" Command="{Binding Delete}" ToolTip="Delete current selection" MinWidth="20">X</Button>
+                <Button DockPanel.Dock="Right" Command="{Binding Duplicate}" ToolTip="Duplicate current selection" MinWidth="20">
+                    <fa:FontAwesome Icon="Plus" Foreground="{Binding Foreground, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type Button}}}"/>    
+                </Button>
+                <Button DockPanel.Dock="Right" Command="{Binding Delete}" ToolTip="Delete current selection" MinWidth="20">
+                    <fa:FontAwesome Icon="Trash" Foreground="{Binding Foreground, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type Button}}}"/>
+                </Button>
                 <ComboBox ItemsSource="{Binding Selections}" DisplayMemberPath="Key.Text" SelectedItem="{Binding CurrentSelection}"/>
             </DockPanel>
             <ListBox ItemsSource="{Binding ModConflicts}"
@@ -334,50 +200,11 @@
             <Label Grid.Column="1" Grid.Row="2">File in conflicting mod:</Label>
             <diff:MergeViewer DataContext="{Binding ComparisonContext}" Visibility="{Binding ., RelativeSource={RelativeSource Self}, Converter={StaticResource NullToVisibilityConverter}}" IsReadOnly="True" Grid.Column="1" Grid.Row="3" Contents="{Binding Comparison}" Side="Right" Document="{Binding RightDocument}" FontFamily="Consolas" ShowLineNumbers="True" ScrollOffset="{Binding ScrollOffset}" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" />
         </Grid>
-        <Border Grid.Column="1" Grid.Row="1" Grid.RowSpan="2" Grid.ColumnSpan="2"  VerticalAlignment="Stretch" Background="#262626" >
-        <ScrollViewer  Visibility="{Binding IsChecked, ElementName=MergeMode, Converter={StaticResource BoolToVisConverterInverse}}" HorizontalAlignment="Center" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" Padding="40">
-            <Grid DataContext="{Binding SelectedModConflict.Mod}" TextBlock.Foreground="#8F98A0" Visibility="{Binding ., Converter={StaticResource NullToVisibilityConverter}}" >
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="269"/>
-                    <ColumnDefinition Width="400"/>
-                </Grid.ColumnDefinitions>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="269"/>
-                    <RowDefinition Height="*"/>
-                </Grid.RowDefinitions>
-                <Border BorderBrush="#acb2b8" BorderThickness="1 1 0 1" HorizontalAlignment="Left" TextBlock.Foreground="#8F98A0" Width="269">
-                    <Image Source="{Binding RemoteDescriptor.PreviewURL}" Stretch="Uniform" />
-                </Border >
-                <ListBox ItemsSource="{Binding RemoteDescriptor.DisplayValues}" Grid.Column="1" Background="Transparent" BorderThickness="1" HorizontalAlignment="Left"  Grid.IsSharedSizeScope="True" Width="400">
-                    <ListBox.ItemContainerStyle>
-                        <Style TargetType="{x:Type ListBoxItem}">
-                            <Setter Property="HorizontalAlignment" Value="Stretch"/>
-                            <Setter Property="Width" Value="380"/>
-                        </Style>
-                    </ListBox.ItemContainerStyle>
-                    <ListBox.ItemTemplate>
-                        <DataTemplate >
-                            <Border BorderThickness="0 0 0 1" BorderBrush="#acb2b8" Width="380" >
-                                <Grid HorizontalAlignment="Stretch" >
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto"  SharedSizeGroup="Key"/>
-                                        <ColumnDefinition Width="*"  />
-                                        <ColumnDefinition Width="Auto"  SharedSizeGroup="Value"/>
-                                    </Grid.ColumnDefinitions>
-                                    <Label Content="{Binding Key}" Grid.Column="0" HorizontalAlignment="Left" Foreground="#8F98A0"/>
-                                    <Label Content="{Binding Value}" Grid.Column="1" HorizontalAlignment="Right" Foreground="#8F98A0"/>
-                                </Grid>
-                            </Border>
-                        </DataTemplate>
-                    </ListBox.ItemTemplate>
-                </ListBox>
-                <Border Grid.Column="0" Grid.Row="1" Grid.ColumnSpan="2" BorderBrush="#acb2b8" BorderThickness="1 0 1 1">
-                    <sw:BBControl FontFamily="Arial" FontSize="14px" Width="662" x:Name="BBControl" HorizontalAlignment="Left" VerticalAlignment="Stretch" ScrollViewer.VerticalScrollBarVisibility="Disabled"
-                                 Tags="{StaticResource defaultTags}" BBCode="{Binding RemoteDescriptor.Description}">
-                    </sw:BBControl>
-                </Border>
-            </Grid>
-        </ScrollViewer>
+
+        <Border Grid.Column="1" Grid.Row="1" Grid.RowSpan="2" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Visibility="{Binding IsChecked, ElementName=MergeMode, Converter={StaticResource BoolToVisConverterInverse}}" >
+            <ScrollViewer  HorizontalAlignment="Stretch" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" Padding="40" Background="#262626" >
+                <ContentControl Content="{Binding SelectedModConflict.Mod}" ContentTemplate="{StaticResource WokrshopModView}"/>
+            </ScrollViewer>
         </Border>
     </Grid>
 </Window>

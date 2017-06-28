@@ -15,7 +15,7 @@ namespace SCModManager.Ui
 
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            var res = value is bool ? (bool)value : false;
+            var res = value as bool? ?? false;
 
             if (Inverse)
                 return res ? Visibility.Collapsed : Visibility.Visible;

@@ -63,11 +63,12 @@ namespace SCModManager
 
         private static readonly string ModsDir = $"{BasePath}\\mod";
         private static readonly string SettingsPath = $"{BasePath}\\settings.txt";
+        private static readonly string BackupPath = $"{BasePath}\\settings.bak";
         private static readonly string SavedSelections = $"{BasePath}\\saved_selections.txt";
 
-        private readonly SCObject _settingsRoot;
+        private SCObject _settingsRoot;
 
-        private readonly SCObject _savedSelectionsDocument;
+        private SCObject _savedSelectionsDocument;
 
         private List<Mod> _mods = new List<Mod>();
 
@@ -187,8 +188,8 @@ namespace SCModManager
             get { return _errorReason; }
             set
             {
-                Set(ref _errorReason, value);
                 ConflictMode = true;
+                Set(ref _errorReason, value);
             }
         }
 
@@ -203,57 +204,106 @@ namespace SCModManager
 
         public ModContext()
         {
-            try
+            SaveSettingsCommand = new RelayCommand(SaveSettings);
+            MergeModsCommand = new RelayCommand(MergeMods, DoModsNeedToBeMerged);
+            Duplicate = new RelayCommand(DoDuplicate);
+            Delete = new RelayCommand(DoDelete, () => Selections?.Count() > 1);
+        }
+
+
+        SCObject LoadStellarisSettings(string path)
+        {
+            using (var stream = new FileStream(path, FileMode.Open, FileAccess.Read))
             {
-                using (var stream = new FileStream(SettingsPath, FileMode.Open, FileAccess.Read))
+                var settingsParser = new Parser(new Scanner(stream));
+
+                settingsParser.Parse();
+                if (!settingsParser.Root.Any() || settingsParser.ParseError)
+                    return null;
+                return settingsParser.Root;
+            }
+        }
+
+
+        public bool Initialize()
+        {
+            try
+
+            {
+                bool reloadFromBackup = false;
+
+                _settingsRoot = LoadStellarisSettings(SettingsPath);
+
+                if (_settingsRoot == null)
                 {
-                    var settingsParser = new Parser(new Scanner(stream));
-
-                    settingsParser.Parse();
-
-                    _settingsRoot = settingsParser.Root;
+                    if (File.Exists(BackupPath))
+                    {
+                        if (MessageBox.Show("Settings.txt corrupted, backup available, reload from backup?", "Error",
+                                MessageBoxButton.OKCancel) ==
+                            MessageBoxResult.OK)
+                        {
+                            _settingsRoot = LoadStellarisSettings(BackupPath);
+                        }
+                    }
+                    // haven't managed to load from backup
+                    if (_settingsRoot == null)
+                    {
+                        MessageBox.Show(
+                            "Settings.txt corrupted - no backup available, please run stellaris to recreate default settings.",
+                            "Error", MessageBoxButton.OK);
+                        return false;
+                    }
+                    else
+                    {
+                        SaveSettings();
+                        // this is a backup of an incorrect file, we should delete it. 
+                        File.Delete(BackupPath);
+                    }
                 }
 
                 LoadMods();
 
-                if (!File.Exists(SavedSelections))
+                if (File.Exists(SavedSelections))
                 {
-                    _savedSelectionsDocument = new SCObject();
-                    var selection = new SCKeyValObject(new SCString("Stellaris selection"), _settingsRoot["last_mods"]);
-                    _savedSelectionsDocument["Selections"] = new SCObject() { selection };
-                    CurrentSelection = selection;
-                }
-                else using (var stream = new FileStream(SavedSelections, FileMode.Open, FileAccess.Read))
-                {
-                    var selectionParser = new Parser(new Scanner(stream));
-
-                    selectionParser.Parse();
-
-                    _savedSelectionsDocument = selectionParser.Root;
-                    var selectionIdx = _savedSelectionsDocument["SavedToStellaris"] as SCString;
-                    if (selectionIdx != null)
+                    using (var stream = new FileStream(SavedSelections, FileMode.Open, FileAccess.Read))
                     {
-                        var stellaris_selection = _settingsRoot["last_mods"] ?? new SCObject();
-                        var selection = new SCKeyValObject(selectionIdx, stellaris_selection);
-                        Selections[selectionIdx] = stellaris_selection;
-                        CurrentSelection = selection;
+                        var selectionParser = new Parser(new Scanner(stream));
+
+                        selectionParser.Parse();
+
+                        if (!selectionParser.ParseError && selectionParser.Root.Any())
+                        {
+
+                            _savedSelectionsDocument = selectionParser.Root;
+                            var selectionIdx = _savedSelectionsDocument["SavedToStellaris"] as SCString;
+                            if (selectionIdx != null)
+                            {
+                                var stellaris_selection = _settingsRoot["last_mods"] ?? new SCObject();
+                                var selection = new SCKeyValObject(selectionIdx, stellaris_selection);
+                                Selections[selectionIdx] = stellaris_selection;
+                                CurrentSelection = selection;
+                            }
+                        }
                     }
                 }
 
+                if (_savedSelectionsDocument == null)
+                {
+                    _savedSelectionsDocument = new SCObject();
+                    var selection = new SCKeyValObject(new SCString("Stellaris selection"), _settingsRoot["last_mods"] ?? new SCObject());
+                    _savedSelectionsDocument["Selections"] = new SCObject() { selection };
+                    CurrentSelection = selection;
+                }
+
                 SortAndUpdate();
-
-                SaveSettingsCommand = new RelayCommand(SaveSettings);
-                MergeModsCommand = new RelayCommand(MergeMods, DoModsNeedToBeMerged);
-                Duplicate = new RelayCommand(DoDuplicate);
-                Delete = new RelayCommand(DoDelete, () => Selections.Count() > 1);
-
-
-
             }
             catch (Exception ex)
             {
                 MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                return false;
             }
+
+            return true;
         }
 
         private void ConnectionError(string obj)
@@ -270,7 +320,7 @@ namespace SCModManager
                 return false;
             }
 
-            return selectedMods.Any(sm => CalculateConflicts(sm, selectedMods).Count() > 0);
+            return selectedMods.Any(sm => CalculateConflicts(sm, selectedMods).Any());
         }
 
         private void SortAndUpdate()
@@ -460,12 +510,11 @@ namespace SCModManager
 
                 _settingsRoot["last_mods"] = CurrentSelection.Value;
 
-                var backup = Path.ChangeExtension(SettingsPath, "bak");
-                if (File.Exists(backup))
+                if (File.Exists(BackupPath))
                 {
-                    File.Delete(backup);
+                    File.Delete(BackupPath);
                 }
-                File.Move(SettingsPath, backup);
+                File.Move(SettingsPath, BackupPath);
 
                 using (var stream = new FileStream(SettingsPath, FileMode.Create, FileAccess.Write))
                 {
