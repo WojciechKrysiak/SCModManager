@@ -1,0 +1,99 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:local="clr-namespace:SCModManager"
+                    xmlns:sw="clr-namespace:SCModManager.SteamWorkshop"
+                    xmlns:md="clr-namespace:SCModManager.ModData"
+                    xmlns:diff="clr-namespace:SCModManager.DiffMerge"
+                    xmlns:fa="http://schemas.fontawesome.io/icons/"
+                    xmlns:ui="clr-namespace:SCModManager.Ui">
+    <ui:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
+    <ui:ExactTypeConverter x:Key="ExactTypeConverter"/>
+    <DataTemplate DataType="{x:Type md:ModFile}" x:Key="ConflictModItemTemplate">
+        <Grid x:Name="Container" HorizontalAlignment="Stretch" Margin="5">
+            <TextBlock Text="{Binding Name}"/>
+        </Grid>
+    </DataTemplate>
+    <Style x:Key="ListBoxItemStyle" TargetType="{x:Type ListBoxItem}">
+        <Setter Property="HorizontalAlignment" Value="Stretch"/>
+        <Setter Property="BorderBrush" Value="Gray"/>
+        <Setter Property="BorderThickness" Value="0 0 0 1"/>
+    </Style>
+
+    <DataTemplate x:Key="WokrshopConflictView" DataType="{x:Type md:Mod}">
+        <Grid >
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="10"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+            <Label>Files in mod:</Label>
+            <Border Grid.Column="0" Grid.Row="1" BorderBrush="Black" BorderThickness="1">
+                <ui:MVVMTreeView Visibility="{Binding SelectedModConflict, Converter={StaticResource NullToVisibilityConverter}}"
+                    ItemsSource="{Binding SelectedModFileTree}"
+                    Selected="{Binding SelectedModFile, Mode=OneWayToSource, Converter={StaticResource ExactTypeConverter}}"
+                    SelectedValuePath="File"
+                    VerticalAlignment="Stretch"
+                                 BorderThickness="0">
+                    <TreeView.Resources>
+                        <HierarchicalDataTemplate DataType="{x:Type md:ModDirectory}" ItemsSource="{Binding Files}">
+                            <StackPanel Orientation="Vertical">
+                                <StackPanel Orientation="Horizontal">
+                                    <fa:FontAwesome Icon="Folder" VerticalAlignment="Center" Margin="0 0 3 0" x:Name="FolderIcon" Opacity="0.4"/>
+                                    <TextBlock Text="{Binding Filename}" VerticalAlignment="Center" x:Name="FolderName" Opacity="0.4"/>
+                                </StackPanel>
+                            </StackPanel>
+                            <HierarchicalDataTemplate.Triggers>
+                                <DataTrigger Binding="{Binding HasConflicts}" Value="True">
+                                    <Setter Property="Opacity" Value="1" TargetName="FolderIcon"/>
+                                    <Setter Property="Opacity" Value="1" TargetName="FolderName"/>
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding AllConflicts}" Value="True">
+                                    <Setter Property="Background" Value="PaleVioletRed" TargetName="FolderName"/>
+                                </DataTrigger>
+                            </HierarchicalDataTemplate.Triggers>
+                        </HierarchicalDataTemplate>
+                        <DataTemplate DataType="{x:Type md:ModFileEntry}">
+                            <StackPanel Orientation="Horizontal">
+                                <fa:FontAwesome Icon="File" VerticalAlignment="Center" Margin="0 0 3 0" Opacity="0.4" x:Name="FileIcon"/>
+                                <TextBlock Text="{Binding Filename}" VerticalAlignment="Center" x:Name="FileName" Opacity="0.4"/>
+                            </StackPanel>
+                            <DataTemplate.Triggers>
+                                <DataTrigger Binding="{Binding HasConflicts}" Value="True">
+                                    <Setter Property="Opacity" Value="1" TargetName="FileName"/>
+                                    <Setter Property="Background" Value="PaleVioletRed" TargetName="FileIcon"/>
+                                    <Setter Property="Background" Value="PaleVioletRed" TargetName="FileName"/>
+                                </DataTrigger>
+                            </DataTemplate.Triggers>
+                        </DataTemplate>
+                    </TreeView.Resources>
+                </ui:MVVMTreeView>
+            </Border>
+
+            <Label Grid.Column="2" Grid.Row="0">Conflicting mod for file-:</Label>
+            <Border Grid.Column="2" Grid.Row="1" BorderBrush="Black" BorderThickness="1">
+                <ListBox Visibility="{Binding SelectedModFile, Converter={StaticResource NullToVisibilityConverter}}"
+                        ItemsSource="{Binding SelectedConflictMods}"
+                        SelectedItem="{Binding SelectedConflict}"
+                        ItemTemplate="{StaticResource ConflictModItemTemplate}"
+                        ItemContainerStyle="{StaticResource ListBoxItemStyle}"
+                        VerticalAlignment="Stretch"
+                        BorderThickness="0"/>
+            </Border>
+            <Label Grid.Column="0" Grid.Row="2">File in selected mod:</Label>
+            <Border Grid.Column="0" Grid.Row="3" BorderBrush="Black" BorderThickness="1">
+                <diff:MergeViewer DataContext="{Binding ComparisonContext}" Visibility="{Binding ., RelativeSource={RelativeSource Self}, Converter={StaticResource NullToVisibilityConverter}}" IsReadOnly="True" Contents="{Binding Comparison}" Side="Left" Document="{Binding LeftDocument}" FontFamily="Consolas" ShowLineNumbers="True" ScrollOffset="{Binding ScrollOffset}" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto"  BorderThickness="0"/>
+            </Border>
+            <Label Grid.Column="2" Grid.Row="2">File in conflicting mod:</Label>
+            <Border Grid.Column="2" Grid.Row="3" BorderBrush="Black" BorderThickness="1">
+                <diff:MergeViewer DataContext="{Binding ComparisonContext}" Visibility="{Binding ., RelativeSource={RelativeSource Self}, Converter={StaticResource NullToVisibilityConverter}}" IsReadOnly="True" Contents="{Binding Comparison}" Side="Right" Document="{Binding RightDocument}" FontFamily="Consolas" ShowLineNumbers="True" ScrollOffset="{Binding ScrollOffset}" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" BorderThickness="0"/>
+            </Border>
+        </Grid>
+    </DataTemplate>
+</ResourceDictionary>
+    

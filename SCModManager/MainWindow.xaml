@@ -18,9 +18,9 @@
             <ui:BooleanToVisibilityConverter x:Key="BoolToVisConverter"/>
             <ui:BooleanToVisibilityConverter x:Key="BoolToVisConverterInverse" Inverse="true"/>
             <ui:BoolNegatingConverter x:Key="NegateValue"/>
-            <ui:ExactTypeConverter x:Key="ExactTypeConverter"/>
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="Views/WorkshopPanel.xaml"/>
+                <ResourceDictionary Source="Views/ComparePanel.xaml"/>
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Window.Resources>
@@ -75,17 +75,6 @@
                     </DataTrigger>
                 </DataTemplate.Triggers>
             </DataTemplate>
-            <DataTemplate DataType="{x:Type modData:ModFile}" x:Key="ConflictModItemTemplate">
-                <Grid x:Name="Container" HorizontalAlignment="Stretch" Margin="5">
-                    <TextBlock Text="{Binding Name}"/>
-                </Grid>
-            </DataTemplate>
-            <Style x:Key="ListBoxItemStyle" TargetType="{x:Type ListBoxItem}">
-                <Setter Property="HorizontalAlignment" Value="Stretch"/>
-                <Setter Property="BorderBrush" Value="Gray"/>
-                <Setter Property="BorderThickness" Value="0 0 0 1"/>
-            </Style>
-
 
         </Grid.Resources>
         <Grid.ColumnDefinitions>
@@ -118,7 +107,7 @@
             <DockPanel LastChildFill="True" DockPanel.Dock="Top">
                 <Label DockPanel.Dock="Left">Mod list:</Label>
                 <Button DockPanel.Dock="Right" Command="{Binding Duplicate}" ToolTip="Duplicate current selection" MinWidth="20">
-                    <fa:FontAwesome Icon="Plus" Foreground="{Binding Foreground, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type Button}}}"/>    
+                    <fa:FontAwesome Icon="Plus" Foreground="{Binding Foreground, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type Button}}}"/>
                 </Button>
                 <Button DockPanel.Dock="Right" Command="{Binding Delete}" ToolTip="Delete current selection" MinWidth="20">
                     <fa:FontAwesome Icon="Trash" Foreground="{Binding Foreground, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type Button}}}"/>
@@ -136,70 +125,7 @@
                 </ListBox.ItemsPanel>
             </ListBox>
         </DockPanel>
-        <Grid Grid.Column="1" Grid.Row="1" Grid.RowSpan="2" Grid.ColumnSpan="2" Visibility="{Binding IsChecked, ElementName=MergeMode, Converter={StaticResource BoolToVisConverter}}">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="*"/>
-                <ColumnDefinition Width="*"/>
-            </Grid.ColumnDefinitions>
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*"/>
-            </Grid.RowDefinitions>
-            <Label>Files in mod:</Label>
-            <ui:MVVMTreeView Grid.Column="0" Grid.Row="1" Visibility="{Binding SelectedModConflict, Converter={StaticResource NullToVisibilityConverter}}"
-                    ItemsSource="{Binding SelectedModFileTree}"
-                    Selected="{Binding SelectedModFile, Mode=OneWayToSource, Converter={StaticResource ExactTypeConverter}}"
-                    SelectedValuePath="File"
-                    VerticalAlignment="Stretch">
-                <TreeView.Resources>
-                    <HierarchicalDataTemplate DataType="{x:Type modData:ModDirectory}" ItemsSource="{Binding Files}">
-                        <StackPanel Orientation="Vertical">
-                            <StackPanel Orientation="Horizontal">
-                                <fa:FontAwesome Icon="Folder" VerticalAlignment="Center" Margin="0 0 3 0" x:Name="FolderIcon" Opacity="0.4"/>
-                                <TextBlock Text="{Binding Filename}" VerticalAlignment="Center" x:Name="FolderName" Opacity="0.4"/>
-                            </StackPanel>
-                        </StackPanel>
-                        <HierarchicalDataTemplate.Triggers>
-                            <DataTrigger Binding="{Binding HasConflicts}" Value="True">
-                                <Setter Property="Opacity" Value="1" TargetName="FolderIcon"/>
-                                <Setter Property="Opacity" Value="1" TargetName="FolderName"/>
-                            </DataTrigger>
-                            <DataTrigger Binding="{Binding AllConflicts}" Value="True">
-                                <Setter Property="Background" Value="PaleVioletRed" TargetName="FolderName"/>
-                            </DataTrigger>
-                        </HierarchicalDataTemplate.Triggers>
-                    </HierarchicalDataTemplate>
-                    <DataTemplate DataType="{x:Type modData:ModFileEntry}">
-                        <StackPanel Orientation="Horizontal">
-                            <fa:FontAwesome Icon="File" VerticalAlignment="Center" Margin="0 0 3 0" Opacity="0.4" x:Name="FileIcon"/>
-                            <TextBlock Text="{Binding Filename}" VerticalAlignment="Center" x:Name="FileName" Opacity="0.4"/>
-                        </StackPanel>
-                        <DataTemplate.Triggers>
-                            <DataTrigger Binding="{Binding HasConflicts}" Value="True">
-                                <Setter Property="Opacity" Value="1" TargetName="FileName"/>
-                                <Setter Property="Background" Value="PaleVioletRed" TargetName="FileIcon"/>
-                                <Setter Property="Background" Value="PaleVioletRed" TargetName="FileName"/>
-                            </DataTrigger>
-                        </DataTemplate.Triggers>
-                    </DataTemplate>
-                </TreeView.Resources>
-            </ui:MVVMTreeView>
-
-            <Label Grid.Column="1" Grid.Row="0">Conflicting mod for file:</Label>
-            <ListBox Grid.Column="1" Grid.Row="1" Visibility="{Binding SelectedModFile, Converter={StaticResource NullToVisibilityConverter}}"
-                    ItemsSource="{Binding SelectedConflictMods}"
-                    SelectedItem="{Binding SelectedConflict}"
-                    ItemTemplate="{StaticResource ConflictModItemTemplate}"
-                    ItemContainerStyle="{StaticResource ListBoxItemStyle}"
-                    VerticalAlignment="Stretch"/>
-
-            <Label Grid.Column="0" Grid.Row="2">File in selected mod:</Label>
-            <diff:MergeViewer DataContext="{Binding ComparisonContext}" Visibility="{Binding ., RelativeSource={RelativeSource Self}, Converter={StaticResource NullToVisibilityConverter}}" IsReadOnly="True" Grid.Column="0" Grid.Row="3" Contents="{Binding Comparison}" Side="Left" Document="{Binding LeftDocument}" FontFamily="Consolas" ShowLineNumbers="True" ScrollOffset="{Binding ScrollOffset}" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" />
-            <Label Grid.Column="1" Grid.Row="2">File in conflicting mod:</Label>
-            <diff:MergeViewer DataContext="{Binding ComparisonContext}" Visibility="{Binding ., RelativeSource={RelativeSource Self}, Converter={StaticResource NullToVisibilityConverter}}" IsReadOnly="True" Grid.Column="1" Grid.Row="3" Contents="{Binding Comparison}" Side="Right" Document="{Binding RightDocument}" FontFamily="Consolas" ShowLineNumbers="True" ScrollOffset="{Binding ScrollOffset}" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" />
-        </Grid>
+        <ContentControl Grid.Column="1" Grid.Row="1" Grid.RowSpan="2" Grid.ColumnSpan="2" Content="{Binding .}" ContentTemplate="{StaticResource WokrshopConflictView}" Visibility="{Binding IsChecked, ElementName=MergeMode, Converter={StaticResource BoolToVisConverter}}"/>
 
         <Border Grid.Column="1" Grid.Row="1" Grid.RowSpan="2" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Visibility="{Binding IsChecked, ElementName=MergeMode, Converter={StaticResource BoolToVisConverterInverse}}" >
             <ScrollViewer  HorizontalAlignment="Stretch" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" Padding="40" Background="#262626" >

@@ -187,15 +187,14 @@
                                 <Label Content="{Binding Value}" Grid.Column="1" HorizontalAlignment="Right" Foreground="#8F98A0"/>
                             </Grid>
                         </Border>
-                    </DataTemplate>
+                    </DataTemplate> 
                 </ListBox.ItemTemplate>
             </ListBox>
             <Border Grid.Column="0" Grid.Row="1" Grid.ColumnSpan="2" BorderBrush="#acb2b8" BorderThickness="1 0 1 1">
                 <sw:BBControl FontFamily="Arial" FontSize="14px" Width="662" x:Name="BBControl" HorizontalAlignment="Left" VerticalAlignment="Stretch" ScrollViewer.VerticalScrollBarVisibility="Disabled"
-                              Tags="{StaticResource defaultTags}" BBCode="{Binding RemoteDescriptor.Description}">
-                </sw:BBControl>
+                              Tags="{DynamicResource defaultTags}" BBCode="{Binding RemoteDescriptor.Description}"/>
             </Border>
         </Grid>
-
     </DataTemplate>
 </ResourceDictionary>
+    

@@ -342,6 +342,7 @@ namespace SCModManager
                 CurrentSelection = Selections.FirstOrDefault();
                 Delete.RaiseCanExecuteChanged();
                 SaveSelection();
+                RaisePropertyChanged(nameof(Selections));
             }
         }
 

@@ -53,7 +53,7 @@
             <ColumnDefinition Width="8*"/>
         </Grid.ColumnDefinitions>
         <Button Command="{Binding Save}">Save</Button>
-        <CheckBox x:Name="ShowOnlyConflicts" Grid.Column="0" Grid.Row="1" IsChecked="{Binding OnlyConflicts}">Show only conflicts</CheckBox>
+        <CheckBox x:Name="ShowOnlyConflicts" Grid.Column="0" Grid.Row="1" IsChecked="{Binding OnlyConflicts}" Margin="5 7">Show only conflicts</CheckBox>
         
         <ui:MVVMTreeView Grid.Column="0" Grid.Row="2" 
                     ItemsSource="{Binding ModFileTree}"
@@ -113,8 +113,11 @@
                 <Label>Left file</Label>
                 <ComboBox ItemsSource="{Binding LeftSelection}" SelectedItem="{Binding Left}" DisplayMemberPath="SourceMod.Name"/>
             </DockPanel>
-            
-            <Button Grid.Column="1" Grid.Row="0"  Content="U" Command="{Binding Reset}"/>
+
+            <Button Grid.Column="1" Grid.Row="0" Command="{Binding Reset}" ToolTip="Revert">
+                <fa:FontAwesome Icon="Undo"/>
+            </Button>
+
 
             <DockPanel Grid.Column="2" Grid.Row="0"  LastChildFill="True">
                 <Label>Right file</Label>

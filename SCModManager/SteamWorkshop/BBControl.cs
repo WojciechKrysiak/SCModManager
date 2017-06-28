@@ -33,7 +33,6 @@ namespace SCModManager.SteamWorkshop
 
         public BBControl()
         {
-            Tags = new TagDictionary();
         }
 
         private static void OnBBPropertyChanged(DependencyObject obj, DependencyPropertyChangedEventArgs args)
@@ -181,7 +180,6 @@ namespace SCModManager.SteamWorkshop
                 return;
             }
 
-
             XmlDocument doc = new XmlDocument();
 
             var root = doc.CreateElement("FlowDocumentScrollViewer");
@@ -190,7 +188,6 @@ namespace SCModManager.SteamWorkshop
 
             var first = doc.CreateElement("FlowDocument");
             first.SetAttribute("xml:space", "preserve");
-            //first.SetAttribute("TextWrapping", "Wrap");
             root.AppendChild(first);
 
             var para = doc.CreateElement("Paragraph");

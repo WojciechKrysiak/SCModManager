@@ -22,7 +22,7 @@ namespace SCModManager.Ui
 
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            if (targetType.IsAssignableFrom(value?.GetType()))
+            if (targetType?.IsAssignableFrom(value?.GetType()) ?? false)
             {
                 return value;
             }
