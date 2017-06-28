@@ -41,7 +41,7 @@ namespace SCModManager
         {
             base.OnStartup(e);
 
-            var viewModel = new ModContext();
+            var viewModel = new ModContext("Stellaris");
             if (!viewModel.Initialize())
             {
                 return;

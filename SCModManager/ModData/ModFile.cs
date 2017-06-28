@@ -20,6 +20,8 @@ namespace SCModManager.ModData
 
         public abstract bool HasConflicts {get;}
 
+        public virtual bool AllConflicfts => HasConflicts;
+
         protected Func<ModFile, bool> _hasConflict;
 
         protected ModFileHolder(string name, Func<ModFile, bool> hasConflict)
@@ -35,9 +37,7 @@ namespace SCModManager.ModData
 
         public IEnumerable<ModFileHolder> Files { get; }
 
-        public bool AllConflicfts => Files.All(f => f.HasConflicts);
-
-        public bool NoConflicts => !Files.Any(f => f.HasConflicts);
+        public override bool AllConflicfts => Files.All(f => f.HasConflicts);
 
         public override bool HasConflicts => Files.Any(f => f.HasConflicts);
 

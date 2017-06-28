@@ -59,12 +59,14 @@ namespace SCModManager
     {
         private static readonly Logger Log = LogManager.GetCurrentClassLogger();
 
-        private static readonly string BasePath = $"{Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)}\\Paradox Interactive\\Stellaris";
+        private readonly string product = "Stellaris";
 
-        private static readonly string ModsDir = $"{BasePath}\\mod";
-        private static readonly string SettingsPath = $"{BasePath}\\settings.txt";
-        private static readonly string BackupPath = $"{BasePath}\\settings.bak";
-        private static readonly string SavedSelections = $"{BasePath}\\saved_selections.txt";
+        private string BasePath => $"{Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)}\\Paradox Interactive\\{product}";
+
+        private string ModsDir => $"{BasePath}\\mod";
+        private string SettingsPath => $"{BasePath}\\settings.txt";
+        private string BackupPath => $"{BasePath}\\settings.bak";
+        private string SavedSelections => $"{BasePath}\\saved_selections.txt";
 
         private SCObject _settingsRoot;
 
@@ -202,8 +204,9 @@ namespace SCModManager
             }
         }
 
-        public ModContext()
+        public ModContext(string product)
         {
+            this.product = product;
             SaveSettingsCommand = new RelayCommand(SaveSettings);
             MergeModsCommand = new RelayCommand(MergeMods, DoModsNeedToBeMerged);
             Duplicate = new RelayCommand(DoDuplicate);
