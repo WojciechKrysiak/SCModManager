@@ -133,8 +133,6 @@
     <Compile Include="SCFormat\ScannerImpl.cs" />
     <Compile Include="SCFormat\SCValue.cs" />
     <Compile Include="SCFormat\Parser\ShiftReduceParserCode.cs" />
-    <Compile Include="SteamWorkshop\BBNodes\Bold.cs" />
-    <Compile Include="SteamWorkshop\BBNodes\Node.cs" />
     <Compile Include="SteamWorkshop\Tag.cs" />
     <Compile Include="SteamWorkshop\BBControl.cs" />
     <Compile Include="SteamWorkshop\SteamWebApiIntegration.cs" />

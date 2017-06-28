@@ -167,7 +167,7 @@
             <Border BorderBrush="#acb2b8" BorderThickness="1 1 0 1" HorizontalAlignment="Left" TextBlock.Foreground="#8F98A0" Width="269">
                 <Image Source="{Binding RemoteDescriptor.PreviewURL}" Stretch="Uniform" />
             </Border >
-            <ListBox ItemsSource="{Binding RemoteDescriptor.DisplayValues}" Grid.Column="1" Background="Transparent" BorderThickness="1" HorizontalAlignment="Left"  Grid.IsSharedSizeScope="True" Width="400">
+            <ListBox ItemsSource="{Binding DisplayValues}" Grid.Column="1" Background="Transparent" BorderThickness="1" HorizontalAlignment="Left"  Grid.IsSharedSizeScope="True" Width="400">
                 <ListBox.ItemContainerStyle>
                     <Style TargetType="{x:Type ListBoxItem}">
                         <Setter Property="HorizontalAlignment" Value="Stretch"/>

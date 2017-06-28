@@ -153,6 +153,31 @@ namespace SCModManager.ModData
 
             yield return SCSupportedVersion;
         }
+
+        public IEnumerable<KeyValuePair<string, string>> DisplayValues
+        {
+            get {
+                var retval = new Dictionary<string, string>();
+
+                retval.Add("Title", RemoteDescriptor?.Title ?? Name);
+                if (RemoteDescriptor != null)
+                {
+                    retval.Add("Tags", string.Join(",", RemoteDescriptor.Tags.Select(t => t.Tag)));
+                    retval.Add("Created", new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc).AddSeconds(RemoteDescriptor.TimeCreated).ToLocalTime().ToShortDateString());
+                    retval.Add("Modified", new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc).AddSeconds(RemoteDescriptor.TimeUpdate).ToLocalTime().ToShortDateString());
+                    retval.Add("Subscriptions", RemoteDescriptor.LifetimeSubscriptions.ToString());
+                    retval.Add("Favorited", RemoteDescriptor.Favorited.ToString());
+                } else
+                {
+                    retval.Add("Tags", string.Join(",", Tags));
+                }
+
+                retval.Add("Supported version", this.SupportedVersion.ToString());
+
+                return retval;
+            }
+        }
+
     }
 
     public class SupportedVersion
