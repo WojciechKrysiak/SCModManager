@@ -31,7 +31,7 @@ The Steam symbol signifies mods that have a Steam workshop page, and their detai
 The number of conflicting mods is displayed at the end of the list entry, and if you select it, all the conflicting mods will be displayed in red. 
 
 ### Mod conflict preview
-![](http://github.com/WojciechKrysiak/SCModManager/blob/master/PageImages/Preview%20conflicts.png)
+![](https://github.com/WojciechKrysiak/SCModManager/blob/master/PageImages/Preview%20conflicts.png)
 
 **Files in mod** - files added or modified by the mod.
 
