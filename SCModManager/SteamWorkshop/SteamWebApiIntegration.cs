@@ -34,6 +34,11 @@ namespace SCModManager.SteamWorkshop
         {
             var modDict = mods.Where(m => !String.IsNullOrEmpty(m.RemoteFileId)).ToDictionary(m => m.RemoteFileId, m => m);
 
+            if (!modDict.Any())
+            {
+                return;
+            }
+
             string[] modIds = modDict.Select(kvp => kvp.Key).ToArray();
 
             var content = new FormUrlEncodedContent(

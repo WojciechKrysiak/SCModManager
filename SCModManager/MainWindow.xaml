@@ -3,133 +3,220 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:SCModManager"
-        xmlns:ui="clr-namespace:SCModManager.Ui"
-        xmlns:modData="clr-namespace:SCModManager.ModData"
-        xmlns:diff="clr-namespace:SCModManager.DiffMerge"
         xmlns:fa="http://schemas.fontawesome.io/icons/"
-        xmlns:sw="clr-namespace:SCModManager.SteamWorkshop"
+        xmlns:local="clr-namespace:SCModManager"
+        xmlns:modData="clr-namespace:SCModManager.ModData"
+        xmlns:ui="clr-namespace:SCModManager.Ui"
         mc:Ignorable="d"
-        d:DataContext="{d:DesignInstance Type={x:Type local:ModContext}"
-        Title="SC Mod Manager" Height="800" Width="1154">
+        Title="SC Mod Manager"
+        d:DataContext="{d:DesignInstance Type={x:Type local:ModContext}}"
+        Height="800"
+        Width="1200"
+        >
     <Window.Resources>
         <ResourceDictionary>
-            <ui:NullToVisibilityConverter x:Key="NullToVisibilityConverter"/>
-            <ui:BooleanToVisibilityConverter x:Key="BoolToVisConverter"/>
-            <ui:BooleanToVisibilityConverter x:Key="BoolToVisConverterInverse" Inverse="true"/>
-            <ui:BoolNegatingConverter x:Key="NegateValue"/>
+            <ui:NullToVisibilityConverter x:Key="NullToVisibilityConverter" />
+            <ui:BooleanToVisibilityConverter x:Key="BoolToVisConverter" />
+            <ui:BooleanToVisibilityConverter x:Key="BoolToVisConverterInverse" Inverse="true" />
+            <ui:BoolNegatingConverter x:Key="NegateValue" />
             <ResourceDictionary.MergedDictionaries>
-                <ResourceDictionary Source="Views/WorkshopPanel.xaml"/>
-                <ResourceDictionary Source="Views/ComparePanel.xaml"/>
+                <ResourceDictionary Source="Views/WorkshopPanel.xaml" />
+                <ResourceDictionary Source="Views/ComparePanel.xaml" />
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Window.Resources>
-    <Grid x:Name="Root">
+    <Grid>
         <Grid.Resources>
+            <ui:ModConflictToBoolConverter x:Key="ConflictToBool" />
 
-            <ui:ModConflictToBoolConverter x:Key="ConflictToBool"/>
-            <DataTemplate DataType="{x:Type local:ModConflictSelection}" x:Key="ModListTemplate">
-                <Border BorderThickness="0 0 1 0" BorderBrush="Gray">
-                    <Grid x:Name="Container" HorizontalAlignment="Stretch" Margin="0 5">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <Rectangle Grid.Column="1" Fill="{x:Null}" x:Name="Underlay"/>
-                        <CheckBox Margin="0 0 5 0" Grid.Column="0" IsChecked="{Binding Selected}"/>
-                        <TextBlock Grid.Column="1" Text="{Binding Name}"/>
-                        <TextBlock Margin="5 0" Grid.Column="2" Text="{Binding ConflictCount}"/>
-                        <Rectangle Fill="{x:Null}" Grid.Column="0" Grid.ColumnSpan="3" x:Name="Overlay"/>
+            <DataTemplate x:Key="ModListTemplate" DataType="{x:Type local:ModConflictSelection}">
+                <Border Width="{Binding ActualWidth,
+                                        RelativeSource={RelativeSource FindAncestor,
+                                                                       AncestorType={x:Type ScrollContentPresenter}}}"
+                        BorderBrush="Gray"
+                        BorderThickness="0 0 1 0"
+                        >
+                    <Grid x:Name="Container"
+                          HorizontalAlignment="Stretch"
+                          Margin="5"
+                          >
+                        <Rectangle x:Name="Underlay" Fill="{x:Null}" />
+                        <DockPanel LastChildFill="True">
+                            <CheckBox DockPanel.Dock="Left"
+                                      IsChecked="{Binding Selected}"
+                                      Margin="0 0 5 0"
+                                      />
+
+                            <TextBlock Width="15"
+                                       DockPanel.Dock="Right"
+                                       Margin="5 0"
+                                       Text="{Binding ConflictCount}"
+                                       />
+                            <fa:FontAwesome DockPanel.Dock="Right"
+                                            Icon="Steam"
+                                            Visibility="{Binding Mod.RemoteDescriptor,
+                                                                 Converter={StaticResource NullToVisibilityConverter}}"
+                                            />
+                            <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis" />
+
+                        </DockPanel>
+                        <Rectangle x:Name="Overlay" Fill="{x:Null}" />
                     </Grid>
                 </Border>
                 <DataTemplate.Triggers>
                     <DataTrigger Value="True">
                         <DataTrigger.Binding>
                             <MultiBinding Converter="{StaticResource ConflictToBool}">
-                                <Binding/>
-                                <Binding Path="DataContext.SelectedModConflict" RelativeSource="{RelativeSource FindAncestor, AncestorType=local:MainWindow}"/>
+                                <Binding />
+                                <Binding Path="DataContext.SelectedModConflict" RelativeSource="{RelativeSource FindAncestor, AncestorType=local:MainWindow}" />
                             </MultiBinding>
                         </DataTrigger.Binding>
-                        <Setter TargetName="Underlay" Property="Fill" Value="PaleVioletRed"/>
+                        <Setter TargetName="Underlay" Property="Fill" Value="PaleVioletRed" />
                     </DataTrigger>
                     <DataTrigger Binding="{Binding ParseError}" Value="True">
-                        <Setter TargetName="Overlay" Property="Fill" Value="LightGray"/>
-                        <Setter TargetName="Overlay" Property="Opacity" Value="0.3"/>
-                        <Setter TargetName="Overlay" Property="ToolTip" Value="There was an error parsing this mod file."/>
+                        <Setter TargetName="Overlay" Property="Fill" Value="LightGray" />
+                        <Setter TargetName="Overlay" Property="Opacity" Value="0.3" />
+                        <Setter TargetName="Overlay" Property="ToolTip" Value="There was an error parsing this mod file." />
                     </DataTrigger>
                 </DataTemplate.Triggers>
             </DataTemplate>
-            <DataTemplate DataType="{x:Type modData:ModFile}" x:Key="ModFileListTemplate">
-                <Grid x:Name="Container" HorizontalAlignment="Stretch" Margin="5">
-                    <TextBlock Text="{Binding Path}"/>
+
+            <DataTemplate x:Key="ModFileListTemplate" DataType="{x:Type modData:ModFile}">
+                <Grid x:Name="Container"
+                      HorizontalAlignment="Stretch"
+                      Margin="5"
+                      >
+                    <TextBlock Text="{Binding Path}" />
                 </Grid>
                 <DataTemplate.Triggers>
                     <DataTrigger Binding="{Binding HasConflicts}" Value="True">
-                        <Setter TargetName="Container" Property="Background" Value="PaleVioletRed"/>
+                        <Setter TargetName="Container" Property="Background" Value="PaleVioletRed" />
                         <Setter TargetName="Container" Property="ToolTip">
                             <Setter.Value>
-                                <ListBox ItemsSource="{Binding Conflicts}" DisplayMemberPath="Name"/>
+                                <ListBox DisplayMemberPath="Name" ItemsSource="{Binding Conflicts}" />
                             </Setter.Value>
                         </Setter>
                     </DataTrigger>
                 </DataTemplate.Triggers>
             </DataTemplate>
-
         </Grid.Resources>
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="Auto" MinWidth="200"/>
-            <ColumnDefinition Width="*" MinWidth="350"/>
+            <ColumnDefinition Width="380" />
+            <ColumnDefinition Width="*" MinWidth="520" />
         </Grid.ColumnDefinitions>
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="*"/>
-            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="*" />
         </Grid.RowDefinitions>
+
         <Menu Grid.ColumnSpan="2">
             <Menu.ItemsPanel>
                 <ItemsPanelTemplate>
-                    <DockPanel HorizontalAlignment="Stretch"/>
+                    <DockPanel HorizontalAlignment="Stretch" />
                 </ItemsPanelTemplate>
             </Menu.ItemsPanel>
             <Button Command="{Binding SaveSettingsCommand}">Save To Stellaris</Button>
             <Button Command="{Binding MergeModsCommand}">Merge Selected</Button>
-            <ToggleButton x:Name="MergeMode" IsEnabled="{Binding IsVisible, ElementName=CommsError, Converter={StaticResource NegateValue}}" IsChecked="{Binding ConflictMode}">Preview conflicts</ToggleButton>
+            <ToggleButton x:Name="MergeMode"
+                          IsChecked="{Binding ConflictMode}"
+                          IsEnabled="{Binding IsVisible,
+                                              ElementName=CommsError,
+                                              Converter={StaticResource NegateValue}}"
+                          >
+                Preview conflicts
+            </ToggleButton>
 
-            <MenuItem HorizontalAlignment="Right" ToolTip="{Binding ErrorReason}" Visibility="{Binding ErrorReason, Converter={StaticResource NullToVisibilityConverter} }" x:Name="CommsError"
-                      Header="Can't download mod data!">
+            <MenuItem x:Name="CommsError"
+                      HorizontalAlignment="Right"
+                      Header="Can't download mod data!"
+                      ToolTip="{Binding ErrorReason}"
+                      Visibility="{Binding ErrorReason,
+                                           Converter={StaticResource NullToVisibilityConverter}}"
+                      >
                 <MenuItem.Icon>
-                    <fa:FontAwesome Icon="Warning" Foreground="Red" VerticalAlignment="Center" />
+                    <fa:FontAwesome VerticalAlignment="Center"
+                                    Foreground="Red"
+                                    Icon="Warning"
+                                    />
                 </MenuItem.Icon>
             </MenuItem>
         </Menu>
-        <DockPanel LastChildFill="True" Grid.Column="0" Grid.Row="1" Grid.RowSpan="2" VerticalAlignment="Stretch">
-            <DockPanel LastChildFill="True" DockPanel.Dock="Top">
+
+        <DockPanel Grid.Column="0"
+                   Grid.Row="1"
+                   Grid.RowSpan="2"
+                   VerticalAlignment="Stretch"
+                   LastChildFill="True"
+                   >
+            <DockPanel DockPanel.Dock="Top" LastChildFill="True">
                 <Label DockPanel.Dock="Left">Mod list:</Label>
-                <Button DockPanel.Dock="Right" Command="{Binding Duplicate}" ToolTip="Duplicate current selection" MinWidth="20">
-                    <fa:FontAwesome Icon="Plus" Foreground="{Binding Foreground, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type Button}}}"/>
+                <Button MinWidth="20"
+                        Command="{Binding Duplicate}"
+                        DockPanel.Dock="Right"
+                        ToolTip="Duplicate current selection"
+                        >
+                    <fa:FontAwesome Foreground="{Binding Foreground, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type Button}}}" Icon="Plus" />
                 </Button>
-                <Button DockPanel.Dock="Right" Command="{Binding Delete}" ToolTip="Delete current selection" MinWidth="20">
-                    <fa:FontAwesome Icon="Trash" Foreground="{Binding Foreground, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type Button}}}"/>
+                <Button MinWidth="20"
+                        Command="{Binding Delete}"
+                        DockPanel.Dock="Right"
+                        ToolTip="Delete current selection"
+                        >
+                    <fa:FontAwesome Foreground="{Binding Foreground, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type Button}}}" Icon="Trash" />
                 </Button>
-                <ComboBox ItemsSource="{Binding Selections}" DisplayMemberPath="Key.Text" SelectedItem="{Binding CurrentSelection}"/>
+                <ComboBox DisplayMemberPath="Key.Text"
+                          ItemsSource="{Binding Selections}"
+                          SelectedItem="{Binding CurrentSelection}"
+                          />
             </DockPanel>
-            <ListBox ItemsSource="{Binding ModConflicts}"
-                     SelectedItem="{Binding SelectedModConflict}"
+            <ListBox HorizontalAlignment="Stretch"
+                     HorizontalContentAlignment="Stretch"
                      ItemTemplate="{StaticResource ModListTemplate}"
-                     HorizontalContentAlignment="Stretch">
+                     ItemsSource="{Binding ModConflicts}"
+                     SelectedItem="{Binding SelectedModConflict}"
+                     >
                 <ListBox.ItemsPanel>
                     <ItemsPanelTemplate>
-                        <StackPanel Orientation="Vertical"/>
+                        <StackPanel Orientation="Vertical" />
                     </ItemsPanelTemplate>
                 </ListBox.ItemsPanel>
+                <ListBox.ItemContainerStyle>
+                    <Style TargetType="{x:Type ListBoxItem}">
+                        <Setter Property="HorizontalAlignment" Value="Stretch" />
+                        <Setter Property="Padding" Value="0" />
+                    </Style>
+                </ListBox.ItemContainerStyle>
             </ListBox>
         </DockPanel>
-        <ContentControl Grid.Column="1" Grid.Row="1" Grid.RowSpan="2" Grid.ColumnSpan="2" Content="{Binding .}" ContentTemplate="{StaticResource WokrshopConflictView}" Visibility="{Binding IsChecked, ElementName=MergeMode, Converter={StaticResource BoolToVisConverter}}"/>
 
-        <Border Grid.Column="1" Grid.Row="1" Grid.RowSpan="2" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Visibility="{Binding IsChecked, ElementName=MergeMode, Converter={StaticResource BoolToVisConverterInverse}}" >
-            <ScrollViewer  HorizontalAlignment="Stretch" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" Padding="40" Background="#262626" >
-                <ContentControl Content="{Binding SelectedModConflict.Mod}" ContentTemplate="{StaticResource WokrshopModView}"/>
+        <ContentControl Grid.Column="1"
+                        Grid.Row="1"
+                        Grid.RowSpan="2"
+                        Content="{Binding .}"
+                        ContentTemplate="{StaticResource WokrshopConflictView}"
+                        Visibility="{Binding IsChecked,
+                                             ElementName=MergeMode,
+                                             Converter={StaticResource BoolToVisConverter}}"
+                        />
+
+        <Border Grid.Column="1"
+                Grid.Row="1"
+                Grid.RowSpan="2"
+                HorizontalAlignment="Stretch"
+                VerticalAlignment="Stretch"
+                Visibility="{Binding IsChecked,
+                                     ElementName=MergeMode,
+                                     Converter={StaticResource BoolToVisConverterInverse}}"
+                >
+            <ScrollViewer HorizontalAlignment="Stretch"
+                          Background="#262626"
+                          HorizontalScrollBarVisibility="Auto"
+                          Padding="40 20 40 40"
+                          TextBlock.Foreground="#8F98A0"
+                          VerticalScrollBarVisibility="Auto"
+                          >
+                <ContentControl Content="{Binding SelectedModConflict.Mod}" ContentTemplate="{StaticResource WokrshopModView}" />
             </ScrollViewer>
         </Border>
     </Grid>

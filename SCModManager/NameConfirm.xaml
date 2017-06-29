@@ -3,20 +3,30 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:SCModManager"
         mc:Ignorable="d"
-        Title="Confirm Name" 
+        Title="Confirm Name"
+        Width="300"
         VerticalContentAlignment="Top"
         ResizeMode="NoResize"
         SizeToContent="Height"
-        Width="300">
-    <StackPanel Orientation="Vertical" Margin="5">
+        >
+    <StackPanel Margin="5" Orientation="Vertical">
         <TextBlock Margin="5">Enter a name for the selection:</TextBlock>
-        <TextBox Text="{Binding Name}" Margin="5"/>
-        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" >
+        <TextBox Margin="5" Text="{Binding Name}" />
+        <StackPanel HorizontalAlignment="Right" Orientation="Horizontal">
 
-            <Button Margin="5" Width="50" Command="{Binding Ok}">OK</Button>
-            <Button Margin="5" Width="50" Command="{Binding Cancel}">Cancel</Button>
+            <Button Width="50"
+                    Command="{Binding Ok}"
+                    Margin="5"
+                    >
+                OK
+            </Button>
+            <Button Width="50"
+                    Command="{Binding Cancel}"
+                    Margin="5"
+                    >
+                Cancel
+            </Button>
         </StackPanel>
     </StackPanel>
 </Window>

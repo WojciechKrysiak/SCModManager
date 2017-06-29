@@ -233,8 +233,6 @@ namespace SCModManager
             try
 
             {
-                bool reloadFromBackup = false;
-
                 _settingsRoot = LoadStellarisSettings(SettingsPath);
 
                 if (_settingsRoot == null)
