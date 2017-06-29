@@ -12,7 +12,7 @@ Start SCModManager.exe from any location. It should detect the location of your 
 ## Main features:
 
 ### Steam workshop integration
-![]({{site.baseurl}}/PageImages/Main view.png)
+![](https://github.com/WojciechKrysiak/SCModManager/blob/master/PageImages/Main%20view.png)
 
 **Save to stellaris** - saves your current mod selection to Settings.txt to be used in game.
 
@@ -31,7 +31,7 @@ The Steam symbol signifies mods that have a Steam workshop page, and their detai
 The number of conflicting mods is displayed at the end of the list entry, and if you select it, all the conflicting mods will be displayed in red. 
 
 ### Mod conflict preview
-![]({{site.baseurl}}/PageImages/Preview conflicts.png)
+![](http://github.com/WojciechKrysiak/SCModManager/blob/master/PageImages/Preview%20conflicts.png)
 
 **Files in mod** - files added or modified by the mod.
 
@@ -42,7 +42,7 @@ The number of conflicting mods is displayed at the end of the list entry, and if
 Conflict preview can quickly show whether the mod conflict is serious, or just a readme file named the same in two mods. 
 
 ### Merge mods
-![]({{site.baseurl}}/PageImages/Merge.png)
+![](https://github.com/WojciechKrysiak/SCModManager/blob/master/PageImages/Merge.png)
 
 **Conflicting files** - files in the resulting mod, marked in bold/red if there is a conflict. You can filter only those files with "Show only conflicts"
 
