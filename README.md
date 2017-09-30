@@ -5,6 +5,9 @@
 ### Disclaimer!
 This is very much a work in progress - bugs are expected - backup any files you don't wish irreprably harmed (for now only settings.txt).
 
+### Download prebuilt version:
+To get the latest release, go to the [releases](https://github.com/WojciechKrysiak/SCModManager/releases) page and download the latest version from the .zip file. Extract wherever you wish.
+
 ### Usage:
 
 Start SCModManager.exe from any location. It should detect the location of your Stellaris documents folder automatically. If not, let me know.
