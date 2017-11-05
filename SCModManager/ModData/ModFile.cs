@@ -49,12 +49,12 @@ namespace SCModManager.ModData
 
             var kids = source.Select(m => Tuple.Create(m.Path.Split(Separators), m));
             List<ModFileHolder> result = new List<ModFileHolder>();
-            foreach (var kid in kids.Where(t => t.Item1.Length > level + 2).GroupBy(k => k.Item1[level + 1]).OrderBy(g => g.Key))
+            foreach (var kid in kids.Where(t => t.Item1.Length > level + 1).GroupBy(k => k.Item1[level]).OrderBy(g => g.Key))
             {
                 result.Add(new ModDirectory(kid.Key, level + 1, kid.Select(k => k.Item2), hasConflict));
             }
 
-            foreach (var kid in kids.Where(t => t.Item1.Length == level + 2))
+            foreach (var kid in kids.Where(t => t.Item1.Length == level + 1))
             {
                 result.Add(new ModFileEntry(kid.Item1.Last(), kid.Item2, hasConflict));
             }

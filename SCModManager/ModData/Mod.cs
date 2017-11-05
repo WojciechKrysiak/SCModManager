@@ -162,7 +162,7 @@ namespace SCModManager.ModData
                 retval.Add("Title", RemoteDescriptor?.Title ?? Name);
                 if (RemoteDescriptor != null)
                 {
-                    retval.Add("Tags", string.Join(",", RemoteDescriptor.Tags.Select(t => t.Tag)));
+                    retval.Add("Tags", string.Join(",", RemoteDescriptor.Tags?.Select(t => t.Tag) ?? new string[0]));
                     retval.Add("Created", new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc).AddSeconds(RemoteDescriptor.TimeCreated).ToLocalTime().ToShortDateString());
                     retval.Add("Modified", new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc).AddSeconds(RemoteDescriptor.TimeUpdate).ToLocalTime().ToShortDateString());
                     retval.Add("Subscriptions", RemoteDescriptor.LifetimeSubscriptions.ToString());
