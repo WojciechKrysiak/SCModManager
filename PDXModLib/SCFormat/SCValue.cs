@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SCModManager.SCFormat
+namespace PDXModLib.SCFormat
 {
 
     public abstract class SCValue
@@ -130,6 +130,13 @@ namespace SCModManager.SCFormat
             contents.Remove(kvp);
         }
 
+        public void Remove(string key)
+        {
+            var kvo = contents.FirstOrDefault(kv => kv.Key.ToString() == key);
+
+            contents.Remove(kvo);
+        }
+
         public SCObject(SCIdentifier name = null)
         {
             Name = name?.Name;
@@ -192,7 +199,7 @@ namespace SCModManager.SCFormat
             }
         }
 
-        internal static SCObject Create(List<string> tags)
+        public static SCObject Create(List<string> tags)
         {
             SCObject res = new SCObject();
 
@@ -200,14 +207,14 @@ namespace SCModManager.SCFormat
             return res;
         }
 
-        internal static SCObject Create(IEnumerable<KeyValuePair<string, string>> values)
+        public static SCObject Create(IEnumerable<KeyValuePair<string, string>> values)
         {
             SCObject res = new SCObject();
             res.contents.AddRange(values.Select(kvp => SCKeyValObject.Create(kvp.Key, kvp.Value)));
             return res;
         }
 
-        internal static SCObject Create(IEnumerable<SCKeyValObject> values)
+        public static SCObject Create(IEnumerable<SCKeyValObject> values)
         {
             SCObject res = new SCObject();
             res.contents.AddRange(values.Select(kvp => new SCKeyValObject(kvp.Key, new SCToken(Tokens.Eq), kvp.Value)));
@@ -232,6 +239,17 @@ namespace SCModManager.SCFormat
         internal override void Serialize(StringBuilder writer)
         {
             writer.Append(ToString());
+        }
+
+        public override bool Equals(object obj)
+        {
+            var other = obj as SCIdentifier;
+            return other != null && other.Name.Equals(Name);
+        }
+
+        public override int GetHashCode()
+        {
+            return Name?.GetHashCode() ?? 0;
         }
     }
 
@@ -265,6 +283,17 @@ namespace SCModManager.SCFormat
         {
             writer.Append(ToString());
         }
+
+        public override bool Equals(object obj)
+        {
+            var other = obj as SCString;
+            return other!= null && other.Text.Equals(Text);
+        }
+
+        public override int GetHashCode()
+        {
+            return Text?.GetHashCode() ?? 0;
+        }
     }
 
     public class SCNumber : SCValue
@@ -289,6 +318,17 @@ namespace SCModManager.SCFormat
         internal override void Serialize(StringBuilder writer)
         {
             writer.Append(ToString());
+        }
+
+        public override bool Equals(object obj)
+        {
+            var other = obj as SCNumber;
+            return other != null && other._number == _number;
+        }
+
+        public override int GetHashCode()
+        {
+            return _number.GetHashCode();
         }
     }
 
@@ -318,11 +358,22 @@ namespace SCModManager.SCFormat
         {
             writer.Append(ToString());
         }
+
+        public override bool Equals(object obj)
+        {
+            var other = obj as SCPercent;
+            return other != null && Math.Abs(other._value - _value) < 0.00001;
+        }
+
+        public override int GetHashCode()
+        {
+            return _value.GetHashCode();
+        }
     }
 
     public class SCToken : SCValue
     {
-        Tokens _token;
+        readonly Tokens _token;
 
         internal SCToken(Tokens token)
         {
@@ -347,6 +398,17 @@ namespace SCModManager.SCFormat
         internal override void Serialize(StringBuilder writer)
         {
             writer.Append(ToString());
+        }
+
+        public override bool Equals(object obj)
+        {
+            var other = obj as SCToken;
+            return other != null && other._token == _token;
+        }
+
+        public override int GetHashCode()
+        {
+            return _token.GetHashCode();
         }
     }
 

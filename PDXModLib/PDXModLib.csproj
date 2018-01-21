@@ -1,0 +1,97 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="14.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{85C37A72-662E-46A1-A324-0369F261D50F}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>PDXModLib</RootNamespace>
+    <AssemblyName>PDXModLib</AssemblyName>
+    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <TargetFrameworkProfile />
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Ionic.Zip, Version=1.9.8.0, Culture=neutral, PublicKeyToken=6583c7c814667745, processorArchitecture=MSIL">
+      <HintPath>..\packages\DotNetZip.1.9.8\lib\net20\Ionic.Zip.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="NLog, Version=4.0.0.0, Culture=neutral, PublicKeyToken=5120e14c03d0593c, processorArchitecture=MSIL">
+      <HintPath>..\packages\NLog.4.3.4\lib\net35\NLog.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Data.DataSetExtensions" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="GameContext\GameContext.cs" />
+    <Compile Include="Interfaces\IModConflictCalculator.cs" />
+    <Compile Include="GameContext\InstalledModManager.cs" />
+    <Compile Include="GameContext\ModConflictCalculator.cs" />
+    <Compile Include="GameContext\ModSelection.cs" />
+    <Compile Include="Interfaces\IGameConfiguration.cs" />
+    <Compile Include="Interfaces\IInstalledModManager.cs" />
+    <Compile Include="ModData\Mod.cs" />
+    <Compile Include="ModData\ModConflictDescriptor.cs" />
+    <Compile Include="ModData\ModFile.cs" />
+    <Compile Include="ModData\ModFileConflictDescriptor.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="SCFormat\Parser.cs" />
+    <Compile Include="SCFormat\ParserImpl.cs" />
+    <Compile Include="SCFormat\Parser\GplexBuffers.cs" />
+    <Compile Include="SCFormat\Parser\ShiftReduceParserCode.cs" />
+    <Compile Include="SCFormat\ScanBase.cs" />
+    <Compile Include="SCFormat\Scanner.cs" />
+    <Compile Include="SCFormat\ScannerImpl.cs" />
+    <Compile Include="SCFormat\SCValue.cs" />
+    <Compile Include="Interfaces\INotificationService.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="BinTools\gplex.exe.config" />
+    <None Include="BinTools\gppg.exe.config" />
+    <None Include="packages.config" />
+    <None Include="SCFormat\Parser.par" />
+    <None Include="SCFormat\Scanner.lex" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="BinTools\gplex.exe" />
+    <Content Include="BinTools\Gppg.exe" />
+  </ItemGroup>
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup>
+    <PreBuildEvent>"$(ProjectDir)\BinTools\GpLex" /out:"$(ProjectDir)\ScFormat\Scanner.cs" "$(ProjectDir)\ScFormat\Scanner.lex"
+"$(ProjectDir)\BinTools\Gppg" /out:"$(ProjectDir)\ScFormat\Parser.cs" "$(ProjectDir)\ScFormat\Parser.par"</PreBuildEvent>
+  </PropertyGroup>
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

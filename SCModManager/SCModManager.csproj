@@ -50,18 +50,6 @@
       <HintPath>..\packages\FSharp.Core.4.0.0.1\lib\net40\FSharp.Core.dll</HintPath>
       <Private>True</Private>
     </Reference>
-    <Reference Include="GalaSoft.MvvmLight, Version=5.3.0.19026, Culture=neutral, PublicKeyToken=e7570ab207bcb616, processorArchitecture=MSIL">
-      <HintPath>..\packages\MvvmLightLibs.5.3.0.0\lib\net45\GalaSoft.MvvmLight.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="GalaSoft.MvvmLight.Extras, Version=5.3.0.19032, Culture=neutral, PublicKeyToken=669f0b5e8f868abf, processorArchitecture=MSIL">
-      <HintPath>..\packages\MvvmLightLibs.5.3.0.0\lib\net45\GalaSoft.MvvmLight.Extras.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
-    <Reference Include="GalaSoft.MvvmLight.Platform, Version=5.3.0.19032, Culture=neutral, PublicKeyToken=5f873c45e98af8a1, processorArchitecture=MSIL">
-      <HintPath>..\packages\MvvmLightLibs.5.3.0.0\lib\net45\GalaSoft.MvvmLight.Platform.dll</HintPath>
-      <Private>True</Private>
-    </Reference>
     <Reference Include="ICSharpCode.AvalonEdit, Version=5.0.3.0, Culture=neutral, PublicKeyToken=9cc39be672370310, processorArchitecture=MSIL">
       <HintPath>..\packages\AvalonEdit.5.0.3\lib\Net40\ICSharpCode.AvalonEdit.dll</HintPath>
       <Private>True</Private>
@@ -86,10 +74,34 @@
       <HintPath>..\packages\NLog.4.3.4\lib\net45\NLog.dll</HintPath>
       <Private>True</Private>
     </Reference>
+    <Reference Include="ReactiveUI, Version=7.4.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\reactiveui-core.7.4.0\lib\Net45\ReactiveUI.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Splat, Version=1.4.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\Splat.1.4.0\lib\Net45\Splat.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
-    <Reference Include="System.Windows.Interactivity, Version=4.5.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
-      <HintPath>..\packages\MvvmLightLibs.5.3.0.0\lib\net45\System.Windows.Interactivity.dll</HintPath>
+    <Reference Include="System.Reactive.Core, Version=2.2.5.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Rx-Core.2.2.5\lib\net45\System.Reactive.Core.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System.Reactive.Interfaces, Version=2.2.5.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Rx-Interfaces.2.2.5\lib\net45\System.Reactive.Interfaces.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System.Reactive.Linq, Version=2.2.5.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Rx-Linq.2.2.5\lib\net45\System.Reactive.Linq.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System.Reactive.PlatformServices, Version=2.2.5.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Rx-PlatformServices.2.2.5\lib\net45\System.Reactive.PlatformServices.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="System.Reactive.Windows.Threading, Version=2.2.5.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\Rx-XAML.2.2.5\lib\net45\System.Reactive.Windows.Threading.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="System.Xml" />
@@ -114,29 +126,22 @@
     <Compile Include="DiffMerge\Colorizer.cs" />
     <Compile Include="DiffMerge\Comparison.cs" />
     <Compile Include="DiffMerge\ReadOnlyProvider.cs" />
-    <Compile Include="SCFormat\Parser\GplexBuffers.cs" />
     <Compile Include="DiffMerge\Merge.xaml.cs">
       <DependentUpon>Merge.xaml</DependentUpon>
     </Compile>
     <Compile Include="DiffMerge\ModMergeContext.cs" />
     <Compile Include="DiffMerge\MergeProcess.cs" />
     <Compile Include="DiffMerge\MergeViewer.cs" />
-    <Compile Include="ModData\ModFile.cs" />
     <Compile Include="NameConfirm.xaml.cs">
       <DependentUpon>NameConfirm.xaml</DependentUpon>
     </Compile>
     <Compile Include="NameConfirmVM.cs" />
-    <Compile Include="SCFormat\Parser.cs" />
-    <Compile Include="SCFormat\ParserImpl.cs" />
-    <Compile Include="SCFormat\ScanBase.cs" />
-    <Compile Include="SCFormat\Scanner.cs" />
-    <Compile Include="SCFormat\ScannerImpl.cs" />
-    <Compile Include="SCFormat\SCValue.cs" />
-    <Compile Include="SCFormat\Parser\ShiftReduceParserCode.cs" />
+    <Compile Include="NotificationService.cs" />
     <Compile Include="SteamWorkshop\Tag.cs" />
     <Compile Include="SteamWorkshop\BBControl.cs" />
     <Compile Include="SteamWorkshop\SteamWebApiIntegration.cs" />
     <Compile Include="SteamWorkshop\SteamWorkshopDescriptor.cs" />
+    <Compile Include="StellarisConfiguration.cs" />
     <Compile Include="Ui\ArrayTypeConverter.cs" />
     <Compile Include="Ui\BooleanToVisibilityConverter.cs" />
     <Compile Include="Ui\BoolNegatingConverter.cs" />
@@ -146,6 +151,9 @@
     <Compile Include="Ui\TypeBasedDataTemplateSelector.cs" />
     <Compile Include="Ui\ModConflictToBoolConverter.cs" />
     <Compile Include="Ui\NullToVisibilityConverter.cs" />
+    <Compile Include="ViewModels\ModConflictPreviewVm.cs" />
+    <Compile Include="ViewModels\ModFileVm.cs" />
+    <Compile Include="ViewModels\ModVM.cs" />
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -176,7 +184,6 @@
     </Page>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="ModData\Mod.cs" />
     <Compile Include="ModContext.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
       <SubType>Code</SubType>
@@ -195,24 +202,23 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
-    <None Include="BinTools\gplex.exe.config" />
-    <None Include="BinTools\gppg.exe.config" />
-    <None Include="packages.config" />
+    <None Include="packages.config">
+      <SubType>Designer</SubType>
+    </None>
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
     </None>
     <AppDesigner Include="Properties\" />
-    <None Include="SCFormat\Scanner.lex" />
-    <None Include="SCFormat\Parser.par" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
   </ItemGroup>
-  <ItemGroup />
   <ItemGroup>
-    <Content Include="BinTools\gplex.exe" />
-    <Content Include="BinTools\Gppg.exe" />
+    <ProjectReference Include="..\PDXModLib\PDXModLib.csproj">
+      <Project>{85c37a72-662e-46a1-a324-0369f261d50f}</Project>
+      <Name>PDXModLib</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
@@ -220,8 +226,8 @@
     </PostBuildEvent>
   </PropertyGroup>
   <PropertyGroup>
-    <PreBuildEvent>"$(ProjectDir)\BinTools\GpLex" /out:"$(ProjectDir)\ScFormat\Scanner.cs" "$(ProjectDir)\ScFormat\Scanner.lex"
-"$(ProjectDir)\BinTools\Gppg" /out:"$(ProjectDir)\ScFormat\Parser.cs" "$(ProjectDir)\ScFormat\Parser.par"</PreBuildEvent>
+    <PreBuildEvent>
+    </PreBuildEvent>
   </PropertyGroup>
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

@@ -5,8 +5,9 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:fa="http://schemas.fontawesome.io/icons/"
         xmlns:local="clr-namespace:SCModManager"
-        xmlns:modData="clr-namespace:SCModManager.ModData"
         xmlns:ui="clr-namespace:SCModManager.Ui"
+        xmlns:modData="clr-namespace:PDXModLib.ModData;assembly=PDXModLib"
+        xmlns:viewModels="clr-namespace:SCModManager.ViewModels"
         mc:Ignorable="d"
         Title="SC Mod Manager"
         d:DataContext="{d:DesignInstance Type={x:Type local:ModContext}}"
@@ -29,7 +30,7 @@
         <Grid.Resources>
             <ui:ModConflictToBoolConverter x:Key="ConflictToBool" />
 
-            <DataTemplate x:Key="ModListTemplate" DataType="{x:Type local:ModConflictSelection}">
+            <DataTemplate x:Key="ModListTemplate" DataType="{x:Type viewModels:ModVM}">
                 <Border Width="{Binding ActualWidth,
                                         RelativeSource={RelativeSource FindAncestor,
                                                                        AncestorType={x:Type ScrollContentPresenter}}}"
@@ -54,7 +55,7 @@
                                        />
                             <fa:FontAwesome DockPanel.Dock="Right"
                                             Icon="Steam"
-                                            Visibility="{Binding Mod.RemoteDescriptor,
+                                            Visibility="{Binding RemoteDescriptor,
                                                                  Converter={StaticResource NullToVisibilityConverter}}"
                                             />
                             <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis" />
@@ -165,7 +166,7 @@
                         >
                     <fa:FontAwesome Foreground="{Binding Foreground, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type Button}}}" Icon="Trash" />
                 </Button>
-                <ComboBox DisplayMemberPath="Key.Text"
+                <ComboBox DisplayMemberPath="Name"
                           ItemsSource="{Binding Selections}"
                           SelectedItem="{Binding CurrentSelection}"
                           />
@@ -173,8 +174,8 @@
             <ListBox HorizontalAlignment="Stretch"
                      HorizontalContentAlignment="Stretch"
                      ItemTemplate="{StaticResource ModListTemplate}"
-                     ItemsSource="{Binding ModConflicts}"
-                     SelectedItem="{Binding SelectedModConflict}"
+                     ItemsSource="{Binding Mods}"
+                     SelectedItem="{Binding SelectedMod}"
                      >
                 <ListBox.ItemsPanel>
                     <ItemsPanelTemplate>
@@ -193,7 +194,7 @@
         <ContentControl Grid.Column="1"
                         Grid.Row="1"
                         Grid.RowSpan="2"
-                        Content="{Binding .}"
+                        Content="{Binding ConflictPreviewVm}"
                         ContentTemplate="{StaticResource WokrshopConflictView}"
                         Visibility="{Binding IsChecked,
                                              ElementName=MergeMode,
@@ -216,7 +217,7 @@
                           TextBlock.Foreground="#8F98A0"
                           VerticalScrollBarVisibility="Auto"
                           >
-                <ContentControl Content="{Binding SelectedModConflict.Mod}" ContentTemplate="{StaticResource WokrshopModView}" />
+                <ContentControl Content="{Binding SelectedMod}" ContentTemplate="{StaticResource WokrshopModView}" />
             </ScrollViewer>
         </Border>
     </Grid>

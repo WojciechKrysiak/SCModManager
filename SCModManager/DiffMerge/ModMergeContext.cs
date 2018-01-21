@@ -1,16 +1,17 @@
-﻿using GalaSoft.MvvmLight;
-using GalaSoft.MvvmLight.Command;
-using SCModManager.ModData;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reactive.Subjects;
 using System.Text.RegularExpressions;
 using System.Windows.Input;
+using PDXModLib.ModData;
+using ReactiveUI;
+using SCModManager.ViewModels;
 
 namespace SCModManager.DiffMerge
 {
-    class ModMergeContext : ObservableObject
+    class ModMergeContext : ReactiveObject
     {
         public List<Mod> BaseMods { get; }
         private ModFile _selected;
@@ -21,12 +22,14 @@ namespace SCModManager.DiffMerge
 
         private Action<ModMergeContext> saveAction;
 
+        private Subject<bool> _canSave = new Subject<bool>();
+
         // public IEnumerable<ModToProcess> ModFiles => modFiles.Where(mf => mf.HasConflict);
         Dictionary<ModFile, MergeProcess> _currentProcesses = new Dictionary<ModFile, MergeProcess>();
 
-        private IEnumerable<ModFileHolder> _modFileTree;
+        private ModDirectory _rootDirectory;
 
-        public IEnumerable<ModFileHolder> ModFileTree => _modFileTree;
+        public ModDirectory RootDirectory => _rootDirectory;
 
         public ModFile SelectedModFile
         {
@@ -38,14 +41,14 @@ namespace SCModManager.DiffMerge
                     CurrentProcess.FileResolved -= CurrentProcess_FileResolved;
                 }
 
-                Set(ref _selected, value);
+                this.RaiseAndSetIfChanged(ref _selected, value);
 
                 if (CurrentProcess != null)
                 {
                     CurrentProcess.FileResolved += CurrentProcess_FileResolved;
                 }
 
-                RaisePropertyChanged(nameof(CurrentProcess));
+                this.RaisePropertyChanged(nameof(CurrentProcess));
             }
         }
 
@@ -60,7 +63,7 @@ namespace SCModManager.DiffMerge
 
             UpdateModList();
 
-            Save.RaiseCanExecuteChanged();
+            _canSave.OnNext(!modFiles.Any(ReferenceHasConflicts));
         }
 
         public MergeProcess CurrentProcess
@@ -84,32 +87,28 @@ namespace SCModManager.DiffMerge
         public bool OnlyConflicts
         {
             get { return onlyConflicts; }
-            set { Set(ref onlyConflicts, value); }
+            set { this.RaiseAndSetIfChanged(ref onlyConflicts, value); }
         }
 
-        private MergedMod result;
+        public MergedMod Result { get; }
 
-        public MergedMod Result => result;
+        public ICommand Save { get; }
 
-        public RelayCommand Save { get; }
-
-        public ModMergeContext(IEnumerable<Mod> source, Action<ModMergeContext> save)
+        public ModMergeContext(IEnumerable<ModConflictDescriptor> source, Action<ModMergeContext> save)
         {
-            BaseMods = source.ToList();
+            Result = new MergedMod("Merge result", source);
 
-            result = new MergedMod("Merge result", BaseMods);
+            modFiles.AddRange(Result.Files);
 
-            modFiles.AddRange(result.Files);
-
-            LeftBefore = new RelayCommand<ModFile>(DoBefore);
-            LeftAfter = new RelayCommand<ModFile>(DoAfter);
-            RightBefore = new RelayCommand<ModFile>(DoBefore);
-            RightAfter = new RelayCommand<ModFile>(DoAfter);
+            LeftBefore = ReactiveCommand.Create<ModFile>(DoBefore);
+            LeftAfter = ReactiveCommand.Create<ModFile>(DoAfter);
+            RightBefore = ReactiveCommand.Create<ModFile>(DoBefore);
+            RightAfter = ReactiveCommand.Create<ModFile>(DoAfter);
 
             saveAction = save;
-            Save = new RelayCommand(SaveAction, () => !modFiles.Any(ReferenceHasConflicts));
+            Save = ReactiveCommand.Create(DoSave, _canSave);
 
-            _modFileTree = new ModDirectory(string.Empty, 0, modFiles, ReferenceHasConflicts).Files;
+            _rootDirectory = ModDirectory.CreateRoot(Result.ToModConflictDescriptor());
         }
 
         private static bool ReferenceHasConflicts(ModFile mf)
@@ -117,15 +116,15 @@ namespace SCModManager.DiffMerge
             return (mf as MergedModFile)?.SourceFileCount > 1;
         }
 
-        private void SaveAction()
+        private void DoSave()
         {
             var confirm = new NameConfirm();
-            var confirmVM = new NameConfirmVM(result.Name);
+            var confirmVM = new NameConfirmVM(Result.Name);
             confirmVM.ShouldClose += (o, b) =>
             {
                 if (b)
                 {
-                    result.Name = confirmVM.Name;
+                    Result.Name = confirmVM.Name;
                     saveAction(this);
                 }
                 confirm.Close();
@@ -247,23 +246,22 @@ namespace SCModManager.DiffMerge
 
         private void UpdateModList()
         {
-            _modFileTree = new ModDirectory(string.Empty, 0, modFiles, ReferenceHasConflicts).Files;
+            _rootDirectory = ModDirectory.CreateRoot(Result.ToModConflictDescriptor());
 
-            RaisePropertyChanged(nameof(ModFileTree));
-
+            this.RaisePropertyChanged(nameof(RootDirectory));
         }
 
         private class ModNameParse
         {
-            private static Regex PDXPattern = new Regex(@"(?<directory>(.+/)+)?(?<prefix>[\d|\w][\d|\w](?=_))?(?<filename>.+)(?<extension>\..+)");
+            private static readonly Regex PDXPattern = new Regex(@"(?<directory>(.+/)+)?(?<prefix>[\d|\w][\d|\w](?=_))?(?<filename>.+)(?<extension>\..+)");
 
-            private static List<char> characters = new List<char> {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-                                                                   'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',
-                                                                   'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't',
-                                                                   'u', 'v', 'w', 'x', 'y', 'z'};
+            private static readonly List<char> characters = new List<char> {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+                                                                            'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',
+                                                                            'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't',
+                                                                            'u', 'v', 'w', 'x', 'y', 'z'};
 
 
-            public static int MaxNum = characters.Count * characters.Count - 1;
+            public static readonly int MaxNum = characters.Count * characters.Count - 1;
 
             public ModFile File {get;}
 

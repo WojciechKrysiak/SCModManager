@@ -1,11 +1,11 @@
-﻿using GalaSoft.MvvmLight;
-using ICSharpCode.AvalonEdit.Document;
-using SCModManager.ModData;
+﻿using ICSharpCode.AvalonEdit.Document;
 using System.Windows;
+using PDXModLib.ModData;
+using ReactiveUI;
 
 namespace SCModManager.DiffMerge
 {
-    class ComparisonContext : ObservableObject
+    public class ComparisonContext : ReactiveObject
     {
         private TextDocument _leftDocument;
         private Comparison _comparison;
@@ -15,7 +15,7 @@ namespace SCModManager.DiffMerge
         public TextDocument LeftDocument
         {
             get { return _leftDocument; }
-            set { Set(ref _leftDocument, value); }
+            set { this.RaiseAndSetIfChanged(ref _leftDocument, value); }
         }
 
         public Comparison Comparison
@@ -23,14 +23,14 @@ namespace SCModManager.DiffMerge
             get { return _comparison; }
             private set
             {
-                Set(ref _comparison, value);
+                this.RaiseAndSetIfChanged(ref _comparison, value);
             }
         }
 
         public TextDocument RightDocument
         {
             get { return _rightDocument; }
-            set { Set(ref _rightDocument, value); }
+            set { this.RaiseAndSetIfChanged(ref _rightDocument, value); }
         }
 
 
@@ -39,7 +39,7 @@ namespace SCModManager.DiffMerge
             get { return _scrollOffset; }
             set
             {
-                Set(ref _scrollOffset, value);
+                this.RaiseAndSetIfChanged(ref _scrollOffset, value);
             }
         }
 

@@ -6,8 +6,9 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:diff="clr-namespace:SCModManager.DiffMerge"
         xmlns:fa="http://schemas.fontawesome.io/icons/"
-        xmlns:modData="clr-namespace:SCModManager.ModData"
         xmlns:ui="clr-namespace:SCModManager.Ui"
+        xmlns:modData="clr-namespace:PDXModLib.ModData;assembly=PDXModLib"
+        xmlns:viewModels="clr-namespace:SCModManager.ViewModels"
         mc:Ignorable="d"
         Title="Merge"
         Height="800"
@@ -58,14 +59,14 @@
                          Grid.Row="2"
                          VerticalAlignment="Stretch"
                          ItemContainerStyle="{StaticResource TreeViewItemStyle}"
-                         ItemsSource="{Binding ModFileTree}"
+                         ItemsSource="{Binding RootDirectory.Files}"
                          Selected="{Binding SelectedModFile,
                                             Mode=OneWayToSource,
                                             Converter={StaticResource ExactTypeConverter}}"
                          SelectedValuePath="File"
                          >
             <TreeView.Resources>
-                <HierarchicalDataTemplate DataType="{x:Type modData:ModDirectory}" ItemsSource="{Binding Files}">
+                <HierarchicalDataTemplate DataType="{x:Type viewModels:ModDirectory}" ItemsSource="{Binding Files}">
                     <StackPanel Orientation="Vertical">
                         <StackPanel Orientation="Horizontal">
                             <fa:FontAwesome x:Name="FolderIcon"
@@ -91,7 +92,7 @@
                         </DataTrigger>
                     </HierarchicalDataTemplate.Triggers>
                 </HierarchicalDataTemplate>
-                <DataTemplate DataType="{x:Type modData:ModFileEntry}">
+                <DataTemplate DataType="{x:Type viewModels:ModFileEntry}">
                     <DockPanel x:Name="Container"
                                HorizontalAlignment="Stretch"
                                LastChildFill="True"

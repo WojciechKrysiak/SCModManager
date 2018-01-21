@@ -213,3 +213,5 @@ ModelManifest.xml
 /SCModManager/SCFormat/Parser.cs
 /SCModManager/SCFormat/Scanner.cs
 /SCModManager/SCFormat/Scanner.cs
+/PDXModLib/SCFormat/Scanner.cs
+/PDXModLib/SCFormat/Parser.cs

@@ -1,13 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.Generic;
 
-namespace SCModManager.SCFormat
+namespace PDXModLib.SCFormat
 {
-    internal partial class Parser
+    public partial class Parser
     {
         List<SCKeyValObject> _currentValues = new List<SCKeyValObject>();
         Stack<SCObject> _currentObjectStack = new Stack<SCObject>();

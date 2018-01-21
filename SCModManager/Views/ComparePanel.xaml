@@ -2,9 +2,9 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:diff="clr-namespace:SCModManager.DiffMerge"
                     xmlns:fa="http://schemas.fontawesome.io/icons/"
-                    xmlns:md="clr-namespace:SCModManager.ModData"
                     xmlns:ui="clr-namespace:SCModManager.Ui"
-                    >
+                    xmlns:md="clr-namespace:PDXModLib.ModData;assembly=PDXModLib"
+                    xmlns:viewModels="clr-namespace:SCModManager.ViewModels">
     <ui:NullToVisibilityConverter x:Key="NullToVisibilityConverter" />
     <ui:ExactTypeConverter x:Key="ExactTypeConverter" />
     
@@ -13,7 +13,7 @@
               HorizontalAlignment="Stretch"
               Margin="5"
               >
-            <TextBlock Text="{Binding Name}" />
+            <TextBlock Text="{Binding SourceMod.Name}" />
         </Grid>
     </DataTemplate>
     
@@ -23,7 +23,7 @@
         <Setter Property="BorderThickness" Value="0 0 0 1" />
     </Style>
 
-    <DataTemplate x:Key="WokrshopConflictView" DataType="{x:Type md:Mod}">
+    <DataTemplate x:Key="WokrshopConflictView" DataType="{x:Type viewModels:ModConflictPreviewVm}">
         <Grid>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*" />
@@ -44,16 +44,14 @@
                     >
                 <ui:MVVMTreeView VerticalAlignment="Stretch"
                                  BorderThickness="0"
-                                 ItemsSource="{Binding SelectedModFileTree}"
-                                 Selected="{Binding SelectedModFile,
+                                 ItemsSource="{Binding RootDirectory.Files}"
+                                 Selected="{Binding SelectedFile,
                                                     Mode=OneWayToSource,
                                                     Converter={StaticResource ExactTypeConverter}}"
-                                 SelectedValuePath="File"
-                                 Visibility="{Binding SelectedModConflict,
-                                                      Converter={StaticResource NullToVisibilityConverter}}"
+                                 x:Name="ModFileTree"
                                  >
                     <TreeView.Resources>
-                        <HierarchicalDataTemplate DataType="{x:Type md:ModDirectory}" ItemsSource="{Binding Files}">
+                        <HierarchicalDataTemplate DataType="{x:Type viewModels:ModDirectory}" ItemsSource="{Binding Files}">
                             <StackPanel Orientation="Vertical">
                                 <StackPanel Orientation="Horizontal">
                                     <fa:FontAwesome x:Name="FolderIcon"
@@ -74,12 +72,9 @@
                                     <Setter TargetName="FolderIcon" Property="Opacity" Value="1" />
                                     <Setter TargetName="FolderName" Property="Opacity" Value="1" />
                                 </DataTrigger>
-                                <DataTrigger Binding="{Binding AllConflicts}" Value="True">
-                                    <Setter TargetName="FolderName" Property="Background" Value="PaleVioletRed" />
-                                </DataTrigger>
                             </HierarchicalDataTemplate.Triggers>
                         </HierarchicalDataTemplate>
-                        <DataTemplate DataType="{x:Type md:ModFileEntry}">
+                        <DataTemplate DataType="{x:Type viewModels:ModFileEntry}">
                             <StackPanel Orientation="Horizontal">
                                 <fa:FontAwesome x:Name="FileIcon"
                                                 VerticalAlignment="Center"
@@ -116,9 +111,9 @@
                          BorderThickness="0"
                          ItemContainerStyle="{StaticResource ListBoxItemStyle}"
                          ItemTemplate="{StaticResource ConflictModItemTemplate}"
-                         ItemsSource="{Binding SelectedConflictMods}"
-                         SelectedItem="{Binding SelectedConflict}"
-                         Visibility="{Binding SelectedModFile,
+                         ItemsSource="{Binding SelectedFile.ConflictDescriptor.ConflictingModFiles}"
+                         SelectedItem="{Binding SelectedModFile}"
+                         Visibility="{Binding Selected, ElementName=ModFileTree,
                                               Converter={StaticResource NullToVisibilityConverter}}"
                          />
             </Border>

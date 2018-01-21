@@ -1,5 +1,4 @@
-﻿using SCModManager.SCFormat;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.IO;
@@ -8,181 +7,76 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
-using GalaSoft.MvvmLight;
-using GalaSoft.MvvmLight.CommandWpf;
 using NLog;
 using Ionic.Zip;
 using SCModManager.DiffMerge;
-using SCModManager.ModData;
 using SCModManager.SteamWorkshop;
 using System.Threading;
 using System.Linq.Expressions;
+using System.Reactive.Subjects;
+using PDXModLib.GameContext;
+using PDXModLib.Interfaces;
+using PDXModLib.ModData;
+using PDXModLib.SCFormat;
+using ReactiveUI;
+using SCModManager.ViewModels;
 
 namespace SCModManager
 {
-
-    internal class ModConflictSelection : ObservableObject 
-    {
-        private Mod _mod;
-        private bool _selected;
-        private IEnumerable<Mod> _conflictingMods;
-
-        public Mod Mod => _mod;
-
-        public string Name => _mod.Name;
-
-        public int ConflictCount => _conflictingMods.Count();
-
-        public IEnumerable<Mod> ConflictingMods => _conflictingMods;
-
-        public bool HasConflict => ConflictCount > 0;
-
-        public bool ParseError => _mod.ParseError;
-
-        public IEnumerable<ModFile> Files => _mod.Files;
-
-        public bool Selected
-        {
-            get { return _selected; }
-            set { Set(ref _selected, value); }
-        }
-
-        public ModConflictSelection(Mod mod, IEnumerable<Mod> conflictingMods, bool selected)
-        {
-            _mod = mod;
-            _selected = selected;
-            _conflictingMods = conflictingMods;
-        }
-    }
-
-    class ModContext : ObservableObject
+    class ModContext : ReactiveObject
     {
         private static readonly Logger Log = LogManager.GetCurrentClassLogger();
 
-        private readonly string product = "Stellaris";
+        private GameContext _gameContext;
 
-        private string BasePath => $"{Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)}\\Paradox Interactive\\{product}";
+        private readonly string product;
 
-        private string ModsDir => $"{BasePath}\\mod";
-        private string SettingsPath => $"{BasePath}\\settings.txt";
-        private string BackupPath => $"{BasePath}\\settings.bak";
-        private string SavedSelections => $"{BasePath}\\saved_selections.txt";
+        private List<ModVM> _mods = new List<ModVM>();
 
-        private SCObject _settingsRoot;
-
-        private SCObject _savedSelectionsDocument;
-
-        private List<Mod> _mods = new List<Mod>();
-
-        ModFile _selectedModFile;
+        private List<ModConflictDescriptor> _modConflicts = new List<ModConflictDescriptor>();
 
         public ICommand SaveSettingsCommand { get; }
         public ICommand Duplicate { get; }
-        public RelayCommand Delete { get; }
-        public RelayCommand MergeModsCommand { get; }
+        public ICommand Delete { get; }
+        public ICommand MergeModsCommand { get; }
 
-        public IEnumerable<Mod> Mods => _mods;
+        public IEnumerable<ModVM> Mods => _mods;
+        public IEnumerable<ModSelection> Selections => _gameContext.Selections;
 
-        List<ModConflictSelection> _conflicts;
+        private Window mergeWindow;
+        private string _errorReason;
+        private bool _conflictsMode;
+        private IModConflictCalculator _modConflictCalculator;
+        private ModVM _selectedMod;
 
-        public IEnumerable<ModConflictSelection> ModConflicts => _conflicts; 
-
-        private IEnumerable<Mod> CalculateConflicts(Mod mod, List<Mod> _mods)
+        public ModSelection CurrentSelection
         {
-            return _mods.Except(new[] { mod }).Where(m => m.Files.Any(mf => mod.Files.Any(mff => mff.Path == mf.Path))).ToList();
-        } 
-
-        public SCObject Selections => (_savedSelectionsDocument["Selections"] as SCObject);
-
-        public SCKeyValObject CurrentSelection
-        {
-            get {
-                var selectionKey = _savedSelectionsDocument["CurrentSelection"] as SCString;
-
-                if (selectionKey == null)
-                    return null;
-
-                var obj = (_savedSelectionsDocument["Selections"] as SCObject);
-                return obj?.FirstOrDefault(sckv => (sckv.Key as SCString)?.Text == selectionKey.Text) as SCKeyValObject;
+            get { return _gameContext.CurrentSelection; }
+            set
+            {
+                if (_gameContext.CurrentSelection != value)
+                {
+                    _gameContext.CurrentSelection = value;
+                    UpdateSelections();
+                }
             }
-            set {
+        }
 
-                _savedSelectionsDocument["CurrentSelection"] = new SCString(value.Key.ToString());
-
-                var obj = value.Value as SCObject;
+        public ModVM SelectedMod
+        {
+            get { return _selectedMod; }
+            set
+            {
+                this.RaiseAndSetIfChanged(ref _selectedMod, value);
                 
-                if (obj != null && _conflicts != null)
-                {
-                    foreach (var conflict in _conflicts)
-                    {
-                        conflict.Selected = obj?.Any(kvp => (kvp.Value as SCString)?.Text == conflict.Mod.Key) ?? false;
-                    }
-                }
-                RaisePropertyChanged();
+                ConflictPreviewVm = value == null ? null : new ModConflictPreviewVm(value.ModConflict);
             }
         }
 
-        public ModConflictSelection SelectedModConflict
+        public ModConflictPreviewVm ConflictPreviewVm
         {
-            get { return _selectedModConflict; }
-            set
-            {
-                Set(ref _selectedModConflict, value);
-                RaisePropertyChanged(nameof(SelectedModFileTree));
-            }
-        }
-
-        public IEnumerable<ModFileHolder> SelectedModFileTree
-        {
-            get
-            {
-                if (_selectedModConflict != null)
-                {
-                    var mfr = new ModDirectory(string.Empty, 0, _selectedModConflict.Files, ModFileHasConflicts);
-                    return mfr.Files;
-                }
-                return null;
-            }
-        }
-
-        private bool ModFileHasConflicts(ModFile modFile)
-        {
-            return _mods.Except(new[] { modFile.SourceMod }).SelectMany(m => m.Files).Any(mf => mf.Path == modFile.Path);
-        }
-
-        public ModFile SelectedModFile
-        {
-            get { return _selectedModFile; }
-            set
-            {
-                Set(ref _selectedModFile, value);
-                SelectedConflict = null;
-                RaisePropertyChanged(nameof(SelectedConflictMods));
-            }
-        }
-
-        public IEnumerable<Mod> SelectedConflictMods => SelectedModConflict?.ConflictingMods.Where(m => m.Files.Any(mf => mf.Path == SelectedModFile?.Path));
-
-        public Mod SelectedConflict
-        {
-            get { return _selectedConflict; }
-            set
-            {
-                Set(ref _selectedConflict, value);
-                if (_selectedConflict != null)
-                    ComparisonContext = new ComparisonContext(SelectedModFile, _selectedConflict.Files.FirstOrDefault(mf => mf.Path == SelectedModFile.Path));
-                else
-                    ComparisonContext = null;
-            }
-        }
-
-        public ComparisonContext ComparisonContext
-        {
-            get { return _comparisonContext; }
-            set
-            {
-                Set(ref _comparisonContext, value);
-            }
+            get { return _conflictPreviewVm; }
+            set { this.RaiseAndSetIfChanged(ref _conflictPreviewVm, value); }
         }
 
         public string ErrorReason
@@ -191,7 +85,7 @@ namespace SCModManager
             set
             {
                 ConflictMode = true;
-                Set(ref _errorReason, value);
+                this.RaiseAndSetIfChanged(ref _errorReason, value);
             }
         }
 
@@ -200,200 +94,79 @@ namespace SCModManager
             get { return _conflictsMode; }
             set
             {
-                Set(ref _conflictsMode, value);
+                this.RaiseAndSetIfChanged(ref _conflictsMode, value);
             }
         }
+
+        private readonly Subject<bool> _canMerge = new Subject<bool>();
+        private readonly Subject<bool> _canDelete = new Subject<bool>();
+        private ModConflictPreviewVm _conflictPreviewVm;
+
 
         public ModContext(string product)
         {
             this.product = product;
-            SaveSettingsCommand = new RelayCommand(SaveSettings);
-            MergeModsCommand = new RelayCommand(MergeMods, DoModsNeedToBeMerged);
-            Duplicate = new RelayCommand(DoDuplicate);
-            Delete = new RelayCommand(DoDelete, () => Selections?.Count() > 1);
+            SaveSettingsCommand = ReactiveCommand.Create(() => _gameContext.SaveSettings());
+            MergeModsCommand = ReactiveCommand.Create(MergeMods, _canMerge);
+            Duplicate = ReactiveCommand.Create(DoDuplicate);
+            Delete = ReactiveCommand.Create(DoDelete, _canDelete);
         }
-
-
-        SCObject LoadStellarisSettings(string path)
-        {
-            using (var stream = new FileStream(path, FileMode.Open, FileAccess.Read))
-            {
-                var settingsParser = new Parser(new Scanner(stream));
-
-                settingsParser.Parse();
-                if (!settingsParser.Root.Any() || settingsParser.ParseError)
-                    return null;
-                return settingsParser.Root;
-            }
-        }
-
 
         public bool Initialize()
         {
-            try
+            var gameConfiguration = new StellarisConfiguration();
+            var notificationService = new NotificationService();
+            var installedModManager = new InstalledModManager(gameConfiguration, notificationService);
+            _gameContext = new GameContext(gameConfiguration, notificationService, installedModManager);
 
+            _modConflictCalculator = new ModConflictCalculator(gameConfiguration, installedModManager);
+
+            if (!_gameContext.Initialize())
             {
-                _settingsRoot = LoadStellarisSettings(SettingsPath);
-
-                if (_settingsRoot == null)
-                {
-                    if (File.Exists(BackupPath))
-                    {
-                        if (MessageBox.Show("Settings.txt corrupted, backup available, reload from backup?", "Error",
-                                MessageBoxButton.OKCancel) ==
-                            MessageBoxResult.OK)
-                        {
-                            _settingsRoot = LoadStellarisSettings(BackupPath);
-                        }
-                    }
-                    // haven't managed to load from backup
-                    if (_settingsRoot == null)
-                    {
-                        MessageBox.Show(
-                            "Settings.txt corrupted - no backup available, please run stellaris to recreate default settings.",
-                            "Error", MessageBoxButton.OK);
-                        return false;
-                    }
-                    else
-                    {
-                        SaveSettings();
-                        // this is a backup of an incorrect file, we should delete it. 
-                        File.Delete(BackupPath);
-                    }
-                }
-
-                LoadMods();
-
-                if (File.Exists(SavedSelections))
-                {
-                    using (var stream = new FileStream(SavedSelections, FileMode.Open, FileAccess.Read))
-                    {
-                        var selectionParser = new Parser(new Scanner(stream));
-
-                        selectionParser.Parse();
-
-                        if (!selectionParser.ParseError && selectionParser.Root.Any())
-                        {
-
-                            _savedSelectionsDocument = selectionParser.Root;
-                            var selectionIdx = _savedSelectionsDocument["SavedToStellaris"] as SCString;
-                            if (selectionIdx != null)
-                            {
-                                var stellaris_selection = _settingsRoot["last_mods"] ?? new SCObject();
-                                var selection = new SCKeyValObject(selectionIdx, stellaris_selection);
-                                Selections[selectionIdx] = stellaris_selection;
-                                CurrentSelection = selection;
-                            }
-                        }
-                    }
-                }
-
-                if (_savedSelectionsDocument == null)
-                {
-                    _savedSelectionsDocument = new SCObject();
-                    var selection = new SCKeyValObject(new SCString("Stellaris selection"), _settingsRoot["last_mods"] ?? new SCObject());
-                    _savedSelectionsDocument["Selections"] = new SCObject() { selection };
-                    CurrentSelection = selection;
-                }
-
-                SortAndUpdate();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(ex.Message, "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                 return false;
             }
+
+            SortAndCreateViewModels();
+
+            SteamWebApiIntegration.LoadModDescriptors(_mods, (s) => { });
 
             return true;
         }
 
-        private void ConnectionError(string obj)
-        {
-            ErrorReason = obj;
-        }
-
         private bool DoModsNeedToBeMerged()
         {
-            var selectedMods = _conflicts.Where(c => c.Selected).Select(c => c.Mod).ToList();
-
-            if (selectedMods.Count < 2)
-            {
-                return false;
-            }
-
-            return selectedMods.Any(sm => CalculateConflicts(sm, selectedMods).Any());
+            return Mods?.Where(mvm => mvm.Selected).Any(mvm => mvm.ModConflict.ConflictingMods.Any(IsSelected))?? false;
         }
 
-        private void SortAndUpdate()
+        private void SortAndCreateViewModels()
         {
-            _mods = Mods.OrderBy(m => m.Name).ToList();
-            _conflicts?.ForEach(mod => mod.PropertyChanged -= ModOnPropertyChanged);
-            _conflicts = _mods.Select(m => new ModConflictSelection(m, CalculateConflicts(m, _mods), IsSelected(m))).ToList();
-            _conflicts.ForEach(mod => mod.PropertyChanged += ModOnPropertyChanged);
-            RaisePropertyChanged(nameof(ModConflicts));
+            _modConflicts = _modConflictCalculator.CalculateAllConflicts().ToList();
+
+            _mods?.ForEach(mvm => mvm.PropertyChanged -= ModOnPropertyChanged);
+            _mods = _modConflicts.Select(mc => new ModVM(mc, IsSelected(mc.Mod))).OrderBy(m => m.Name).ToList();
+            _mods.ForEach(mvm => mvm.PropertyChanged += ModOnPropertyChanged);
+
+            this.RaisePropertyChanged(nameof(Mods));
+
+            _canMerge.OnNext(DoModsNeedToBeMerged());
         }
 
         private void DoDelete()
         {
             var selection = CurrentSelection;
 
-            if (MessageBox.Show($"Are you sure you want to delete {selection.Key}?", "Confirm deletion", MessageBoxButton.OKCancel, MessageBoxImage.Question) == MessageBoxResult.OK)
+            if (MessageBox.Show($"Are you sure you want to delete {selection.Name}?", "Confirm deletion", MessageBoxButton.OKCancel, MessageBoxImage.Question) == MessageBoxResult.OK)
             {
-                Selections.Remove(selection);
-                CurrentSelection = Selections.FirstOrDefault();
-                Delete.RaiseCanExecuteChanged();
-                SaveSelection();
-                RaisePropertyChanged(nameof(Selections));
-            }
-        }
-
-        public void LoadMods()
-        {
-            if (Directory.Exists(ModsDir))
-            {
-                var modsToLoad = new List<Mod>();
-
-                foreach (var file in Directory.EnumerateFiles(ModsDir, "*.mod"))
-                {
-                    var fileName = Path.GetFileName(file);
-
-                    if (_mods.Any(m => m.Id == fileName))
-                    {
-                        continue;
-                    }
-
-                    Mod mod = null;
-                    try
-                    {
-                        mod = Mod.Load(file);
-                        mod.LoadFiles(BasePath);
-                    }
-                    catch (Exception exception)
-                    {
-                        Log.Error(exception);
-                    }
-
-                    if (mod != null)
-                    {
-                        _mods.Add(mod);
-                        modsToLoad.Add(mod);
-                    }
-                }
-
-                SteamWebApiIntegration.LoadModDescriptors(modsToLoad, ConnectionError);
-            }
-            else
-            {
-                MessageBox.Show("No mods installed - nothing to do!");
-                Application.Current.Shutdown();
+                _gameContext.DeleteCurrentSelection();
+                CurrentSelection = _gameContext.CurrentSelection;
+                _canDelete.OnNext(_gameContext.Selections.Count > 1);
+                this.RaisePropertyChanged(nameof(Selections));
             }
         }
 
         private void DoDuplicate()
         {
-            var selection = CurrentSelection;
-
-            int cnt = Selections.Count();
+            int cnt = _gameContext.Selections.Count();
 
             var name = $"Selection {cnt + 1}";
 
@@ -411,25 +184,16 @@ namespace SCModManager
             confirm.DataContext = confirmVM;
             confirm.ShowDialog();
 
-            var newSelection = new SCKeyValObject(new SCString(name), SCObject.Create(selection.Value as SCObject));
-            Selections.Add(newSelection);
+            _gameContext.DuplicateCurrentSelection(name);
 
-            CurrentSelection = newSelection;
-            SaveSelection();
+            CurrentSelection = _gameContext.CurrentSelection;
         }
-
-        private Window mergeWindow;
-        private ModConflictSelection _selectedModConflict;
-        private ComparisonContext _comparisonContext;
-        private Mod _selectedConflict;
-        private string _errorReason;
-        private bool _conflictsMode;
 
         private void MergeMods()
         {
             mergeWindow = new Merge();
             mergeWindow.Closed += MergeWindow_Closed;
-            mergeWindow.DataContext = new ModMergeContext(_conflicts.Where(m => m.Selected).Select(m=>m.Mod), SaveMergedMod);
+            mergeWindow.DataContext = new ModMergeContext(Mods.Where(m => m.Selected).Select(m => m.ModConflict), SaveMergedMod);
             mergeWindow.ShowDialog();
         }
 
@@ -441,103 +205,50 @@ namespace SCModManager
 
         private void SaveMergedMod(ModMergeContext mod)
         {
-            var path = Path.Combine(ModsDir, mod.Result.FileName);
 
-            var descPath = Path.Combine(ModsDir, $"{mod.Result.FileName}.mod");
-
-            if (Directory.Exists(path))
+            if (!_gameContext.SaveMergedMod(mod.Result))
             {
-                if (MessageBox.Show("Overwrite existing mod?", "Overwrite mod", MessageBoxButton.OKCancel) == MessageBoxResult.Cancel)
-                    return;
-                foreach(var file in Directory.EnumerateFiles(path, "*.*", SearchOption.AllDirectories))
-                    File.Delete(file);
-
-                Directory.Delete(path, true);
-                File.Delete(descPath);
+                MessageBox.Show("Error saving merged mod file. Please check the log file", "Error",
+                    MessageBoxButton.OK);
+                return;
             }
 
-            var contents = string.Join(Environment.NewLine, mod.Result.ToDescriptor());
-
-            File.WriteAllText(descPath, contents);
-
-            foreach(var modFile in mod.Result.Files)
-            {
-                var dir = Path.Combine(path, modFile.Directory);
-                if (!Directory.Exists(dir))
-                {
-                    Directory.CreateDirectory(dir);
-                }
-                var fn = Path.Combine(path, modFile.Path);
-
-                modFile.Save(fn);
-            }
-
-            LoadMods();
             mergeWindow.Close();
-            SortAndUpdate();
+            _gameContext.LoadMods();
+            SortAndCreateViewModels();
         }
 
         private bool IsSelected(Mod mod)
         {
-            return (CurrentSelection?.Value as SCObject)?.Any(kvp => (kvp.Value as SCString)?.Text == mod.Key) ?? false;
+            return CurrentSelection.Contents.Contains(mod);
         }
 
         private void ModOnPropertyChanged(object sender, PropertyChangedEventArgs propertyChangedEventArgs)
         {
-            if (propertyChangedEventArgs.PropertyName == nameof(ModConflictSelection.Selected))
+            if (propertyChangedEventArgs.PropertyName == nameof(ModVM.Selected))
             {
-                var modConflict = sender as ModConflictSelection;
+                var modConflict = sender as ModVM;
                 var mod = modConflict.Mod;
                 if (modConflict.Selected)
                 {
-                    if (!(CurrentSelection.Value as SCObject).Any(kvp => (kvp.Value as SCString)?.Text == mod.Key))
-                        (CurrentSelection.Value as SCObject).Add(SCKeyValObject.Create(mod.Key));
+                    if (!CurrentSelection.Contents.Contains(mod))
+                        CurrentSelection.Contents.Add(mod);
                 }
                 else
                 {
-                    var selected = (CurrentSelection.Value as SCObject).FirstOrDefault(kvp => (kvp.Value as SCString)?.Text == mod.Key);
-                    (CurrentSelection.Value as SCObject).Remove(selected);
+                    CurrentSelection.Contents.Remove(mod);
                 }
-                SaveSelection();
-                MergeModsCommand?.RaiseCanExecuteChanged();
+                _gameContext.SaveSelection();
+                _canMerge.OnNext(DoModsNeedToBeMerged()); 
             }
         }
 
-        private void SaveSettings()
+        private void UpdateSelections()
         {
-            try
+            foreach (var modVm in _mods)
             {
-                _savedSelectionsDocument["SavedToStellaris"] = new SCString(CurrentSelection.Key.ToString());
-                SaveSelection();
-
-                _settingsRoot["last_mods"] = CurrentSelection.Value;
-
-                if (File.Exists(BackupPath))
-                {
-                    File.Delete(BackupPath);
-                }
-                File.Move(SettingsPath, BackupPath);
-
-                using (var stream = new FileStream(SettingsPath, FileMode.Create, FileAccess.Write))
-                {
-                    _settingsRoot.WriteToStream(stream);
-                }
+                modVm.Selected = _gameContext.CurrentSelection.Contents.Contains(modVm.Mod);
             }
-            catch 
-            { }
-        }
-
-        private void SaveSelection()
-        {
-            try
-            {
-                using (var stream = new FileStream(SavedSelections, FileMode.Create, FileAccess.Write))
-                {
-                    _savedSelectionsDocument.WriteToStream(stream);
-                }
-            }
-            catch
-            { }
         }
     }
 }

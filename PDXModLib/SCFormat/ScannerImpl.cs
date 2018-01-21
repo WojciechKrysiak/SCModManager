@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SCModManager.SCFormat
+namespace PDXModLib.SCFormat
 {
-    internal partial class Scanner
+    public partial class Scanner
     {
         SCValue MakeIdentifier(string yytext)
         {

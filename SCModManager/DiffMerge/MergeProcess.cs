@@ -1,39 +1,41 @@
-﻿using GalaSoft.MvvmLight;
-using GalaSoft.MvvmLight.Command;
-using ICSharpCode.AvalonEdit.Document;
-using SCModManager.ModData;
+﻿using ICSharpCode.AvalonEdit.Document;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reactive.Subjects;
 using System.Windows;
 using System.Windows.Input;
+using PDXModLib.ModData;
+using ReactiveUI;
 
 namespace SCModManager.DiffMerge
 {
-    public class MergeProcess : ObservableObject
+    public class MergeProcess : ReactiveObject
     {
         public static DiffMatchPatch.DiffMatchPatch DiffModule = new DiffMatchPatch.DiffMatchPatch(1f, (short)128, 0, 0.3f, 1000, 512, 0.2f, (short)64);
 
-        MergedModFile file;
+        readonly MergedModFile file;
         private ModFile _left;
         private ModFile _right;
 
         private ModFile _result;
         private Comparison _comparison;
 
+        private readonly Subject<bool> _canSaveMerge = new Subject<bool>();
+
         public Vector ScrollOffset
         {
             get { return _scrollOffset; }
             set
             {
-                Set(ref _scrollOffset, value);
+                this.RaiseAndSetIfChanged(ref _scrollOffset, value);
             }
         }
 
         public IEnumerable<ModFile> LeftSelection
         {
             get {
-                return file.SourceFiles.Concat(new[] { _result }).Except(new[] { _right, null }).ToList();
+                return file.SourceFiles.Concat(new[] { _result }).Where(f => f != null && f != _right).ToList();
             }
         }
 
@@ -41,8 +43,8 @@ namespace SCModManager.DiffMerge
             get { return _left; }
             set
             {
-                Set(ref _left, value);
-                RaisePropertyChanged(nameof(RightSelection));
+                this.RaiseAndSetIfChanged(ref _left, value);
+                this.RaisePropertyChanged(nameof(RightSelection));
                 UpdateCompareContent();
             }
         }
@@ -50,7 +52,7 @@ namespace SCModManager.DiffMerge
         public TextDocument LeftDocument
         {
             get { return _leftDocument; }
-            set { Set(ref _leftDocument, value); }
+            set { this.RaiseAndSetIfChanged(ref _leftDocument, value); }
         }
 
         public Comparison Comparison
@@ -58,14 +60,14 @@ namespace SCModManager.DiffMerge
             get { return _comparison; }
             private set
             {
-                Set(ref _comparison, value);
+                this.RaiseAndSetIfChanged(ref _comparison, value);
             }
         }
         public IEnumerable<ModFile> RightSelection
         {
             get
             {
-                return file.SourceFiles.Concat(new[] { _result }).Except(new[] { _left, null }).ToList();
+                return file.SourceFiles.Concat(new[] { _result }).Where(f => f != null && f != _left).ToList();
             }
         }
 
@@ -74,8 +76,8 @@ namespace SCModManager.DiffMerge
             get { return _right; }
             set
             {
-                Set(ref _right, value);
-                RaisePropertyChanged(nameof(LeftSelection));
+                this.RaiseAndSetIfChanged(ref _right, value);
+                this.RaisePropertyChanged(nameof(LeftSelection));
                 UpdateCompareContent();
             }
         }
@@ -83,13 +85,13 @@ namespace SCModManager.DiffMerge
         public TextDocument RightDocument
         {
             get { return _rightDocument; }
-            set { Set(ref _rightDocument, value); }
+            set { this.RaiseAndSetIfChanged(ref _rightDocument, value); }
         }
 
         public TextDocument ResultDocument
         {
             get { return _resultDocument; }
-            set { Set(ref _resultDocument, value); }
+            set { this.RaiseAndSetIfChanged(ref _resultDocument, value); }
         }
 
         public MergeProcess(MergedModFile fileToMerge)
@@ -98,11 +100,11 @@ namespace SCModManager.DiffMerge
             Left = LeftSelection.First();
             Right = RightSelection.First();
 
-            PickLeft = new RelayCommand(DoPickLeft);
-            PickRight = new RelayCommand(DoPickRight);
-            SaveMerge = new RelayCommand(DoSaveMerge, AreAllConflictsResolved);
+            PickLeft = ReactiveCommand.Create(DoPickLeft);
+            PickRight = ReactiveCommand.Create(DoPickRight);
+            SaveMerge = ReactiveCommand.Create(DoSaveMerge, _canSaveMerge); 
 
-            Reset = new RelayCommand(DoReset);
+            Reset = ReactiveCommand.Create(DoReset);
 
             _resultDocument.Changed += _resultDocument_Changed;
         }
@@ -145,8 +147,8 @@ namespace SCModManager.DiffMerge
                 Left = LeftSelection.First();
                 Right = RightSelection.First();
             }
-            RaisePropertyChanged(nameof(LeftSelection));
-            RaisePropertyChanged(nameof(RightSelection));
+            this.RaisePropertyChanged(nameof(LeftSelection));
+            this.RaisePropertyChanged(nameof(RightSelection));
             FileResolved?.Invoke(this, EventArgs.Empty);
         }
 
@@ -218,7 +220,7 @@ namespace SCModManager.DiffMerge
             ResultDocument.Replace(start, length, text);
             ResultDocument.Changed += _resultDocument_Changed;
 
-            SaveMerge.RaiseCanExecuteChanged();
+            _canSaveMerge.OnNext(AreAllConflictsResolved());
         }
 
         public ICommand PickLeft { get; } 
@@ -240,8 +242,8 @@ namespace SCModManager.DiffMerge
                 Left = _result;
                 Right = RightSelection.First();
             }
-            RaisePropertyChanged(nameof(LeftSelection));
-            RaisePropertyChanged(nameof(RightSelection));
+            this.RaisePropertyChanged(nameof(LeftSelection));
+            this.RaisePropertyChanged(nameof(RightSelection));
             FileResolved?.Invoke(this, EventArgs.Empty);
         }
 
@@ -263,12 +265,12 @@ namespace SCModManager.DiffMerge
                 Left = _result;
                 Right = RightSelection.First();
             }
-            RaisePropertyChanged(nameof(LeftSelection));
-            RaisePropertyChanged(nameof(RightSelection));
+            this.RaisePropertyChanged(nameof(LeftSelection));
+            this.RaisePropertyChanged(nameof(RightSelection));
             FileResolved?.Invoke(this, EventArgs.Empty);
         }
 
-        public RelayCommand SaveMerge { get; }
+        public ICommand SaveMerge { get; }
 
         private bool AreAllConflictsResolved()
         {
@@ -300,8 +302,8 @@ namespace SCModManager.DiffMerge
                 Left = _result;
                 Right = RightSelection.First();
             }
-            RaisePropertyChanged(nameof(LeftSelection));
-            RaisePropertyChanged(nameof(RightSelection));
+            this.RaisePropertyChanged(nameof(LeftSelection));
+            this.RaisePropertyChanged(nameof(RightSelection));
             FileResolved?.Invoke(this, EventArgs.Empty);
 
         }

@@ -1,80 +1,16 @@
-﻿using SCModManager.SCFormat;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-using System.Threading.Tasks;
-
-using GalaSoft.MvvmLight;
-
-using NLog;
-using Ionic.Zip;
 using System.Text.RegularExpressions;
+using Ionic.Zip;
+using NLog;
+using PDXModLib.Interfaces;
+using PDXModLib.SCFormat;
 
-namespace SCModManager.ModData
+namespace PDXModLib.ModData
 {
-    public abstract class ModFileHolder : ObservableObject
-    {
-        public string Filename { get; protected set; }
-
-        public abstract bool HasConflicts {get;}
-
-        public virtual bool AllConflicfts => HasConflicts;
-
-        protected Func<ModFile, bool> _hasConflict;
-
-        protected ModFileHolder(string name, Func<ModFile, bool> hasConflict)
-        {
-            Filename = name;
-            _hasConflict = hasConflict;
-        }
-    }
-
-    public class ModDirectory : ModFileHolder
-    {
-        private static char[] Separators = new[] { System.IO.Path.DirectorySeparatorChar, System.IO.Path.AltDirectorySeparatorChar };
-
-        public IEnumerable<ModFileHolder> Files { get; }
-
-        public override bool AllConflicfts => Files.All(f => f.HasConflicts);
-
-        public override bool HasConflicts => Files.Any(f => f.HasConflicts);
-
-        public ModDirectory(string name, int level, IEnumerable<ModFile> source, Func<ModFile, bool> hasConflict)
-            :base(name, hasConflict)
-        {
-            Filename = name;
-            _hasConflict = hasConflict;
-
-            var kids = source.Select(m => Tuple.Create(m.Path.Split(Separators), m));
-            List<ModFileHolder> result = new List<ModFileHolder>();
-            foreach (var kid in kids.Where(t => t.Item1.Length > level + 1).GroupBy(k => k.Item1[level]).OrderBy(g => g.Key))
-            {
-                result.Add(new ModDirectory(kid.Key, level + 1, kid.Select(k => k.Item2), hasConflict));
-            }
-
-            foreach (var kid in kids.Where(t => t.Item1.Length == level + 1))
-            {
-                result.Add(new ModFileEntry(kid.Item1.Last(), kid.Item2, hasConflict));
-            }
-            Files = result;
-        }
-    }
-
-    public class ModFileEntry : ModFileHolder
-    {
-        public ModFile File { get; }
-
-        public override bool HasConflicts => _hasConflict(File);
-
-        public ModFileEntry(string name, ModFile item, Func<ModFile, bool> hasConflict) 
-            : base(name, hasConflict)
-        {
-            File = item;
-        }
-    }
-
     public abstract class ModFile 
     {
         private static string[] SCExtensions = new[] { ".gfx", ".gui", ".txt" };
@@ -98,6 +34,17 @@ namespace SCModManager.ModData
         {
             Path = path;
             SourceMod = sourceMod;
+        }
+
+        public override bool Equals(object obj)
+        {
+            var other = obj as ModFile;
+            return other != null && string.Compare(other.Path, this.Path, StringComparison.OrdinalIgnoreCase) == 0;
+        }
+
+        public override int GetHashCode()
+        {
+            return Path.GetHashCode();
         }
 
         public abstract string RawContents { get; }
@@ -214,9 +161,9 @@ namespace SCModManager.ModData
             return Regex.Replace(source, @"\r\n|\n\r|\n|\r", Environment.NewLine);
         }
 
-        internal abstract void Save(ZipFile entry);
+        public abstract void Save(ZipFile entry);
 
-        internal virtual void Save(string fn)
+        public virtual void Save(string fn)
         {
             File.WriteAllText(fn, RawContents);
         }
@@ -241,7 +188,7 @@ namespace SCModManager.ModData
             ParseError = parseError;
         }
 
-        internal override void Save(ZipFile entry)
+        public override void Save(ZipFile entry)
         {
             entry.AddEntry(Path, RawContents);
         }
@@ -259,7 +206,7 @@ namespace SCModManager.ModData
             Contents = contents;
         }
 
-        internal override void Save(ZipFile entry)
+        public override void Save(ZipFile entry)
         {
             entry.AddEntry(Path, RawContents);
         }
@@ -277,18 +224,16 @@ namespace SCModManager.ModData
             Contents = contents;
         }
 
-        internal override void Save(ZipFile entry)
+        public override void Save(ZipFile entry)
         {
             entry.AddEntry(Path, RawContents, Encoding.UTF8);
         }
 
-        internal override void Save(string fn)
+        public override void Save(string fn)
         {
             File.WriteAllText(fn, RawContents, Encoding.UTF8);
         }
     }
-
-
 
     public class BinaryModFile : ModFile
     {
@@ -312,7 +257,7 @@ namespace SCModManager.ModData
             originalFilePath = path;
         }
 
-        internal override void Save(ZipFile entry)
+        public override void Save(ZipFile entry)
         {
             entry.AddEntry(Path, openDelegate, closeDelegate);
         }
@@ -327,7 +272,7 @@ namespace SCModManager.ModData
             return (Stream)_entry?.OpenReader() ?? File.OpenRead(originalFilePath);
         }
 
-        internal override void Save(string fn)
+        public override void Save(string fn)
         {
             using (var stream = _entry.OpenReader())
             {
@@ -365,12 +310,12 @@ namespace SCModManager.ModData
             contents = toSave;
         }
 
-        internal override void Save(ZipFile entry)
+        public override void Save(ZipFile entry)
         {
             entry.AddEntry(Path, RawContents);
         }
-        
-        internal override void Save(string fn)
+
+        public override void Save(string fn)
         {
             File.WriteAllText(fn, RawContents, Encoding.UTF8);
         }

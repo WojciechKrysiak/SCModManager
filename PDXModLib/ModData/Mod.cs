@@ -2,24 +2,19 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using GalaSoft.MvvmLight;
 using Ionic.Zip;
 using NLog;
-using SCModManager.SCFormat;
-using SCModManager.SteamWorkshop;
+using PDXModLib.SCFormat;
 
-namespace SCModManager.ModData
+namespace PDXModLib.ModData
 {
-    public class Mod : ObservableObject
+    public class Mod 
     {
         private static readonly Logger Log = LogManager.GetCurrentClassLogger();
 
-        private string archive;
+        private string _archive;
 
-        private string folder;
-        private SteamWorkshopDescriptor _remoteDescriptor;
+        private string _folder;
 
         protected Mod(string id)
         {
@@ -36,7 +31,7 @@ namespace SCModManager.ModData
 
         public List<string> Tags { get; } = new List<string>();
 
-        public virtual string FileName => archive;
+        public virtual string FileName => _archive;
 
         public bool ParseError { get; set; }
 
@@ -46,11 +41,9 @@ namespace SCModManager.ModData
 
         public string RemoteFileId { get; private set; }
 
-        public ImageSource Image { get; private set; }
-
         public SupportedVersion SupportedVersion { get; protected set; }
 
-        internal static Mod Load(string modDescriptor)
+        public static Mod Load(string modDescriptor)
         {
             var id = Path.GetFileName(modDescriptor);
             var mod = new Mod(id);
@@ -64,11 +57,11 @@ namespace SCModManager.ModData
 
                 mod.Name = parser.Root["name"]?.ToString();
 
-                mod.archive = (parser.Root["archive"] as SCString)?.Text;
-                mod.folder = (parser.Root["path"] as SCString)?.Text;
+                mod._archive = (parser.Root["archive"] as SCString)?.Text;
+                mod._folder = (parser.Root["path"] as SCString)?.Text;
 
-                if (string.IsNullOrEmpty(mod.archive) &&
-                    string.IsNullOrEmpty(mod.folder))
+                if (string.IsNullOrEmpty(mod._archive) &&
+                    string.IsNullOrEmpty(mod._folder))
                 {
                     Log.Debug($"Both archive and folder for {modDescriptor} are empty");
                     mod.Name = id;
@@ -86,16 +79,15 @@ namespace SCModManager.ModData
 
             if (tags != null)
             {
-                mod.Description = string.Join(", ", tags.Where(t => t != null));
+                mod.Description = string.Join(", ", tags.Where(t => t != null).ToArray());
                 mod.Tags.AddRange(tags.Where(t => t != null));
             }
             return mod;
         }
 
-
         public void LoadFiles(string basePath)
         {
-            var mPath = Path.Combine(basePath, archive ?? folder);
+            var mPath = Path.Combine(basePath, _archive ?? _folder);
 
             if (Path.GetExtension(mPath) == ".zip")
             {
@@ -137,12 +129,6 @@ namespace SCModManager.ModData
 
         public IEnumerable<SCKeyValObject> DescriptorContents => ToDescriptor();
 
-        public SteamWorkshopDescriptor RemoteDescriptor
-        {
-            get { return _remoteDescriptor; }
-            set { Set(ref _remoteDescriptor, value); }
-        }
-
         public IEnumerable<SCKeyValObject> ToDescriptor()
         {
             yield return SCName;
@@ -152,30 +138,6 @@ namespace SCModManager.ModData
                 yield return new SCKeyValObject(new SCIdentifier("picture"), new SCString(PictureName));
 
             yield return SCSupportedVersion;
-        }
-
-        public IEnumerable<KeyValuePair<string, string>> DisplayValues
-        {
-            get {
-                var retval = new Dictionary<string, string>();
-
-                retval.Add("Title", RemoteDescriptor?.Title ?? Name);
-                if (RemoteDescriptor != null)
-                {
-                    retval.Add("Tags", string.Join(",", RemoteDescriptor.Tags?.Select(t => t.Tag) ?? new string[0]));
-                    retval.Add("Created", new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc).AddSeconds(RemoteDescriptor.TimeCreated).ToLocalTime().ToShortDateString());
-                    retval.Add("Modified", new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc).AddSeconds(RemoteDescriptor.TimeUpdate).ToLocalTime().ToShortDateString());
-                    retval.Add("Subscriptions", RemoteDescriptor.LifetimeSubscriptions.ToString());
-                    retval.Add("Favorited", RemoteDescriptor.Favorited.ToString());
-                } else
-                {
-                    retval.Add("Tags", string.Join(",", Tags));
-                }
-
-                retval.Add("Supported version", this.SupportedVersion.ToString());
-
-                return retval;
-            }
         }
 
     }
@@ -247,44 +209,52 @@ namespace SCModManager.ModData
 
     }
 
-    class MergedMod : Mod
+    public class MergedMod : Mod
     {
-        public MergedMod(string name, IEnumerable<Mod> source)
+        public MergedMod(string name, IEnumerable<ModConflictDescriptor> source)
             : base($"Merged")
         {
             Name = name;
 
-            _source = source.ToList();
+            var listSource = source.ToList();
 
-            SupportedVersion = SupportedVersion.Combine(source.Select(s => s.SupportedVersion));
+            Tags.AddRange(listSource.Select(mcd => mcd.Mod).SelectMany(m => m.Tags).Distinct());
 
-            var modGroups = source.SelectMany(m => m.Files).GroupBy(mf => mf.Path);
+            SupportedVersion = SupportedVersion.Combine(listSource.Select(s => s.Mod.SupportedVersion));
 
-            foreach (var group in modGroups)
+            var distinctConflicts = listSource.SelectMany(mcd => mcd.FileConflicts).Distinct();
+
+            foreach (var conflict in distinctConflicts)
             {
-                if (group.Count() == 1)
+                if (!conflict.ConflictingModFiles.Any())
                 {
-                    Files.Add(group.First());
+                    Files.Add(conflict.File);
                 }
                 else
                 {
-                    Files.Add(new MergedModFile(group.Key, group, this));
+                    Files.Add(new MergedModFile(conflict.File.Path, conflict.ConflictingModFiles.Concat(new[] {conflict.File}), this));
                 }
             }
         }
 
-        public override string FileName
-        {
-            get
-            {
-                return Name;
-            }
-        }
-
-        private IEnumerable<Mod> _source;
+        public override string FileName => Name;
 
         protected override SCKeyValObject SCFileName => SCKeyValObject.Create("path", $"mod/{FileName}");
 
-        protected override SCKeyValObject SCTags => new SCKeyValObject(new SCIdentifier("tags"), SCObject.Create(_source.SelectMany(m => m.Tags).Distinct().ToList()));
+        public ModConflictDescriptor ToModConflictDescriptor()
+        {
+            return new ModConflictDescriptor(this, Files.Select(ToConflictDescriptor));
+        }
+
+        ModFileConflictDescriptor ToConflictDescriptor(ModFile file)
+        {
+            var mmf = file as MergedModFile;
+            if (mmf != null)
+            {
+                return new ModFileConflictDescriptor(mmf, mmf.SourceFiles);
+            }
+
+            return new ModFileConflictDescriptor(file, Enumerable.Empty<ModFile>());
+        }
     }
 }

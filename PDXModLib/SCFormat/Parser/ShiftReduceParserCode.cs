@@ -21,7 +21,7 @@ namespace QUT.Gppg {
 #if EXPORT_GPPG
     public abstract class ShiftReduceParser<TValue, TSpan>
 #else
-    internal abstract class ShiftReduceParser<TValue, TSpan>
+    public abstract class ShiftReduceParser<TValue, TSpan>
 #endif
  where TSpan : IMerge<TSpan>, new() {
         private AbstractScanner<TValue, TSpan> scanner;
@@ -585,7 +585,7 @@ namespace QUT.Gppg {
 #if EXPORT_GPPG
     public interface IMerge<TSpan>
 #else
-    internal interface IMerge<TSpan>
+    public interface IMerge<TSpan>
 #endif
  {
         /// <summary>
@@ -609,7 +609,7 @@ namespace QUT.Gppg {
     public class LexLocation : IMerge<LexLocation>
 #else
     [SuppressMessage( "Microsoft.Performance", "CA1812:AvoidUninstantiatedInternalClasses" )]
-    internal class LexLocation : IMerge<LexLocation>
+    public class LexLocation : IMerge<LexLocation>
 #endif
  {
         private int startLine;   // start line
@@ -670,7 +670,7 @@ namespace QUT.Gppg {
 #if EXPORT_GPPG
     public abstract class AbstractScanner<TValue, TSpan>
 #else
-    internal abstract class AbstractScanner<TValue, TSpan>
+    public abstract class AbstractScanner<TValue, TSpan>
 #endif
  where TSpan : IMerge<TSpan> {
         /// <summary>
@@ -739,7 +739,7 @@ namespace QUT.Gppg {
         /// </summary>
         public int number;
 #else
-    internal class State {
+    public class State {
         /// <summary>
         /// The index of this state in the states array.
         /// </summary>
@@ -802,7 +802,7 @@ namespace QUT.Gppg {
 #if EXPORT_GPPG
     public class Rule
 #else
-    internal class Rule
+    public class Rule
 #endif
  {
         internal int LeftHandSide; // symbol
@@ -832,7 +832,7 @@ namespace QUT.Gppg {
 #if EXPORT_GPPG
     public class PushdownPrefixState<T>
 #else
-    internal class PushdownPrefixState<T>
+    public class PushdownPrefixState<T>
 #endif
  {
         //  Note that we cannot use the BCL Stack<T> class

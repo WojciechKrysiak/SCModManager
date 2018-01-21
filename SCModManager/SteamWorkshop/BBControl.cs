@@ -174,7 +174,7 @@ namespace SCModManager.SteamWorkshop
 
         private void Parse()
         {
-            if (String.IsNullOrEmpty(BBCode))
+            if (String.IsNullOrEmpty(BBCode) || Tags == null)
             {
                 this.Content = string.Empty;
                 return;

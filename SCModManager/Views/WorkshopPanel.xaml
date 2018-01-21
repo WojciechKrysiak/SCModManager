@@ -1,7 +1,7 @@
 ﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
                     xmlns:local="clr-namespace:SCModManager"
-                    xmlns:md="clr-namespace:SCModManager.ModData"
+                    xmlns:vm="clr-namespace:SCModManager.ViewModels"
                     xmlns:sw="clr-namespace:SCModManager.SteamWorkshop"
                     xmlns:ui="clr-namespace:SCModManager.Ui"
                     >
@@ -201,7 +201,7 @@
         <Setter Property="FontWeight" Value="Bold" />
     </Style>
 
-    <DataTemplate x:Key="WokrshopModView" DataType="{x:Type md:Mod}">
+    <DataTemplate x:Key="WokrshopModView" DataType="{x:Type vm:ModVM}">
         <Grid>
             <Border HorizontalAlignment="Center"
                     BorderBrush="#acb2b8"

@@ -1,5 +1,4 @@
 ﻿using Newtonsoft.Json;
-using SCModManager.ModData;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -10,6 +9,7 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
 using NLog;
+using SCModManager.ViewModels;
 
 namespace SCModManager.SteamWorkshop
 {
@@ -30,9 +30,9 @@ namespace SCModManager.SteamWorkshop
             client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
         }
 
-        public static async Task LoadModDescriptors(IEnumerable<Mod> mods, Action<string> onError)
+        public static async Task LoadModDescriptors(IEnumerable<ModVM> mods, Action<string> onError)
         {
-            var modDict = mods.Where(m => !String.IsNullOrEmpty(m.RemoteFileId)).ToDictionary(m => m.RemoteFileId, m => m);
+            var modDict = mods.Where(m => !String.IsNullOrEmpty(m.Mod.RemoteFileId)).ToDictionary(m => m.Mod.RemoteFileId, m => m);
 
             if (!modDict.Any())
             {

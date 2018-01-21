@@ -1,11 +1,11 @@
 ﻿using DiffMatchPatch;
-using GalaSoft.MvvmLight.Command;
 using ICSharpCode.AvalonEdit.Document;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Windows.Input;
+using ReactiveUI;
 
 namespace SCModManager.DiffMerge
 {
@@ -242,10 +242,10 @@ namespace SCModManager.DiffMerge
 
         private ResultBlock(ResultBlock previous)
         {
-            TakeLeft = new RelayCommand(() => ResolveAs(Side.Left));
-            TakeRight = new RelayCommand(() => ResolveAs(Side.Right));
-            TakeLeftThenRight = new RelayCommand(() => ResolveAs(Side.Left, Side.Right));
-            TakeRightThenLeft = new RelayCommand(() => ResolveAs(Side.Right, Side.Left));
+            TakeLeft = ReactiveCommand.Create(() => ResolveAs(Side.Left));
+            TakeRight = ReactiveCommand.Create(() => ResolveAs(Side.Right));
+            TakeLeftThenRight = ReactiveCommand.Create(() => ResolveAs(Side.Left, Side.Right));
+            TakeRightThenLeft = ReactiveCommand.Create(() => ResolveAs(Side.Right, Side.Left));
             PrevBlock = previous;
             if (PrevBlock != null)
             {

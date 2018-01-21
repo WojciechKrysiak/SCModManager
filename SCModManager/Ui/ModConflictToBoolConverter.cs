@@ -1,5 +1,4 @@
-﻿using SCModManager.ModData;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -18,12 +17,12 @@ namespace SCModManager.Ui
                 return false;
             }
 
-            var selectedMod = values[1] as ModConflictSelection;
-            var mod = values[0] as ModConflictSelection;
-            if (selectedMod != null && mod != null && selectedMod != mod)
-            {
-                return mod.Files.Any(mf => selectedMod.Files.Any(mff => mff.Path == mf.Path));
-            }
+            //var selectedMod = values[1] as ModConflictSelection;
+            //var mod = values[0] as ModConflictSelection;
+            //if (selectedMod != null && mod != null && selectedMod != mod)
+            //{
+            //    return mod.Files.Any(mf => selectedMod.Files.Any(mff => mff.Path == mf.Path));
+            //}
 
             return false;
         }

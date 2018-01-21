@@ -1,6 +1,6 @@
   
-%namespace SCModManager.SCFormat       //names the Namespace of the generated Scanner-class
-%visibility internal       //visibility of the types "Tokens","ScanBase","Scanner"
+%namespace PDXModLib.SCFormat       //names the Namespace of the generated Scanner-class
+%visibility public       //visibility of the types "Tokens","ScanBase","Scanner"
 %scannertype Scanner     //names the Scannerclass to "Scanner"
 %scanbasetype ScanBase  //names the ScanBaseclass to "ScanBase"
 %tokentype Tokens        //names the Tokenenumeration to "Tokens"
