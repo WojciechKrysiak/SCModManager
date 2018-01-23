@@ -271,7 +271,7 @@ namespace PDXModLib.SCFormat
 
         public SCString(string text) 
         {
-            Text = text.Trim('"');
+            Text = text?.Trim('"') ?? String.Empty;
         }
 
         public override string ToString()

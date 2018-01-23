@@ -41,7 +41,7 @@ namespace SCModManager
         public ICommand MergeModsCommand { get; }
 
         public IEnumerable<ModVM> Mods => _mods.Where(mvm => CurrentFilter(mvm.Mod));
-        public IEnumerable<ModSelection> Selections => _gameContext.Selections;
+        public IEnumerable<ModSelection> Selections => _gameContext.Selections.ToArray();
 
         private Window mergeWindow;
         private string _errorReason;
@@ -154,7 +154,8 @@ namespace SCModManager
             SortAndCreateViewModels();
 
             SteamWebApiIntegration.LoadModDescriptors(_mods, (s) => { });
-
+            
+            _canDelete.OnNext(_gameContext.Selections.Count > 1);
             return true;
         }
 
@@ -187,8 +188,8 @@ namespace SCModManager
             if (MessageBox.Show($"Are you sure you want to delete {selection.Name}?", "Confirm deletion", MessageBoxButton.OKCancel, MessageBoxImage.Question) == MessageBoxResult.OK)
             {
                 _gameContext.DeleteCurrentSelection();
-                CurrentSelection = _gameContext.CurrentSelection;
                 _canDelete.OnNext(_gameContext.Selections.Count > 1);
+                this.RaisePropertyChanged(nameof(CurrentSelection));
                 this.RaisePropertyChanged(nameof(Selections));
             }
         }
@@ -215,7 +216,8 @@ namespace SCModManager
 
             _gameContext.DuplicateCurrentSelection(name);
 
-            CurrentSelection = _gameContext.CurrentSelection;
+            this.RaisePropertyChanged(nameof(Selections));
+            this.RaisePropertyChanged(nameof(CurrentSelection));
         }
 
         private void MergeMods()

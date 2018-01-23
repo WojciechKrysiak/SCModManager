@@ -24,6 +24,8 @@ namespace PDXModLib.GameContext
         private readonly IGameConfiguration _gameConfiguration;
         private readonly INotificationService _notificationService;
 
+        private ModSelection _currentlySaved;
+
         private readonly IInstalledModManager _installedModManager;
 
         private SCObject _settingsRoot;
@@ -96,6 +98,7 @@ namespace PDXModLib.GameContext
         {
             try
             {
+                _currentlySaved = CurrentSelection;
                 SaveSelection();
 
                 var mods = new SCObject();
@@ -131,7 +134,7 @@ namespace PDXModLib.GameContext
             {
                 var selections = new SCObject();
 
-                var selectionsToSave = new SCObject { [SavedSelectionKey] = new SCString(CurrentSelection.Name), [SelectionsKey] = selections };
+                var selectionsToSave = new SCObject { [SavedSelectionKey] = new SCString(_currentlySaved?.Name), [SelectionsKey] = selections };
 
                 foreach (var modSelection in Selections)
                 {
@@ -183,15 +186,16 @@ namespace PDXModLib.GameContext
 
                         foreach (var selection in selections)
                         {
+                            var key = (selection.Key as SCString).Text;
                             ModSelection modSelection;
                             if (selection.Key.Equals(selectionIdx))
                             {
-                                modSelection = CreateDefaultSelection();
+                                modSelection = CreateDefaultSelection(key);
                                 CurrentSelection = modSelection;
                             }
                             else
                             {
-                                modSelection = CreateFromScObject(selection.Key.ToString(), selection.Value);
+                                modSelection = CreateFromScObject(key, selection.Value);
                             }
 
                             Selections.Add(modSelection);
@@ -206,6 +210,9 @@ namespace PDXModLib.GameContext
                 CurrentSelection = CreateDefaultSelection();
                 Selections.Add(CurrentSelection);
             }
+
+            _currentlySaved = CurrentSelection;
+            SaveSelection();
         }
 
         public void LoadMods()
@@ -217,6 +224,10 @@ namespace PDXModLib.GameContext
         {
             Selections.Remove(CurrentSelection);
             CurrentSelection = Selections.FirstOrDefault();
+            if (!Selections.Contains(_currentlySaved))
+            {
+                _currentlySaved = null;
+            }
             SaveSelection();
         }
 
@@ -257,9 +268,9 @@ namespace PDXModLib.GameContext
             }
         }
 
-        private ModSelection CreateDefaultSelection()
+        private ModSelection CreateDefaultSelection(string name = "Default selection")
         {
-            return CreateFromScObject("Default selection", _settingsRoot["last_mods"]);
+            return CreateFromScObject(name, _settingsRoot["last_mods"]);
         }
 
         private ModSelection CreateFromScObject(string name, SCValue contents)
