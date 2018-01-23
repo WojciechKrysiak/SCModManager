@@ -15,6 +15,7 @@ namespace SCModManager.ViewModels
         private SteamWorkshopDescriptor _remoteDescriptor;
         private bool _selected;
         private int _conflictCount;
+        private bool _hasConflictWithSelected;
 
 
         public ModVM(ModConflictDescriptor modConflict, bool selected)
@@ -79,6 +80,12 @@ namespace SCModManager.ViewModels
         {
             this.RaiseAndSetIfChanged(ref _conflictCount, ModConflict.ConflictingMods.Count(filter),
                 nameof(ConflictCount));
+        }
+
+        public bool HasConflictWithSelected
+        {
+            get { return _hasConflictWithSelected; }
+            set { this.RaiseAndSetIfChanged(ref _hasConflictWithSelected, value); }
         }
     }
 }

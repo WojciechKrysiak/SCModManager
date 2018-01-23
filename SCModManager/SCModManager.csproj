@@ -149,7 +149,6 @@
     <Compile Include="Ui\MultiBoolImplToVisibilityConverter.cs" />
     <Compile Include="Ui\MVVMTreeView.cs" />
     <Compile Include="Ui\TypeBasedDataTemplateSelector.cs" />
-    <Compile Include="Ui\ModConflictToBoolConverter.cs" />
     <Compile Include="Ui\NullToVisibilityConverter.cs" />
     <Compile Include="ViewModels\ModConflictPreviewVm.cs" />
     <Compile Include="ViewModels\ModFileVm.cs" />

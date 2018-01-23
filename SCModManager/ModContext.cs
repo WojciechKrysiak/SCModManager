@@ -81,8 +81,18 @@ namespace SCModManager
             set
             {
                 this.RaiseAndSetIfChanged(ref _selectedMod, value);
+
+                if (value == null)
+                {
+                    _mods.ForEach(m => m.HasConflictWithSelected = false);
+                    ConflictPreviewVm = null;
+                }
+                else
+                {
+                    _mods.ForEach(m => m.HasConflictWithSelected = value.ModConflict.ConflictingMods.Contains(m.Mod));
+                    ConflictPreviewVm = new ModConflictPreviewVm(value.ModConflict, CurrentFilter);
+                }
                 
-                ConflictPreviewVm = value == null ? null : new ModConflictPreviewVm(value.ModConflict, CurrentFilter);
             }
         }
 

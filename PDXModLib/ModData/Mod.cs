@@ -58,7 +58,9 @@ namespace PDXModLib.ModData
 
                 parser.Parse();
 
-                mod.Name = parser.Root["name"]?.ToString();
+                var name = parser.Root["name"];
+
+                mod.Name = (name as SCString)?.Text ?? name?.ToString();
 
                 mod._archive = (parser.Root["archive"] as SCString)?.Text;
                 mod._folder = (parser.Root["path"] as SCString)?.Text;
