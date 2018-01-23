@@ -14,11 +14,14 @@ namespace SCModManager.ViewModels
     {
         private SteamWorkshopDescriptor _remoteDescriptor;
         private bool _selected;
+        private int _conflictCount;
+
 
         public ModVM(ModConflictDescriptor modConflict, bool selected)
         {
             ModConflict = modConflict;
             Selected = selected;
+            _conflictCount = ModConflict.ConflictingMods.Count();
         }
 
         public ModConflictDescriptor ModConflict { get; }
@@ -32,7 +35,7 @@ namespace SCModManager.ViewModels
 
         public bool ParseError => Mod.ParseError;
 
-        public int ConflictCount => ModConflict.ConflictingMods.Count();
+        public int ConflictCount => _conflictCount;
 
         public SteamWorkshopDescriptor RemoteDescriptor
         {
@@ -70,6 +73,12 @@ namespace SCModManager.ViewModels
         {
             get { return _selected; }
             set { this.RaiseAndSetIfChanged(ref _selected, value); }
+        }
+
+        public void UpdateModFilter(Func<Mod, bool> filter)
+        {
+            this.RaiseAndSetIfChanged(ref _conflictCount, ModConflict.ConflictingMods.Count(filter),
+                nameof(ConflictCount));
         }
     }
 }

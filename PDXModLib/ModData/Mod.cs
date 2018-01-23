@@ -5,11 +5,14 @@ using System.Linq;
 using Ionic.Zip;
 using NLog;
 using PDXModLib.SCFormat;
+using PDXModLib.Utility;
 
 namespace PDXModLib.ModData
 {
-    public class Mod 
+    public class Mod : IDisposable
     {
+        private ZipFile _zipFile;
+
         private static readonly Logger Log = LogManager.GetCurrentClassLogger();
 
         private string _archive;
@@ -91,18 +94,17 @@ namespace PDXModLib.ModData
 
             if (Path.GetExtension(mPath) == ".zip")
             {
-                var file = ZipFile.Read(mPath);
+                _zipFile = ZipFile.Read(mPath);
 
-                foreach (var item in file)
+                foreach (var item in _zipFile)
                 {
                     if (string.Compare(item.FileName, "descriptor.mod", true) == 0)
                     {
                         continue;
                     }
 
-                    var modFile = ModFile.Load(item, this);
+                    var modFile = ModFile.Load(new ZipFileLoader(item), item.FileName, this);
                     Files.Add(modFile);
-
                 }
             }
             else
@@ -114,7 +116,7 @@ namespace PDXModLib.ModData
                     if (string.Compare(Path.GetFileName(item), "descriptor.mod", true) != 0)
                     {
                         var refPath = Uri.UnescapeDataString(new Uri(mPath).MakeRelativeUri(new Uri(item)).OriginalString);
-                        var modFile = ModFile.Load(refPath, mPath, this);
+                        var modFile = ModFile.Load(new DiskFileLoader(item), refPath, this);
                         Files.Add(modFile);
                     }
                 }
@@ -140,6 +142,10 @@ namespace PDXModLib.ModData
             yield return SCSupportedVersion;
         }
 
+        public void Dispose()
+        {
+            _zipFile?.Dispose();
+        }
     }
 
     public class SupportedVersion

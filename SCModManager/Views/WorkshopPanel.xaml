@@ -243,6 +243,7 @@
                              Grid.IsSharedSizeScope="True"
                              HorizontalAlignment="Stretch"
                              HorizontalContentAlignment="Stretch"
+                             IsHitTestVisible="False"
                              Background="Transparent"
                              BorderThickness="1 0 0 1"
                              ItemsSource="{Binding DisplayValues}"
@@ -281,7 +282,6 @@
                             </DataTemplate>
                         </ListBox.ItemTemplate>
                     </ListBox>
-
                     <sw:BBControl x:Name="BBControl"
                                   Grid.Column="0"
                                   Grid.ColumnSpan="2"

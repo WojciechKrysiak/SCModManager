@@ -84,16 +84,19 @@ namespace PDXModLib.GameContext
 
                 File.WriteAllText(descPath, contents);
 
-                foreach (var modFile in mod.Files)
+                using (var saver = new DiskFileSaver(path))
                 {
-                    var dir = Path.Combine(path, modFile.Directory);
-                    if (!Directory.Exists(dir))
+                    foreach (var modFile in mod.Files)
                     {
-                        Directory.CreateDirectory(dir);
-                    }
-                    var fn = Path.Combine(path, modFile.Path);
+                        //var dir = Path.Combine(path, modFile.Directory);
+                        //if (!Directory.Exists(dir))
+                        //{
+                        //    Directory.CreateDirectory(dir);
+                        //}
+                        //var fn = Path.Combine(path, modFile.Path);
 
-                    modFile.Save(fn);
+                        modFile.Save(saver);
+                    }
                 }
             }
             catch (Exception ex)

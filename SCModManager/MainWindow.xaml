@@ -127,6 +127,10 @@
                           >
                 Preview conflicts
             </ToggleButton>
+            <ToggleButton IsChecked="{Binding FilterSelection}">
+                Selection only
+            </ToggleButton>
+            
 
             <MenuItem x:Name="CommsError"
                       HorizontalAlignment="Right"
@@ -217,7 +221,7 @@
                           TextBlock.Foreground="#8F98A0"
                           VerticalScrollBarVisibility="Auto"
                           >
-                <ContentControl Content="{Binding SelectedMod}" ContentTemplate="{StaticResource WokrshopModView}" />
+                    <ContentControl Content="{Binding SelectedMod}" ContentTemplate="{StaticResource WokrshopModView}" />
             </ScrollViewer>
         </Border>
     </Grid>

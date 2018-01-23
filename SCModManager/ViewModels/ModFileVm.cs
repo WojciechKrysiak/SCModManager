@@ -28,6 +28,7 @@ namespace SCModManager.ViewModels
     public class ModDirectory : ModFileHolder
     {
         private readonly int _level;
+        private Func<Mod, bool> _modFilter;
         private readonly IEnumerable<ModFileConflictDescriptor> _source;
         private static readonly char[] Separators = { System.IO.Path.DirectorySeparatorChar, System.IO.Path.AltDirectorySeparatorChar };
 
@@ -38,10 +39,11 @@ namespace SCModManager.ViewModels
 
         public override bool HasConflicts => _hasConflicts;
 
-        public ModDirectory(string name, int level, IEnumerable<ModFileConflictDescriptor> source)
+        public ModDirectory(string name, int level, IEnumerable<ModFileConflictDescriptor> source, Func<Mod, bool> initialModFilter)
             : base(name)
         {
             _level = level;
+            _modFilter = initialModFilter;
             _source = source.ToList();
             Filename = name;
             _hasConflicts = _source.Any(mfcd => mfcd.ConflictingModFiles.Any());
@@ -53,25 +55,27 @@ namespace SCModManager.ViewModels
             List<ModFileHolder> result = new List<ModFileHolder>();
             foreach (var kid in kids.Where(t => t.Item1.Length > _level + 1).GroupBy(k => k.Item1[_level]).OrderBy(g => g.Key))
             {
-                result.Add(new ModDirectory(kid.Key, _level + 1, kid.Select(k => k.Item2)));
+                result.Add(new ModDirectory(kid.Key, _level + 1, kid.Select(k => k.Item2), _modFilter));
             }
 
             foreach (var kid in kids.Where(t => t.Item1.Length == _level + 1))
             {
-                result.Add(new ModFileEntry(kid.Item1.Last(), kid.Item2));
+                result.Add(new ModFileEntry(kid.Item1.Last(), kid.Item2, _modFilter));
             }
 
             return result;
         }
 
-        public static ModDirectory CreateRoot(ModConflictDescriptor conflictDescriptor)
+        public static ModDirectory CreateRoot(ModConflictDescriptor conflictDescriptor, Func<Mod, bool> initialModFilter = null)
         {
-            return new ModDirectory(string.Empty, 0, conflictDescriptor.FileConflicts);
+            initialModFilter = initialModFilter ?? (m => true);
+            return new ModDirectory(string.Empty, 0, conflictDescriptor.FileConflicts, initialModFilter);
         }
 
         public override void ApplyModFilter(Func<Mod, bool> filter)
         {
             var conflcits = false;
+            _modFilter = filter;
             if (_files != null)
             {
                 foreach (var modFileHolder in _files)
@@ -97,17 +101,17 @@ namespace SCModManager.ViewModels
 
         public override bool HasConflicts => _hasConflicts;
 
-        public ModFileEntry(string name, ModFileConflictDescriptor conflictDescriptor)
+        public ModFileEntry(string name, ModFileConflictDescriptor conflictDescriptor, Func<Mod, bool> modFilter)
             : base(name)
         {
             ConflictDescriptor = conflictDescriptor;
             File = ConflictDescriptor.File;
-            _hasConflicts = conflictDescriptor.ConflictingModFiles.Any();
+            _hasConflicts = conflictDescriptor.ConflictingModFiles.Select(m => m.SourceMod).Any(modFilter);
         }
 
         public override void ApplyModFilter(Func<Mod, bool> filter)
         {
-            this.RaiseAndSetIfChanged(ref _hasConflicts, ConflictDescriptor.ConflictingModFiles.Any(mf => filter(mf.SourceMod)), nameof(HasConflicts));
+            this.RaiseAndSetIfChanged(ref _hasConflicts, ConflictDescriptor.ConflictingModFiles.Select(m => m.SourceMod).Any(filter), nameof(HasConflicts));
         }
     }
 }

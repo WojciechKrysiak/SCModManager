@@ -8,18 +8,17 @@ using Ionic.Zip;
 using NLog;
 using PDXModLib.Interfaces;
 using PDXModLib.SCFormat;
+using PDXModLib.Utility;
 
 namespace PDXModLib.ModData
 {
     public abstract class ModFile 
     {
-        private static string[] SCExtensions = new[] { ".gfx", ".gui", ".txt" };
+        private static readonly string[] SCExtensions = { ".gfx", ".gui", ".txt" };
 
-        private static string[] CodeExtensions = new[] { ".lua" };
+        private static readonly string[] CodeExtensions = { ".lua" };
 
-        private static string[] LocalisationExtensions = new[] { ".yml" };
-
-        private static string[] ImageExtensions = new[] { ".dds", ".png", ".jpg" };
+        private static readonly string[] LocalisationExtensions = { ".yml" };
 
         public string Path { get; set; }
 
@@ -49,237 +48,175 @@ namespace PDXModLib.ModData
 
         public abstract string RawContents { get; }
 
-        internal static ModFile Load(string refPath, string basePath, Mod sourceMod)
+        internal static ModFile Load(IModFileLoader loader, string path , Mod sourceMod)
         {
-            string path = System.IO.Path.Combine(basePath, refPath);
-
             if (SCExtensions.Contains(System.IO.Path.GetExtension(path).ToLower()))
             {
-                using (var stream = File.OpenRead(path))
-                {
-                    using (var mr = new MemoryStream())
-                    {
-                        byte[] buffer = new byte[1024];
-                        int size = 0;
-                        while (stream.CanRead && ((size = stream.Read(buffer, 0, 1024)) > 0))
-                        {
-                            mr.Write(buffer, 0, size);
-                        }
-
-                        mr.Seek(0, SeekOrigin.Begin);
-
-                        var parser = new Parser(new Scanner(mr));
-
-                        parser.Parse();
-
-                        mr.Seek(0, SeekOrigin.Begin);
-
-                        using (var sr = new StreamReader(mr))
-                        {
-                            return new SCModFile(refPath, parser.Root, NormalizeLineEndings(sr.ReadToEnd()), parser.ParseError, sourceMod);
-                        }
-                    }
-                }
+                return new SCModFile(loader, path, sourceMod);
             }
 
             if (CodeExtensions.Contains(System.IO.Path.GetExtension(path).ToLower()))
             {
-                using (var stream = File.OpenRead(path))
-                {
-                    using (var sr = new StreamReader(stream))
-                    {
-                        return new CodeModFile(refPath, NormalizeLineEndings(sr.ReadToEnd()), sourceMod);
-                    }
-                }
-            }
-
-            return new BinaryModFile(refPath, path, sourceMod);
-        }
-
-
-
-        internal static ModFile Load(ZipEntry item, Mod sourceMod)
-        {
-            var path = item.FileName;
-
-            if (SCExtensions.Contains(System.IO.Path.GetExtension(path).ToLower()))
-            {
-                using (var stream = item.OpenReader())
-                {
-                    using (var mr = new MemoryStream())
-                    {
-                        byte[] buffer = new byte[1024];
-                        int size = 0;
-                        while (stream.CanRead && ((size = stream.Read(buffer, 0, 1024)) > 0))
-                        {
-                            mr.Write(buffer, 0, size);
-                        }
-
-                        mr.Seek(0, SeekOrigin.Begin);
-
-                        var parser = new Parser(new Scanner(mr));
-
-                        parser.Parse();
-
-                        mr.Seek(0, SeekOrigin.Begin);
-
-                        using (var sr = new StreamReader(mr))
-                        {
-                            return new SCModFile(path, parser.Root, NormalizeLineEndings(sr.ReadToEnd()), parser.ParseError, sourceMod);
-                        }
-                    }
-                }
-            }
-
-            if (CodeExtensions.Contains(System.IO.Path.GetExtension(path).ToLower()))
-            {
-                using (var stream = item.OpenReader())
-                {
-                    using (var sr = new StreamReader(stream))
-                    {
-                        return new CodeModFile(path, NormalizeLineEndings(sr.ReadToEnd()), sourceMod);
-                    }
-                }
+                return new CodeModFile(loader, path, sourceMod);
             }
 
             if (LocalisationExtensions.Contains(System.IO.Path.GetExtension(path).ToLower()))
             {
-                using (var stream = item.OpenReader())
-                {
-                    using (var sr = new StreamReader(stream))
-                    {
-                        return new LocalisationFile(path, NormalizeLineEndings(sr.ReadToEnd()), sourceMod);
-                    }
-                }
+                return new LocalisationFile(loader, path, sourceMod);
             }
 
-            return new BinaryModFile(item, sourceMod);
+            return new BinaryModFile(loader, path, sourceMod);
         }
 
-        private static string NormalizeLineEndings(string source)
+        protected static string NormalizeLineEndings(string source)
         {
             return Regex.Replace(source, @"\r\n|\n\r|\n|\r", Environment.NewLine);
         }
 
-        public abstract void Save(ZipFile entry);
-
-        public virtual void Save(string fn)
+        public virtual void Save(IModFileSaver saver)
         {
-            File.WriteAllText(fn, RawContents);
+            saver.Save(Path, RawContents);
         }
     }
 
-    public class SCModFile : ModFile
+    internal class SCModFile : ModFile
     {
-        public SCObject Contents { get; set; }
-        public override string RawContents { get; }
+        private readonly IModFileLoader _loader;
+        private string _rawContents;
+        internal SCObject Contents { get; private set; }
 
-        public bool ParseError { get; }
-    
-        internal SCModFile(string path, SCObject contents, string rawContents, Mod sourceMod)
+        public override string RawContents
+        {
+            get
+            {
+                if (_rawContents == null)
+                {
+                    _rawContents = LoadSCFileContents(_loader);
+                }
+                return _rawContents;
+            }
+        }
+
+        internal bool ParseError { get; private set; }
+
+        public SCModFile(IModFileLoader loader, string path, Mod sourceMod)
             : base(path, sourceMod)
         {
-            Contents = contents;
-            RawContents = rawContents;
+            _loader = loader;
         }
 
-        public SCModFile(string path, SCObject contents, string rawContents, bool parseError, Mod sourceMod) : this(path, contents, rawContents, sourceMod)
+        private string LoadSCFileContents(IModFileLoader loader)
         {
-            ParseError = parseError;
-        }
+            using (var stream = loader.OpenStream())
+            {
 
-        public override void Save(ZipFile entry)
-        {
-            entry.AddEntry(Path, RawContents);
+                using (var mr = new MemoryStream())
+                {
+                    byte[] buffer = new byte[1024];
+                    int size = 0;
+                    while (stream.CanRead && ((size = stream.Read(buffer, 0, 1024)) > 0))
+                    {
+                        mr.Write(buffer, 0, size);
+                    }
+
+                    mr.Seek(0, SeekOrigin.Begin);
+
+                    var parser = new Parser(new Scanner(mr));
+
+                    parser.Parse();
+
+                    mr.Seek(0, SeekOrigin.Begin);
+
+                    using (var sr = new StreamReader(mr))
+                    {
+                        ParseError = parser.ParseError;
+                        Contents = parser.Root;
+                        return sr.ReadToEnd();
+                    }
+                }
+            }
         }
     }
 
-    public class CodeModFile : ModFile
+    internal class CodeModFile : ModFile
     {
+        private readonly IModFileLoader _loader;
         public string Contents { get; set; }
+        private string _rawContents;
 
-        public override string RawContents => Contents;
-
-        internal CodeModFile(string path, string contents, Mod sourceMod)
-            : base(path, sourceMod)
+        public override string RawContents
         {
-            Contents = contents;
+            get
+            {
+                if (_rawContents == null)
+                {
+                    using (var stream = _loader.OpenStream())
+                    {
+                        using (var sr = new StreamReader(stream))
+                        {
+                            _rawContents = NormalizeLineEndings(sr.ReadToEnd());
+                        }
+                    }
+                }
+                return _rawContents;
+            }
         }
 
-        public override void Save(ZipFile entry)
+        public CodeModFile(IModFileLoader loader, string path, Mod sourceMod)
+            : base(path, sourceMod)
         {
-            entry.AddEntry(Path, RawContents);
+            _loader = loader;
         }
     }
 
-    public class LocalisationFile : ModFile
+    internal class LocalisationFile : ModFile
     {
+        private readonly IModFileLoader _loader;
         public string Contents { get; set; }
+        private string _rawContents;
 
-        public override string RawContents => Contents;
+        public override string RawContents
+        {
+            get
+            {
+                if (_rawContents == null)
+                {
+                    using (var stream = _loader.OpenStream())
+                    {
+                        using (var sr = new StreamReader(stream))
+                        {
+                            _rawContents = NormalizeLineEndings(sr.ReadToEnd());
+                        }
+                    }
+                }
+                return _rawContents;
+            }
+        }
 
-        internal LocalisationFile(string path, string contents, Mod sourceMod)
+        public LocalisationFile(IModFileLoader loader, string path, Mod sourceMod)
             : base(path, sourceMod)
         {
-            Contents = contents;
-        }
-
-        public override void Save(ZipFile entry)
-        {
-            entry.AddEntry(Path, RawContents, Encoding.UTF8);
-        }
-
-        public override void Save(string fn)
-        {
-            File.WriteAllText(fn, RawContents, Encoding.UTF8);
+            _loader = loader;
         }
     }
 
-    public class BinaryModFile : ModFile
+    internal class BinaryModFile : ModFile
     {
+        private readonly IModFileLoader _loader;
         public string Contents => "BinaryModFile";
         public override string RawContents => Contents;
 
-        string originalFilePath;
-
-        ZipEntry _entry;
-
-        internal BinaryModFile(ZipEntry entry, Mod sourceMod)
-            : base(entry.FileName, sourceMod)
+        public BinaryModFile(IModFileLoader loader, string path, Mod sourceMod)
+            : base(path, sourceMod)
         {
-            _entry = entry;
+            _loader = loader;
         }
 
-
-        internal BinaryModFile(string refPath, string path, Mod sourceMod)
-            : base(refPath, sourceMod)
+        public override void Save(IModFileSaver saver)
         {
-            originalFilePath = path;
-        }
-
-        public override void Save(ZipFile entry)
-        {
-            entry.AddEntry(Path, openDelegate, closeDelegate);
-        }
-
-        private void closeDelegate(string entryName, Stream stream)
-        {
-            stream.Close();
-        }
-
-        private Stream openDelegate(string entryName)
-        {
-            return (Stream)_entry?.OpenReader() ?? File.OpenRead(originalFilePath);
-        }
-
-        public override void Save(string fn)
-        {
-            using (var stream = _entry.OpenReader())
+            using (var stream = _loader.OpenStream())
             {
-                using (var fileS = File.OpenWrite(fn))
-                {
-                    stream.CopyTo(fileS);
-                }
+                saver.Save(Path, stream);
             }
         }
     }
@@ -310,14 +247,66 @@ namespace PDXModLib.ModData
             contents = toSave;
         }
 
-        public override void Save(ZipFile entry)
+        public override void Save(IModFileSaver saver)
         {
-            entry.AddEntry(Path, RawContents);
+            if (Resolved)
+                base.Save(saver);
+            else
+            {
+                var stream = CreateMergeZip();
+                var extension = System.IO.Path.GetExtension(Path);
+                var newPath = System.IO.Path.ChangeExtension(Path, $"{extension}.mzip");
+                saver.Save(newPath, stream);
+            }
         }
 
-        public override void Save(string fn)
+        private MemoryStream CreateMergeZip()
         {
-            File.WriteAllText(fn, RawContents, Encoding.UTF8);
+            var result = new MemoryStream();
+            using (var saver = new MergeZipFileSaver())
+            {
+                foreach (var sourceFile in SourceFiles)
+                {
+                    sourceFile.Save(saver);
+                }
+
+                saver.ZipFile.Save(result);
+            }
+
+            return result;
+        }
+
+        private class MergeZipFileSaver : IModFileSaver
+        {
+            private int _index;
+            public ZipFile ZipFile { get; }
+
+            public MergeZipFileSaver()
+            {
+                ZipFile = new ZipFile();
+            }
+
+            public void Save(string path, Stream stream)
+            {
+                ZipFile.AddEntry(GetPath(path), stream);
+            }
+
+            public void Save(string path, string text)
+            {
+                ZipFile.AddEntry(GetPath(path), text);
+            }
+
+            public void Dispose()
+            {
+                ZipFile?.Dispose();
+            }
+
+            private string GetPath(string path)
+            {
+                var filename = System.IO.Path.GetFileName(path);
+                var i = _index++;
+                return $"{i:00}/{filename}";
+            }
         }
     }
 }

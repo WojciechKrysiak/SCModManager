@@ -11,6 +11,7 @@ namespace SCModManager.ViewModels
 {
     public class ModConflictPreviewVm : ReactiveObject
     {
+        private Func<Mod, bool> _modFilter;
         private readonly ModConflictDescriptor _modConflict;
 
         private bool _conflictingOnly;
@@ -25,12 +26,13 @@ namespace SCModManager.ViewModels
             set { this.RaiseAndSetIfChanged(ref _conflictingOnly,value); }
         }
 
-        public ModConflictPreviewVm(ModConflictDescriptor modConflict)
+        public ModConflictPreviewVm(ModConflictDescriptor modConflict, Func<Mod, bool> initialModFilter)
         {
+            _modFilter = initialModFilter;
             _modConflict = modConflict;
         }
 
-        public ModDirectory RootDirectory => _rootDirectory ?? (_rootDirectory = ModDirectory.CreateRoot(_modConflict));
+        public ModDirectory RootDirectory => _rootDirectory ?? (_rootDirectory = ModDirectory.CreateRoot(_modConflict, _modFilter));
 
         public ModFileEntry SelectedFile
         {
@@ -38,9 +40,15 @@ namespace SCModManager.ViewModels
             set
             {
                 this.RaiseAndSetIfChanged(ref _selectedFile, value);
-                SelectedModFile = value?.ConflictDescriptor.ConflictingModFiles.FirstOrDefault();
+                _filesInOtherMods = null;
+                SelectedModFile = FilesInOtherMods?.FirstOrDefault();
+                this.RaisePropertyChanged(nameof(FilesInOtherMods));
             }
         }
+
+        private IEnumerable<ModFile> _filesInOtherMods;
+        public IEnumerable<ModFile> FilesInOtherMods => _filesInOtherMods ??
+                (_filesInOtherMods  = SelectedFile?.ConflictDescriptor.ConflictingModFiles.Where(mf => _modFilter(mf.SourceMod)));
 
         public ModFile SelectedModFile
         {
@@ -63,7 +71,15 @@ namespace SCModManager.ViewModels
 
         public void ApplyModFilter(Func<Mod, bool> filter)
         {
+            _modFilter = filter;
             _rootDirectory?.ApplyModFilter(filter);
+
+            if (SelectedModFile != null && !filter(SelectedModFile.SourceMod))
+            {
+                SelectedModFile = null;
+            }
+
+            this.RaisePropertyChanged(nameof(FilesInOtherMods));
         }
     }
 }

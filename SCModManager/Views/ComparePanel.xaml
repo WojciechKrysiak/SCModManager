@@ -111,7 +111,7 @@
                          BorderThickness="0"
                          ItemContainerStyle="{StaticResource ListBoxItemStyle}"
                          ItemTemplate="{StaticResource ConflictModItemTemplate}"
-                         ItemsSource="{Binding SelectedFile.ConflictDescriptor.ConflictingModFiles}"
+                         ItemsSource="{Binding FilesInOtherMods}"
                          SelectedItem="{Binding SelectedModFile}"
                          Visibility="{Binding Selected, ElementName=ModFileTree,
                                               Converter={StaticResource NullToVisibilityConverter}}"

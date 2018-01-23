@@ -10,6 +10,8 @@ using System.Xml;
 using System.Xml.Linq;
 using System.IO;
 using System.Text.RegularExpressions;
+using System.Windows.Input;
+using System.Windows.Media;
 
 namespace SCModManager.SteamWorkshop
 {
@@ -29,10 +31,6 @@ namespace SCModManager.SteamWorkshop
         {
             get { return this.GetValue(TagsProperty) as TagDictionary; }
             set { this.SetValue(TagsProperty, value); }
-        }
-
-        public BBControl()
-        {
         }
 
         private static void OnBBPropertyChanged(DependencyObject obj, DependencyPropertyChangedEventArgs args)
@@ -171,7 +169,6 @@ namespace SCModManager.SteamWorkshop
 
         }
 
-
         private void Parse()
         {
             if (String.IsNullOrEmpty(BBCode) || Tags == null)
@@ -184,6 +181,8 @@ namespace SCModManager.SteamWorkshop
 
             var root = doc.CreateElement("FlowDocumentScrollViewer");
             root.SetAttribute("VerticalScrollBarVisibility", "Disabled");
+            root.SetAttribute("MinZoom", "100");
+            root.SetAttribute("MaxZoom", "100");
             doc.AppendChild(root);
 
             var first = doc.CreateElement("FlowDocument");
@@ -204,8 +203,11 @@ namespace SCModManager.SteamWorkshop
                 ParserContext pc = new ParserContext();
                 pc.XmlnsDictionary.Add("", "http://schemas.microsoft.com/winfx/2006/xaml/presentation");
                 pc.XmlnsDictionary.Add("x", "http://schemas.microsoft.com/winfx/2006/xaml");
-                XamlReader rdr = new XamlReader();
                 this.Content = XamlReader.Load(new MemoryStream(Encoding.UTF8.GetBytes(xaml)), pc);
+
+                var flowDocViewer = this.Content as FlowDocumentScrollViewer;
+
+                flowDocViewer.AddHandler(FrameworkElement.MouseWheelEvent, new RoutedEventHandler(OnFlowDocumentMouseWheel), true);
             }
             catch (Exception ex)
             {
@@ -213,5 +215,12 @@ namespace SCModManager.SteamWorkshop
                 this.ToolTip = ex.Message;
             }
         }
+
+        public void OnFlowDocumentMouseWheel(object sender, RoutedEventArgs a)
+        {
+            a.Handled = false;
+            return;
+        }
+
     }
 }

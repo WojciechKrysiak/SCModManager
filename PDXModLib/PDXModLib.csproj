@@ -70,6 +70,8 @@
     <Compile Include="SCFormat\ScannerImpl.cs" />
     <Compile Include="SCFormat\SCValue.cs" />
     <Compile Include="Interfaces\INotificationService.cs" />
+    <Compile Include="Utility\IModFileSaver.cs" />
+    <Compile Include="Utility\IModFileLoader.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="BinTools\gplex.exe.config" />

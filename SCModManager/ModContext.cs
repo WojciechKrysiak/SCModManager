@@ -40,7 +40,7 @@ namespace SCModManager
         public ICommand Delete { get; }
         public ICommand MergeModsCommand { get; }
 
-        public IEnumerable<ModVM> Mods => _mods;
+        public IEnumerable<ModVM> Mods => _mods.Where(mvm => CurrentFilter(mvm.Mod));
         public IEnumerable<ModSelection> Selections => _gameContext.Selections;
 
         private Window mergeWindow;
@@ -48,6 +48,17 @@ namespace SCModManager
         private bool _conflictsMode;
         private IModConflictCalculator _modConflictCalculator;
         private ModVM _selectedMod;
+
+        private Func<Mod, bool> CurrentFilter
+        {
+            get
+            {
+                if (_filterSelection)
+                    return IsSelected;
+                return IncludeAll;
+            }
+        }
+
 
         public ModSelection CurrentSelection
         {
@@ -58,6 +69,8 @@ namespace SCModManager
                 {
                     _gameContext.CurrentSelection = value;
                     UpdateSelections();
+                    _conflictPreviewVm?.ApplyModFilter(CurrentFilter);
+                    this.RaisePropertyChanged();
                 }
             }
         }
@@ -69,7 +82,7 @@ namespace SCModManager
             {
                 this.RaiseAndSetIfChanged(ref _selectedMod, value);
                 
-                ConflictPreviewVm = value == null ? null : new ModConflictPreviewVm(value.ModConflict);
+                ConflictPreviewVm = value == null ? null : new ModConflictPreviewVm(value.ModConflict, CurrentFilter);
             }
         }
 
@@ -98,10 +111,22 @@ namespace SCModManager
             }
         }
 
+        public bool FilterSelection
+        {
+            get { return _filterSelection; }
+            set
+            {
+                this.RaiseAndSetIfChanged(ref _filterSelection, value);
+                _mods.ForEach(m => m.UpdateModFilter(CurrentFilter));
+                _conflictPreviewVm?.ApplyModFilter(CurrentFilter);
+                this.RaisePropertyChanged(nameof(Mods));
+            }
+        }
+
         private readonly Subject<bool> _canMerge = new Subject<bool>();
         private readonly Subject<bool> _canDelete = new Subject<bool>();
         private ModConflictPreviewVm _conflictPreviewVm;
-
+        private bool _filterSelection;
 
         public ModContext(string product)
         {
@@ -142,7 +167,11 @@ namespace SCModManager
         {
             _modConflicts = _modConflictCalculator.CalculateAllConflicts().ToList();
 
-            _mods?.ForEach(mvm => mvm.PropertyChanged -= ModOnPropertyChanged);
+            _mods?.ForEach(mvm =>
+            {
+                mvm.PropertyChanged -= ModOnPropertyChanged;
+                mvm.Mod.Dispose();
+            });
             _mods = _modConflicts.Select(mc => new ModVM(mc, IsSelected(mc.Mod))).OrderBy(m => m.Name).ToList();
             _mods.ForEach(mvm => mvm.PropertyChanged += ModOnPropertyChanged);
 
@@ -223,6 +252,8 @@ namespace SCModManager
             return CurrentSelection.Contents.Contains(mod);
         }
 
+        private static bool IncludeAll(Mod mod) => true;
+
         private void ModOnPropertyChanged(object sender, PropertyChangedEventArgs propertyChangedEventArgs)
         {
             if (propertyChangedEventArgs.PropertyName == nameof(ModVM.Selected))
@@ -245,9 +276,10 @@ namespace SCModManager
 
         private void UpdateSelections()
         {
-            foreach (var modVm in _mods)
+            _mods.ForEach(modVm => modVm.Selected = IsSelected(modVm.Mod));
+            if (_filterSelection)
             {
-                modVm.Selected = _gameContext.CurrentSelection.Contents.Contains(modVm.Mod);
+                this.RaisePropertyChanged(nameof(Mods));
             }
         }
     }
