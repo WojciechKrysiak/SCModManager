@@ -291,7 +291,11 @@ namespace SCModManager
                     CurrentSelection.Contents.Remove(mod);
                 }
                 _gameContext.SaveSelection();
-                _canMerge.OnNext(DoModsNeedToBeMerged()); 
+                _canMerge.OnNext(DoModsNeedToBeMerged());
+                if (_filterSelection)
+                {
+                    this.RaisePropertyChanged(nameof(Mods));
+                }
             }
         }
 

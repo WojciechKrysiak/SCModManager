@@ -126,6 +126,7 @@
                       CanUserResizeColumns="False"
                       CanUserAddRows="False"
                       RowHeaderWidth="0"
+                      IsReadOnly="True"
                       ColumnWidth="*">
                 <DataGrid.RowStyle>
                     <Style TargetType="DataGridRow">
@@ -137,11 +138,16 @@
                     </Style>
                 </DataGrid.RowStyle>
                 <DataGrid.Columns>
-                    <DataGridCheckBoxColumn Binding="{Binding Selected}" Width="10">
-                        <DataGridCheckBoxColumn.Header>
+                    <DataGridTemplateColumn Width="10" IsReadOnly="False">
+                        <DataGridTemplateColumn.Header>
                             <fa:FontAwesome Icon="Check" ToolTip="Select mod"/>
-                        </DataGridCheckBoxColumn.Header>
-                    </DataGridCheckBoxColumn>
+                        </DataGridTemplateColumn.Header>
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate>
+                                <CheckBox IsChecked="{Binding Selected, UpdateSourceTrigger=PropertyChanged}"/>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
                     <DataGridTextColumn Binding="{Binding Name}" Header="Name">
                         <DataGridTextColumn.ElementStyle>
                             <Style TargetType="TextBlock">
@@ -150,7 +156,6 @@
                             </Style>
                         </DataGridTextColumn.ElementStyle>
                     </DataGridTextColumn>
-
                     <DataGridTextColumn Binding="{Binding ConflictCount}" Width="22">
                         <DataGridTextColumn.Header>
                             <fa:FontAwesome Icon="Flash" ToolTip="Number of conflicts"/>
