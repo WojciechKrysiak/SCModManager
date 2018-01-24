@@ -14,7 +14,7 @@ namespace SCModManager
         public string SettingsPath { get; }
         public string BackupPath { get; }
         public string SavedSelections { get; }
-        public IReadOnlyCollection<string> WhiteListedFiles { get; } = new[] {"description.txt", "modinfo.lua", "descriptor.mod, readme.txt"};
+        public IReadOnlyCollection<string> WhiteListedFiles { get; } = new[] {"description.txt", "modinfo.lua", "descriptor.mod", "readme.txt"};
 
         public StellarisConfiguration()
         {

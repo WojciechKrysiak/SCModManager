@@ -37,42 +37,57 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <Menu Grid.ColumnSpan="2">
-            <Menu.ItemsPanel>
-                <ItemsPanelTemplate>
-                    <DockPanel HorizontalAlignment="Stretch" />
-                </ItemsPanelTemplate>
-            </Menu.ItemsPanel>
-            <Button Command="{Binding SaveSettingsCommand}">Save To Stellaris</Button>
-            <Button Command="{Binding MergeModsCommand}">Merge Selected</Button>
-            <ToggleButton x:Name="MergeMode"
+        <Grid Grid.ColumnSpan="2">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <Button Grid.Column="0" Command="{Binding SaveSettingsCommand}" Margin="5,0">Save To Stellaris</Button>
+            <Button Grid.Column="1" Command="{Binding MergeModsCommand}" Margin="5,0">Merge Selected</Button>
+            <ToggleButton Grid.Column="2" x:Name="MergeMode" Margin="5,0"
                           IsChecked="{Binding ConflictMode}"
                           IsEnabled="{Binding IsVisible,
                                               ElementName=CommsError,
                                               Converter={StaticResource NegateValue}}"
                           >
                 Preview conflicts
-            </ToggleButton>
-            <ToggleButton IsChecked="{Binding FilterSelection}">
+            </ToggleButton >
+            <ToggleButton Grid.Column="3" IsChecked="{Binding FilterSelection}" Margin="5,0">
                 Selection only
             </ToggleButton>
 
 
-            <MenuItem x:Name="CommsError"
+            <StackPanel x:Name="CommsError"
+                      Grid.Column="5"
                       HorizontalAlignment="Right"
-                      Header="Can't download mod data!"
+                      Orientation="Horizontal"
                       ToolTip="{Binding ErrorReason}"
                       Visibility="{Binding ErrorReason,
                                            Converter={StaticResource NullToVisibilityConverter}}"
+                        Margin="5,0"
                       >
-                <MenuItem.Icon>
+                
                     <fa:FontAwesome VerticalAlignment="Center"
                                     Foreground="Red"
                                     Icon="Warning"
                                     />
-                </MenuItem.Icon>
-            </MenuItem>
-        </Menu>
+                    <TextBlock Text="Can't download mod data!"/>
+            </StackPanel>
+            <Button HorizontalAlignment="Right" Grid.Column="6" Command="{Binding ShowPreferences}">
+                <fa:FontAwesome VerticalAlignment="Center"
+                                Icon="Gear"
+                                Padding="5,0"
+                                Margin="5,0"
+                                
+                />
+            </Button>
+        </Grid>
 
         <DockPanel Grid.Column="0"
                    Grid.Row="1"

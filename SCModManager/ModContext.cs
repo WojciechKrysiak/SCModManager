@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Configuration;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -19,15 +20,25 @@ using PDXModLib.Interfaces;
 using PDXModLib.ModData;
 using PDXModLib.SCFormat;
 using ReactiveUI;
+using SCModManager.Configuration;
 using SCModManager.ViewModels;
+using SCModManager.Views;
 
 namespace SCModManager
 {
     class ModContext : ReactiveObject
     {
+        private System.Configuration.Configuration _configuration;
         private static readonly Logger Log = LogManager.GetCurrentClassLogger();
 
         private GameContext _gameContext;
+        private IModConflictCalculator _modConflictCalculator;
+        private GameConfigurationSection _gameConfiguration;
+
+        private readonly Subject<bool> _canMerge = new Subject<bool>();
+        private readonly Subject<bool> _canDelete = new Subject<bool>();
+        private ModConflictPreviewVm _conflictPreviewVm;
+        private bool _filterSelection;
 
         private readonly string product;
 
@@ -39,6 +50,7 @@ namespace SCModManager
         public ICommand Duplicate { get; }
         public ICommand Delete { get; }
         public ICommand MergeModsCommand { get; }
+        public ICommand ShowPreferences { get; }
 
         public IEnumerable<ModVM> Mods => _mods.Where(mvm => CurrentFilter(mvm.Mod));
         public IEnumerable<ModSelection> Selections => _gameContext.Selections.ToArray();
@@ -46,7 +58,6 @@ namespace SCModManager
         private Window mergeWindow;
         private string _errorReason;
         private bool _conflictsMode;
-        private IModConflictCalculator _modConflictCalculator;
         private ModVM _selectedMod;
 
         private Func<Mod, bool> CurrentFilter
@@ -133,11 +144,6 @@ namespace SCModManager
             }
         }
 
-        private readonly Subject<bool> _canMerge = new Subject<bool>();
-        private readonly Subject<bool> _canDelete = new Subject<bool>();
-        private ModConflictPreviewVm _conflictPreviewVm;
-        private bool _filterSelection;
-
         public ModContext(string product)
         {
             this.product = product;
@@ -145,16 +151,19 @@ namespace SCModManager
             MergeModsCommand = ReactiveCommand.Create(MergeMods, _canMerge);
             Duplicate = ReactiveCommand.Create(DoDuplicate);
             Delete = ReactiveCommand.Create(DoDelete, _canDelete);
+            ShowPreferences = ReactiveCommand.Create(DoShowPreferences);
+            _configuration = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
         }
 
         public bool Initialize()
         {
-            var gameConfiguration = new StellarisConfiguration();
-            var notificationService = new NotificationService();
-            var installedModManager = new InstalledModManager(gameConfiguration, notificationService);
-            _gameContext = new GameContext(gameConfiguration, notificationService, installedModManager);
+            LoadConfiguration(product);
 
-            _modConflictCalculator = new ModConflictCalculator(gameConfiguration, installedModManager);
+            var notificationService = new NotificationService();
+            var installedModManager = new InstalledModManager(_gameConfiguration, notificationService);
+            _gameContext = new GameContext(_gameConfiguration, notificationService, installedModManager);
+
+            _modConflictCalculator = new ModConflictCalculator(_gameConfiguration, installedModManager);
 
             if (!_gameContext.Initialize())
             {
@@ -292,6 +301,44 @@ namespace SCModManager
             if (_filterSelection)
             {
                 this.RaisePropertyChanged(nameof(Mods));
+            }
+        }
+
+        private void DoShowPreferences()
+        {
+            var vm = new PreferencesWindowViewModel(_gameConfiguration);
+            var pw = new PreferencesWindow {DataContext = vm};
+
+            vm.ShouldClose += (sender, save) =>
+            {
+                if (save)
+                {
+                    _configuration.Save(ConfigurationSaveMode.Full);
+                    Initialize();
+                }
+                pw.Close();
+            };
+            pw.ShowDialog();
+        }
+
+        private void LoadConfiguration(string game)
+        {
+            var section = _configuration.Sections[game] as GameConfigurationSection;
+            
+            if (section == null)
+            {
+                section = new GameConfigurationSection(new StellarisConfiguration());
+                _configuration.Sections.Add(game, section);
+                _configuration.Save(ConfigurationSaveMode.Full);
+            }
+
+            _gameConfiguration = section;
+
+            if (string.IsNullOrEmpty(_gameConfiguration.BasePath) || !Directory.Exists(_gameConfiguration.BasePath) || !File.Exists(_gameConfiguration.SettingsPath))
+            {
+                MessageBox.Show(
+                    $"There is an error configuration, please sellect a valid documents directory for {game}");
+                DoShowPreferences();
             }
         }
     }

@@ -8,36 +8,42 @@
         xmlns:vm="clr-namespace:SCModManager.ViewModels"
         mc:Ignorable="d"
         Title="PreferencesWindow" Height="500" Width="500"
+        WindowStyle="ToolWindow"
         d:DataContext="{d:DesignInstance Type={x:Type vm:PreferencesWindowViewModel}}">
     <DockPanel LastChildFill="True" Margin="10">
         <StackPanel Orientation="Horizontal" DockPanel.Dock="Bottom" HorizontalAlignment="Right">
             <Button Command="{Binding Ok}" Width="60" Margin="5, 2">Ok</Button>
             <Button Command="{Binding Cancel}" Width="60" Margin="5, 2">Cancel</Button>
         </StackPanel>
-        <StackPanel Orientation="Vertical">
-            <Grid>
+        <DockPanel LastChildFill="True">
+            <Grid DockPanel.Dock="Top">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="1*" />
                     <ColumnDefinition Width="3*"/>
                     <ColumnDefinition Width="auto"/>
                 </Grid.ColumnDefinitions>
                 <TextBlock Text="Settings folder"/>
-                <TextBox Text="{Binding BasePath}" Grid.Column="1"/>
+                <TextBox Text="{Binding BasePath, UpdateSourceTrigger=PropertyChanged}" Grid.Column="1"/>
                 <Button Command="{Binding SelectBasePath}" Grid.Column="2" >
                     <fa:FontAwesome Icon="FolderOpen" Margin="2,0"/>
                 </Button>
             </Grid>
-            <Separator Margin="0,10"/>
-            <TextBlock Text="Whitelisted files"/>
+            <Separator Margin="0,10" DockPanel.Dock="Top"/>
+            <TextBlock Text="Whitelisted files" DockPanel.Dock="Top"/>
             <DataGrid ItemsSource="{Binding WhiteListedFiles}" 
                       CanUserAddRows="True" 
                       CanUserDeleteRows="True" 
                       ColumnWidth="*"
+                      AutoGenerateColumns="False"
+                      CanUserResizeRows="False"
+                      SelectionMode="Single"
+                      SelectionUnit="FullRow"
+                      RowHeaderWidth="0"
                       >
                 <DataGrid.Columns>
-                    <DataGridTextColumn Binding="{Binding}" Header="File"/>
+                    <DataGridTextColumn Binding="{Binding Value}" Header="File"/>
                 </DataGrid.Columns>
             </DataGrid>
-        </StackPanel>
+        </DockPanel>
     </DockPanel>
 </Window>

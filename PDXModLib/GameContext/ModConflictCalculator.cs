@@ -37,7 +37,7 @@ namespace PDXModLib.GameContext
 
         private bool ShouldCompare(ModFile mod)
         {
-            return !_gameConfiguration.WhiteListedFiles.Contains(mod.Filename);
+            return _gameConfiguration.WhiteListedFiles.All(wlf => string.Compare(mod.Filename, wlf, StringComparison.OrdinalIgnoreCase) != 0);
         }
 
         private ModFileConflictDescriptor CalculateConflicts(ModFile modfile)

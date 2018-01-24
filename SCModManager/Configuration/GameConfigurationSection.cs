@@ -10,35 +10,17 @@ namespace SCModManager.Configuration
 {
     public class GameConfigurationSection : ConfigurationSection, IGameConfiguration
     {
+        [ConfigurationProperty("BasePath")]
         public string BasePath
         {
             get { return (string)this["BasePath"]; }
             set { this["BasePath"] = value; }
         }
 
-        public string ModsDir
-        {
-            get { return (string)this["BasePath"]; }
-            set { this["BasePath"] = value; }
-        }
-
-        public string SettingsPath
-        {
-            get { return (string)this["SettingsPath"]; }
-            set { this["SettingsPath"] = value; }
-        }
-
-        public string BackupPath
-        {
-            get { return (string)this["BackupPath"]; }
-            set { this["BackupPath"] = value; }
-        }
-
-        public string SavedSelections
-        {
-            get { return (string)this["SavedSelections"]; }
-            set { this["SavedSelections"] = value; }
-        }
+        public string ModsDir => $"{BasePath}\\mod";
+        public string SettingsPath => $"{BasePath}\\settings.txt";
+        public string BackupPath => $"{BasePath}\\settings.bak";
+        public string SavedSelections => $"{BasePath}\\saved_selections.txt";
 
         public IReadOnlyCollection<string> WhiteListedFiles => WhiteListedFilesConfigSection;
 
@@ -48,12 +30,27 @@ namespace SCModManager.Configuration
             get { return (WhiteListedFileCollection)this[WhiteListedFileCollection.WhiteListedFiles]; }
             set { this[WhiteListedFileCollection.WhiteListedFiles] = value; }
         }
+
+        public GameConfigurationSection(IGameConfiguration source)
+        {
+            BasePath = source.BasePath;
+            WhiteListedFilesConfigSection = new WhiteListedFileCollection();
+            foreach (var file in source.WhiteListedFiles)
+            {
+                WhiteListedFilesConfigSection.Add(file);
+            }
+        }
+
+        public GameConfigurationSection()
+        {
+            
+        }
     }
 
     public class WhiteListedFileCollection : ConfigurationElementCollection, ICollection<string>, IReadOnlyCollection<string>
     {
         public const string WhiteListedFiles = "WhiteListedFiles";
-        bool ICollection<string>.IsReadOnly => throw new NotImplementedException();
+        bool ICollection<string>.IsReadOnly => false;
 
         public void Add(string item)
         {
