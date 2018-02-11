@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Linq;
 using System.Reactive.Linq;
@@ -28,14 +29,16 @@ namespace SCModManager.ViewModels
     public class ModDirectory : ModFileHolder
     {
         private readonly int _level;
-        private Func<Mod, bool> _modFilter;
-        private readonly IEnumerable<ModFileConflictDescriptor> _source;
         private static readonly char[] Separators = { System.IO.Path.DirectorySeparatorChar, System.IO.Path.AltDirectorySeparatorChar };
 
-        private IEnumerable<ModFileHolder> _files;
+        private Func<Mod, bool> _modFilter;
+        private IEnumerable<ModFileConflictDescriptor> _source;
+        private IEnumerable<ModDirectory> _directories;
+        private IEnumerable<ModFileEntry> _files;
+        private ObservableCollection<ModFileHolder> _contents;
         private bool _hasConflicts;
 
-        public IEnumerable<ModFileHolder> Files => _files ?? (_files = CreateChildren());
+        public IEnumerable<ModFileHolder> Files => _contents ?? (_contents = CreateChildren());
 
         public override bool HasConflicts => _hasConflicts;
 
@@ -49,23 +52,6 @@ namespace SCModManager.ViewModels
             _hasConflicts = _source.Any(mfcd => mfcd.ConflictingModFiles.Any());
         }
 
-        private IEnumerable<ModFileHolder> CreateChildren()
-        {
-            var kids = _source.Select(m => Tuple.Create(m.File.Path.Split(Separators), m));
-            List<ModFileHolder> result = new List<ModFileHolder>();
-            foreach (var kid in kids.Where(t => t.Item1.Length > _level + 1).GroupBy(k => k.Item1[_level]).OrderBy(g => g.Key))
-            {
-                result.Add(new ModDirectory(kid.Key, _level + 1, kid.Select(k => k.Item2), _modFilter));
-            }
-
-            foreach (var kid in kids.Where(t => t.Item1.Length == _level + 1))
-            {
-                result.Add(new ModFileEntry(kid.Item1.Last(), kid.Item2, _modFilter));
-            }
-
-            return result;
-        }
-
         public static ModDirectory CreateRoot(ModConflictDescriptor conflictDescriptor, Func<Mod, bool> initialModFilter = null)
         {
             initialModFilter = initialModFilter ?? (m => true);
@@ -76,18 +62,71 @@ namespace SCModManager.ViewModels
         {
             var conflcits = false;
             _modFilter = filter;
-            if (_files != null)
+            if (_contents != null)
             {
-                foreach (var modFileHolder in _files)
+                foreach (var modFileHolder in _contents)
                 {
                     modFileHolder.ApplyModFilter(filter);
                 }
-                conflcits = _files.Any(f => f.HasConflicts);
+                conflcits = _contents.Any(f => f.HasConflicts);
             }
             else 
                 conflcits = _hasConflicts = _source.Any(mfcd => mfcd.ConflictingModFiles.Any(mf => filter(mf.SourceMod)));
 
             this.RaiseAndSetIfChanged(ref _hasConflicts, conflcits, nameof(HasConflicts));
+        }
+
+        public void UpdateDirectoryContents(string directoryName, IEnumerable<ModFileConflictDescriptor> conflicts)
+        {
+            var currentLevel = directoryName.Split(Separators, StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
+            if (currentLevel == null)
+            {
+                _source = conflicts;
+                foreach (var file in _files)
+                {
+                    _contents.Remove(file);
+                }
+                var kids = _source.Select(m => Tuple.Create(m.File.Path.Split(Separators), m)).ToList();
+
+                _files = CreateFiles(kids.Where(t => t.Item1.Length == _level + 1));
+                foreach (var file in _files)
+                {
+                    _contents.Add(file);
+                }
+            }
+            else
+            {
+                var nextLevel = directoryName.Substring(directoryName.IndexOf(currentLevel) + currentLevel.Length);
+
+                var subDir = _directories
+                    .First(md => string.CompareOrdinal(md.Filename, currentLevel) == 0);
+
+                subDir.UpdateDirectoryContents(nextLevel, conflicts);
+            }
+
+            this.RaisePropertyChanged(nameof(HasConflicts));
+        }
+
+        private ObservableCollection<ModFileHolder> CreateChildren()
+        {
+            var kids = _source.Select(m => Tuple.Create(m.File.Path.Split(Separators), m)).ToList();
+
+            _directories = CreateDirectories(kids.Where(t => t.Item1.Length > _level + 1));
+
+            _files = CreateFiles(kids.Where(t => t.Item1.Length == _level + 1));
+
+            return new ObservableCollection<ModFileHolder>(_directories.OfType<ModFileHolder>().Concat(_files));
+        }
+
+        private IEnumerable<ModFileEntry> CreateFiles(IEnumerable<Tuple<string[], ModFileConflictDescriptor>> fileConflicts)
+        {
+            return fileConflicts.Select(fc => new ModFileEntry(fc.Item1.Last(), fc.Item2, _modFilter)).OrderBy(mfe => mfe.Filename).ToList();
+        }
+
+        private IEnumerable<ModDirectory> CreateDirectories(IEnumerable<Tuple<string[], ModFileConflictDescriptor>> directoryConflicts)
+        {
+            return directoryConflicts.GroupBy(k => k.Item1[_level]).OrderBy(g => g.Key)
+                .Select(dc => new ModDirectory(dc.Key, _level + 1, dc.Select(k => k.Item2), _modFilter)).ToList();
         }
     }
 

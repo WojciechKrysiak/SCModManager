@@ -108,6 +108,8 @@
                                    Margin="5 0"
                                    Text="{Binding File.SourceFileCount,
                                                   FallbackValue={x:Null}}"
+                                   Visibility="Collapsed"
+                                   x:Name="ConflictCount"
                                    />
                         <TextBlock x:Name="FileName"
                                    VerticalAlignment="Center"
@@ -118,6 +120,7 @@
                     <DataTemplate.Triggers>
                         <DataTrigger Binding="{Binding HasConflicts}" Value="True">
                             <Setter TargetName="FileName" Property="Opacity" Value="1" />
+                            <Setter TargetName="ConflictCount" Property="Visibility" Value="Visible" />
                             <Setter TargetName="FileIcon" Property="Background" Value="PaleVioletRed" />
                             <Setter TargetName="FileName" Property="Background" Value="PaleVioletRed" />
                         </DataTrigger>

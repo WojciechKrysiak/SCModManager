@@ -243,7 +243,7 @@ namespace SCModManager
         {
             mergeWindow = new Merge();
             mergeWindow.Closed += MergeWindow_Closed;
-            mergeWindow.DataContext = new ModMergeContext(Mods.Where(m => m.Selected).Select(m => m.ModConflict), SaveMergedMod);
+            mergeWindow.DataContext = new ModMergeContext(Mods.Where(m => m.Selected).Select(m => m.ModConflict.Filter(IsSelected)), SaveMergedMod);
             mergeWindow.ShowDialog();
         }
 

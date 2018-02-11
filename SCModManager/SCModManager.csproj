@@ -135,6 +135,7 @@
     <Compile Include="DiffMerge\ModMergeContext.cs" />
     <Compile Include="DiffMerge\MergeProcess.cs" />
     <Compile Include="DiffMerge\MergeViewer.cs" />
+    <Compile Include="DiffMerge\ReferenceEqualityComparer.cs" />
     <Compile Include="NameConfirm.xaml.cs">
       <DependentUpon>NameConfirm.xaml</DependentUpon>
     </Compile>

@@ -20,5 +20,10 @@ namespace PDXModLib.ModData
         public IEnumerable<ModFileConflictDescriptor> FileConflicts { get; }
 
         public IEnumerable<Mod> ConflictingMods { get; }
+
+        public ModConflictDescriptor Filter(Func<Mod, bool> filterFunc)
+        {
+            return new ModConflictDescriptor(Mod, FileConflicts.Select(fc => fc.Filter(filterFunc)));
+        }
     }
 }

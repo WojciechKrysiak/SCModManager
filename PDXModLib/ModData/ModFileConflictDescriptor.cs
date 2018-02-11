@@ -27,5 +27,10 @@ namespace PDXModLib.ModData
         {
             return File.GetHashCode();
         }
+
+        public ModFileConflictDescriptor Filter(Func<Mod, bool> filterFunc)
+        {
+            return new ModFileConflictDescriptor(File, ConflictingModFiles.Where(cmf => filterFunc(cmf.SourceMod)));
+        }
     }
 }

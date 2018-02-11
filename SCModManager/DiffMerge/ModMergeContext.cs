@@ -16,18 +16,17 @@ namespace SCModManager.DiffMerge
         public List<Mod> BaseMods { get; }
         private ModFile _selected;
 
-        private  bool onlyConflicts;
+        private bool onlyConflicts;
 
-        private List<ModFile> modFiles = new List<ModFile>();
+        private readonly IEnumerable<ModFile> modFiles;
 
-        private Action<ModMergeContext> saveAction;
+        private readonly Action<ModMergeContext> saveAction;
 
-        private Subject<bool> _canSave = new Subject<bool>();
+        private readonly Subject<bool> _canSave = new Subject<bool>();
 
-        // public IEnumerable<ModToProcess> ModFiles => modFiles.Where(mf => mf.HasConflict);
-        Dictionary<ModFile, MergeProcess> _currentProcesses = new Dictionary<ModFile, MergeProcess>();
+        readonly Dictionary<ModFile, MergeProcess> _currentProcesses = new Dictionary<ModFile, MergeProcess>(ReferenceEqualityComparer.Default);
 
-        private ModDirectory _rootDirectory;
+        private readonly ModDirectory _rootDirectory;
 
         public ModDirectory RootDirectory => _rootDirectory;
 
@@ -54,14 +53,22 @@ namespace SCModManager.DiffMerge
 
         private void CurrentProcess_FileResolved(object sender, EventArgs e)
         {
-            var selected = _selected;
-            if (!ReferenceHasConflicts(_selected))
-            {
-                _currentProcesses.Remove(_selected);
-                SelectedModFile = null;
-            }
+            CheckFileResolved();
+        }
 
-            UpdateModList();
+        private void CheckFileResolved()
+        {
+            var selected = _selected;
+            if (selected != null)
+            {
+                if (!ReferenceHasConflicts(_selected))
+                {
+                    _currentProcesses.Remove(_selected);
+                    SelectedModFile = null;
+                }
+
+                UpdateModList(selected.Path);
+            }
 
             _canSave.OnNext(!modFiles.Any(ReferenceHasConflicts));
         }
@@ -98,7 +105,7 @@ namespace SCModManager.DiffMerge
         {
             Result = new MergedMod("Merge result", source);
 
-            modFiles.AddRange(Result.Files);
+            modFiles = Result.Files;
 
             LeftBefore = ReactiveCommand.Create<ModFile>(DoBefore);
             LeftAfter = ReactiveCommand.Create<ModFile>(DoAfter);
@@ -136,7 +143,7 @@ namespace SCModManager.DiffMerge
 
         private List<ModNameParse> GetMatchingFiles(ModNameParse modFile)
         {
-            return modFiles.Select(mf => ModNameParse.Parse(mf)).Where(mft => modFile.Filename == mft?.Filename).OrderBy(r => r.Prefix).ToList();
+            return modFiles.Select(ModNameParse.Parse).Where(mft => modFile.Filename == mft?.Filename).OrderBy(r => r.Path).ToList();
         }
 
         public ICommand LeftBefore { get; }
@@ -152,41 +159,43 @@ namespace SCModManager.DiffMerge
 
             var surroundings = GetMatchingFiles(match);
 
-            match = surroundings.First(mnp => mnp.Path == match.Path);
-
-            var idx = surroundings.IndexOf(match);
-
-            if (match.Prefix == 0)
+            var hasPrefix = match.HasPrefix;
+            if (hasPrefix)
             {
-                match.Prefix = 0;
-
-                var tmpPrefix = match.Prefix;
-
-                for (int i = idx; i < surroundings.Count; i++)
+                var prefix = match.Prefix;
+                if (prefix == 0 || surroundings.Any(s => s.HasPrefix && s.Prefix == prefix - 1))
                 {
-                    if (surroundings[i].Prefix - tmpPrefix <= 1)
+                    var toModify = surroundings.Where(s => s.HasPrefix && s.Prefix >= prefix).OrderBy(s => s.Prefix);
+                    var modPrefix = prefix;
+                    foreach (var item in toModify)
                     {
-                        tmpPrefix = surroundings[i].Prefix;
-                        surroundings[i].Prefix++;
+                        if (modPrefix != item.Prefix)
+                            break;
+                        modPrefix++;
+                        item.Prefix = modPrefix;
+                        item.File.Path = item.Path;
                     }
-                    else
-                        break;
+                }
+                else
+                {
+                    match.Prefix = prefix - 1;
+                    modFile.Path = match.Path;
                 }
             }
             else
             {
-                match.Prefix -= 1;
+                int prefix = 0;
+                if (surroundings.Any(s => s.HasPrefix))
+                {
+                    prefix = surroundings.Where(s => s.HasPrefix).Max(s => s.Prefix) + 1;
+                }
+                match.Prefix = prefix;
+                modFile.Path = match.Path;
             }
 
+            Result.Files.Add(modFile);
+
             CurrentProcess.Remove(modFile);
-
-            modFile.Path = match.Path;
-
-            modFiles.Add(modFile);
-
-            UpdateModList();
-
-            return;
         }
 
         public ICommand LeftAfter { get; }
@@ -202,41 +211,47 @@ namespace SCModManager.DiffMerge
 
             var surroundings = GetMatchingFiles(match);
 
-            match = surroundings.First(mnp => mnp.Path == match.Path);
-
-            var idx = surroundings.IndexOf(match);
-
-            if (match.Prefix == ModNameParse.MaxNum)
+            var hasPrefix = match.HasPrefix;
+            if (hasPrefix)
             {
-                match.Prefix = ModNameParse.MaxNum;
-
-                var tmpPrefix = match.Prefix;
-
-                for (int i = idx; i >= 0; i--)
+                var prefix = match.Prefix;
+                if (surroundings.Any(s => s.HasPrefix && s.Prefix == prefix + 1))
                 {
-                    if (tmpPrefix - surroundings[i].Prefix  <= 1)
+                    var toModify = surroundings.Where(s => s.HasPrefix && s.Prefix <= prefix).OrderByDescending(s => s.Prefix);
+                    var modPrefix = prefix;
+                    foreach (var item in toModify)
                     {
-                        tmpPrefix = surroundings[i].Prefix;
-                        surroundings[i].Prefix--;
+                        if (modPrefix != item.Prefix)
+                            break;
+                        modPrefix--;
+                        item.Prefix = modPrefix;
+                        item.File.Path = item.Path;
                     }
-                    else
-                        break;
+                }
+                else
+                {
+                    match.Prefix = prefix + 1;
+                    modFile.Path = match.Path;
                 }
             }
             else
             {
-                match.Prefix -= 1;
+                var dir = Path.GetDirectoryName(modFile.Path);
+                var filename = Path.GetFileName(modFile.Path);
+                var extension = Path.GetExtension(modFile.Path);
+                var postfix = 0;
+                string newPath;
+                do
+                {
+                    newPath = Path.Combine(dir, $"{filename}_{postfix++}{extension}");
+                } while (modFiles.Any(mf => string.CompareOrdinal(mf.Path, newPath) == 0));
+
+                modFile.Path = newPath;
             }
 
+            Result.Files.Add(modFile);
+
             CurrentProcess.Remove(modFile);
-
-            modFile.Path = match.Path;
-
-            modFiles.Add(modFile);
-
-            UpdateModList();
-
-            return;
         }
 
         public ICommand RightBefore { get; }
@@ -244,16 +259,17 @@ namespace SCModManager.DiffMerge
         public ICommand RightAfter { get; }
 
 
-        private void UpdateModList()
+        private void UpdateModList(string path)
         {
-            _rootDirectory = ModDirectory.CreateRoot(Result.ToModConflictDescriptor());
-
-            this.RaisePropertyChanged(nameof(RootDirectory));
+            var directory = Path.GetDirectoryName(path) ?? string.Empty;
+            
+            var newContents = Result.ToModConflictDescriptor().FileConflicts.Where(fc => fc.File.Path.StartsWith(directory)).ToList();
+            _rootDirectory.UpdateDirectoryContents(directory, newContents);
         }
 
         private class ModNameParse
         {
-            private static readonly Regex PDXPattern = new Regex(@"(?<directory>(.+/)+)?(?<prefix>[\d|\w][\d|\w](?=_))?(?<filename>.+)(?<extension>\..+)");
+            private static readonly Regex PDXPattern = new Regex(@"(?<directory>(.+\\)+)?(?<prefix>[\d|\w][\d|\w](?=_))?(?<filename>.+)(?<extension>\..+)");
 
             private static readonly List<char> characters = new List<char> {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
                                                                             'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j',
@@ -274,6 +290,8 @@ namespace SCModManager.DiffMerge
             public int Prefix { get; set; }
 
             public string Path => $"{Directory}{StringPrefix}{Filename}{Extension}";
+
+            public bool HasPrefix => Match.Groups["prefix"].Success;
 
             public string StringPrefix
             {
@@ -297,7 +315,7 @@ namespace SCModManager.DiffMerge
 
             private void ParsePrefix()
             {
-                if (Match.Groups["prefix"].Success)
+                if (HasPrefix)
                 {
                     var prefix = Match.Groups["prefix"].Value;
 

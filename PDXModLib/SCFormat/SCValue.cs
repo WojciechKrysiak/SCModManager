@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Text;
@@ -302,7 +303,7 @@ namespace PDXModLib.SCFormat
 
         public SCNumber(string text) 
         {
-            if (!decimal.TryParse(text, out _number))
+            if (!decimal.TryParse(text, NumberStyles.Any, CultureInfo.InvariantCulture, out _number))
             {
                 _number = 0;
             }
@@ -312,7 +313,7 @@ namespace PDXModLib.SCFormat
 
         public override string ToString()
         {
-            return $"{_number}";
+            return FormattableString.Invariant($"{_number}");
         }
 
         internal override void Serialize(StringBuilder writer)
@@ -339,7 +340,7 @@ namespace PDXModLib.SCFormat
         public SCPercent(string text) 
         {
             var stripped = text.Replace("%", string.Empty);
-            if (double.TryParse(stripped, out _value))
+            if (double.TryParse(stripped, NumberStyles.Any, CultureInfo.InvariantCulture, out _value))
             {
                 _value /= 100;
             }
@@ -351,7 +352,7 @@ namespace PDXModLib.SCFormat
 
         public override string ToString()
         {
-            return $"{_value*100}%";
+            return FormattableString.Invariant($"{_value*100}%");
         }
 
         internal override void Serialize(StringBuilder writer)

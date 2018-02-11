@@ -141,6 +141,8 @@ namespace SCModManager.DiffMerge
             if (file.SourceFiles.Count == 1)
             {
                 Left = Right = null;
+                file.SaveResult(file.SourceFiles.First().RawContents);
+                file.SourceFiles.Clear();
             }
             else
             {

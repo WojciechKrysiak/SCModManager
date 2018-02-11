@@ -31,7 +31,7 @@ namespace PDXModLib.ModData
 
         protected ModFile(string path, Mod sourceMod)
         {
-            Path = path;
+            Path = path.Replace(@"/", @"\");
             SourceMod = sourceMod;
         }
 
