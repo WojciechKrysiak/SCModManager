@@ -11,7 +11,7 @@ namespace PDXModLib.Utility
     public interface IModFileSaver: IDisposable
     {
         void Save(string path, Stream stream);
-        void Save(string path, string text);
+        void Save(string path, string text, Encoding encoding);
     } 
 
     internal sealed class DiskFileSaver : IModFileSaver
@@ -34,11 +34,11 @@ namespace PDXModLib.Utility
             }
         }
 
-        public void Save(string path, string text)
+        public void Save(string path, string text, Encoding encoding)
         {
             path = Path.Combine(_basePath, path);
             VerifyDir(path);
-            File.WriteAllText(path, text);
+            File.WriteAllText(path, text, encoding);
         }
 
         public void Dispose()
@@ -70,9 +70,9 @@ namespace PDXModLib.Utility
             _zipFile.AddEntry(path, stream);
         }
 
-        public void Save(string path, string text)
+        public void Save(string path, string text, Encoding encoding)
         {
-            _zipFile.AddEntry(path, text);
+            _zipFile.AddEntry(path, text, encoding);
         }
 
         public void Dispose()

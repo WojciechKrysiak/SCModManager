@@ -12,8 +12,9 @@ using PDXModLib.Utility;
 
 namespace PDXModLib.ModData
 {
-    public abstract class ModFile 
+    public abstract class ModFile
     {
+        private static readonly Encoding NoBomEncoding = new UTF8Encoding(false, true);
         private static readonly string[] SCExtensions = { ".gfx", ".gui", ".txt" };
 
         private static readonly string[] CodeExtensions = { ".lua" };
@@ -75,7 +76,7 @@ namespace PDXModLib.ModData
 
         public virtual void Save(IModFileSaver saver)
         {
-            saver.Save(Path, RawContents);
+            saver.Save(Path, RawContents, NoBomEncoding);
         }
     }
 
@@ -198,6 +199,11 @@ namespace PDXModLib.ModData
         {
             _loader = loader;
         }
+
+        public override void Save(IModFileSaver saver)
+        {
+            saver.Save(Path, _rawContents, Encoding.UTF8);
+        }
     }
 
     internal class BinaryModFile : ModFile
@@ -291,9 +297,9 @@ namespace PDXModLib.ModData
                 ZipFile.AddEntry(GetPath(path), stream);
             }
 
-            public void Save(string path, string text)
+            public void Save(string path, string text, Encoding encoding)
             {
-                ZipFile.AddEntry(GetPath(path), text);
+                ZipFile.AddEntry(GetPath(path), text, encoding);
             }
 
             public void Dispose()

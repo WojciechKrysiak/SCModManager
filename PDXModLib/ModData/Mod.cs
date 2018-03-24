@@ -36,6 +36,8 @@ namespace PDXModLib.ModData
 
         public virtual string FileName => _archive;
 
+        public virtual string Folder => _folder;
+
         public bool ParseError { get; set; }
 
         public string Description { get; private set; }
