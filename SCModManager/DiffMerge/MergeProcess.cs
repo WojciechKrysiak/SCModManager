@@ -1,6 +1,8 @@
 ﻿using ICSharpCode.AvalonEdit.Document;
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Collections.Specialized;
 using System.Linq;
 using System.Reactive.Subjects;
 using System.Windows;
@@ -15,13 +17,32 @@ namespace SCModManager.DiffMerge
         public static DiffMatchPatch.DiffMatchPatch DiffModule = new DiffMatchPatch.DiffMatchPatch(1f, (short)128, 0, 0.3f, 1000, 512, 0.2f, (short)64);
 
         readonly MergedModFile file;
-        private ModFile _left;
-        private ModFile _right;
+        private ModFileToMerge _left;
+        private ModFileToMerge _right;
+        private ModFileToMerge _result;
 
-        private ModFile _result;
         private Comparison _comparison;
 
+        private ObservableCollection<ModFileToMerge> _sourceFiles  = new ObservableCollection<ModFileToMerge>();
+
         private readonly Subject<bool> _canSaveMerge = new Subject<bool>();
+
+        private double[] _overviewMap;
+
+        private TextDocument _rightDocument = new TextDocument();
+        private TextDocument _leftDocument = new TextDocument();
+        private Vector _scrollOffset;
+        private TextDocument _resultDocument = new TextDocument();
+        private bool _hideWhiteSpace;
+
+        public bool HideWhiteSpace
+        {
+            get { return _hideWhiteSpace; }
+            set
+            {
+                this.RaiseAndSetIfChanged(ref _hideWhiteSpace, value);
+            }
+        }
 
         public Vector ScrollOffset
         {
@@ -32,19 +53,14 @@ namespace SCModManager.DiffMerge
             }
         }
 
-        public IEnumerable<ModFile> LeftSelection
-        {
-            get {
-                return file.SourceFiles.Concat(new[] { _result }).Where(f => f != null && f != _right).ToList();
-            }
-        }
+        public IReactiveCollection<ModFileToMerge> LeftSelection { get; }
 
-        public ModFile Left {
+        public ModFileToMerge Left {
             get { return _left; }
             set
             {
                 this.RaiseAndSetIfChanged(ref _left, value);
-                this.RaisePropertyChanged(nameof(RightSelection));
+                RightSelection.Reset();
                 UpdateCompareContent();
             }
         }
@@ -63,21 +79,16 @@ namespace SCModManager.DiffMerge
                 this.RaiseAndSetIfChanged(ref _comparison, value);
             }
         }
-        public IEnumerable<ModFile> RightSelection
-        {
-            get
-            {
-                return file.SourceFiles.Concat(new[] { _result }).Where(f => f != null && f != _left).ToList();
-            }
-        }
 
-        public ModFile Right
+        public IReactiveCollection<ModFileToMerge> RightSelection { get; }
+
+        public ModFileToMerge Right
         {
             get { return _right; }
             set
             {
                 this.RaiseAndSetIfChanged(ref _right, value);
-                this.RaisePropertyChanged(nameof(LeftSelection));
+                LeftSelection.Reset();
                 UpdateCompareContent();
             }
         }
@@ -91,12 +102,35 @@ namespace SCModManager.DiffMerge
         public TextDocument ResultDocument
         {
             get { return _resultDocument; }
-            set { this.RaiseAndSetIfChanged(ref _resultDocument, value); }
+            set
+            {
+                if (_resultDocument != null)
+                    _resultDocument.Changed -= _resultDocument_Changed;
+
+                this.RaiseAndSetIfChanged(ref _resultDocument, value);
+
+                if (_resultDocument != null)
+                    _resultDocument.Changed += _resultDocument_Changed;
+            }
+        }
+
+        public double[] OverviewMap
+        {
+            get { return _overviewMap; }
+            set { this.RaiseAndSetIfChanged(ref _overviewMap, value); }
         }
 
         public MergeProcess(MergedModFile fileToMerge)
         {
             file = fileToMerge;
+            _result = new ModFileToMerge(file);
+            _sourceFiles = new ObservableCollection<ModFileToMerge>(file.SourceFiles.Select(f => new ModFileToMerge(f)));
+            _sourceFiles.Add(_result);
+            _sourceFiles.CollectionChanged += SourceFilesCollectionChanged;
+
+            LeftSelection = _sourceFiles.CreateDerivedCollection(f => f, f => f?.RawContents != null && f != Right);
+            RightSelection = _sourceFiles.CreateDerivedCollection(f => f, f => f?.RawContents != null && f != Left);
+
             Left = LeftSelection.First();
             Right = RightSelection.First();
 
@@ -105,8 +139,19 @@ namespace SCModManager.DiffMerge
             SaveMerge = ReactiveCommand.Create(DoSaveMerge, _canSaveMerge); 
 
             Reset = ReactiveCommand.Create(DoReset);
+        }
 
-            _resultDocument.Changed += _resultDocument_Changed;
+        private void SourceFilesCollectionChanged(object sender, NotifyCollectionChangedEventArgs notifyCollectionChangedEventArgs)
+        {
+            switch (notifyCollectionChangedEventArgs.Action)
+            {
+                case NotifyCollectionChangedAction.Remove:
+                    foreach (var fileToMerge in notifyCollectionChangedEventArgs.OldItems.OfType<ModFileToMerge>())
+                    {
+                        file.RemoveSourceFile(fileToMerge.Source);
+                    }
+                    return;
+            }
         }
 
         public ICommand Reset { get; }
@@ -137,27 +182,18 @@ namespace SCModManager.DiffMerge
 
         public void Remove(ModFile toRemove)
         {
-            file.SourceFiles.Remove(toRemove);
-            if (file.SourceFiles.Count == 1)
+            _sourceFiles.Remove(_sourceFiles.FirstOrDefault(f => f.Source == toRemove));
+            if (file.Resolved)
             {
                 Left = Right = null;
-                file.SaveResult(file.SourceFiles.First().RawContents);
-                file.SourceFiles.Clear();
             }
             else
             {
                 Left = LeftSelection.First();
                 Right = RightSelection.First();
             }
-            this.RaisePropertyChanged(nameof(LeftSelection));
-            this.RaisePropertyChanged(nameof(RightSelection));
             FileResolved?.Invoke(this, EventArgs.Empty);
         }
-
-        private TextDocument _rightDocument = new TextDocument();
-        private TextDocument _leftDocument = new TextDocument();
-        private Vector _scrollOffset;
-        private TextDocument _resultDocument = new TextDocument();
 
         private void UpdateCompareContent()
         {
@@ -175,11 +211,13 @@ namespace SCModManager.DiffMerge
 
                 Comparison.RebuildRequested += Comparison_RebuildRequested;
 
+                LeftDocument.Text = Comparison.Root?.GetAsString(Side.Left);
                 RightDocument.Text = Comparison.Root?.GetAsString(Side.Right);
 
-                LeftDocument.Text = Comparison.Root?.GetAsString(Side.Left);
 
+                ResultDocument.Changed -= _resultDocument_Changed;
                 ResultDocument.Text = Comparison.Root?.GetAsString(Side.Result);
+                ResultDocument.Changed += _resultDocument_Changed;
             }
         }
 
@@ -229,23 +267,16 @@ namespace SCModManager.DiffMerge
 
         private void DoPickLeft()
         {
-            file.SaveResult(Left.RawContents);
-            _result = file;
-
-            file.SourceFiles.Remove(Left);
-            file.SourceFiles.Remove(Right);
-
-            if (file.SourceFiles.Count < 2)
+            _sourceFiles.Remove(Right);
+            if (file.Resolved)
             {
                 Left = Right = null;
             }
             else
             {
-                Left = _result;
                 Right = RightSelection.First();
             }
-            this.RaisePropertyChanged(nameof(LeftSelection));
-            this.RaisePropertyChanged(nameof(RightSelection));
+
             FileResolved?.Invoke(this, EventArgs.Empty);
         }
 
@@ -253,22 +284,17 @@ namespace SCModManager.DiffMerge
 
         private void DoPickRight()
         {
-            file.SaveResult(Right.RawContents);
-            _result = file;
+            _sourceFiles.Remove(Left);
 
-            file.SourceFiles.Remove(Right);
-            file.SourceFiles.Remove(Left);
-            if (file.SourceFiles.Count < 2)
+            if (file.Resolved)
             {
                 Left = Right = null;
             }
             else
             {
-                Left = _result;
-                Right = RightSelection.First();
+                var tmp = Right;
+                Left = tmp;
             }
-            this.RaisePropertyChanged(nameof(LeftSelection));
-            this.RaisePropertyChanged(nameof(RightSelection));
             FileResolved?.Invoke(this, EventArgs.Empty);
         }
 
@@ -280,7 +306,9 @@ namespace SCModManager.DiffMerge
 
             while (block != null)
             {
-                if (block.IsConflict)
+                
+                if (block.IsConflict && 
+                    !(HideWhiteSpace && block.IsWhiteSpace))
                     return false;
                 block = block.NextBlock;
             }
@@ -291,11 +319,14 @@ namespace SCModManager.DiffMerge
         private void DoSaveMerge()
         {
             file.SaveResult(ResultDocument.Text);
-            _result = file;
 
-            file.SourceFiles.Remove(Right);
-            file.SourceFiles.Remove(Left);
-            if (file.SourceFiles.Count < 2)
+            var left = Left;
+            var right = Right;
+
+            _sourceFiles.Remove(left);
+            _sourceFiles.Remove(right);
+
+            if (file.Resolved)
             {
                 Left = Right = null;
             }
@@ -304,10 +335,7 @@ namespace SCModManager.DiffMerge
                 Left = _result;
                 Right = RightSelection.First();
             }
-            this.RaisePropertyChanged(nameof(LeftSelection));
-            this.RaisePropertyChanged(nameof(RightSelection));
             FileResolved?.Invoke(this, EventArgs.Empty);
-
         }
 
         public event EventHandler FileResolved;

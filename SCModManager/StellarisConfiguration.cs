@@ -7,7 +7,7 @@ using PDXModLib.Interfaces;
 
 namespace SCModManager
 {
-    class StellarisConfiguration : IGameConfiguration
+    public class StellarisConfiguration : IGameConfiguration
     {
         public string BasePath { get; }
         public string ModsDir { get; }

@@ -19,11 +19,6 @@ namespace PDXModLib.GameContext
             _installedModManager = installedModManager;
         }
 
-        //public IEnumerable<Mod> CalculateConflicts(Mod mod)
-        //{
-        //    return _installedModManager.Mods.Except(new[] { mod }).Where(m => m.Files.Where(ShouldCompare).Any(mf => mod.Files.Any(mff => mff.Path == mf.Path))).ToList();
-        //}
-
         public ModConflictDescriptor CalculateConflicts(Mod mod)
         {
             var fileConflicts = mod.Files.Select(CalculateConflicts);
@@ -44,7 +39,7 @@ namespace PDXModLib.GameContext
         {
             var conflictingModFiles = ShouldCompare(modfile)
                 ? _installedModManager.Mods.Where(m => m != modfile.SourceMod)
-                                           .Select(m => m.Files.FirstOrDefault(mf => mf.Equals(modfile)))
+                                           .Select(m => m.Files.FirstOrDefault(mf => mf.Path.Equals(modfile.Path)))
                                            .Where(mf => mf != null)
                 : Enumerable.Empty<ModFile>();
 
@@ -57,7 +52,7 @@ namespace PDXModLib.GameContext
 
             var allFiles = _installedModManager.Mods.SelectMany(m => m.Files);
 
-            var groupped = allFiles.GroupBy(m => m);
+            var groupped = allFiles.GroupBy(m => m.Path);
             foreach (var conflictGroup in groupped)
             {
                 var cgList = conflictGroup.ToList();

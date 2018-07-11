@@ -9,7 +9,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>SCModManager</RootNamespace>
     <AssemblyName>SCModManager</AssemblyName>
-    <TargetFrameworkVersion>v4.6.1</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.7.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <ProjectTypeGuids>{60dc8134-eba5-43b8-bcc9-bb4bc16c2548};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
     <WarningLevel>4</WarningLevel>
@@ -128,6 +128,7 @@
     <Compile Include="DiffMerge\ComparisonContext.cs" />
     <Compile Include="DiffMerge\Colorizer.cs" />
     <Compile Include="DiffMerge\Comparison.cs" />
+    <Compile Include="DiffMerge\ModFileToMerge.cs" />
     <Compile Include="DiffMerge\ReadOnlyProvider.cs" />
     <Compile Include="DiffMerge\Merge.xaml.cs">
       <DependentUpon>Merge.xaml</DependentUpon>
@@ -154,6 +155,8 @@
     <Compile Include="Ui\MVVMTreeView.cs" />
     <Compile Include="Ui\TypeBasedDataTemplateSelector.cs" />
     <Compile Include="Ui\NullToVisibilityConverter.cs" />
+    <Compile Include="Utility\IEnumerableExtensions.cs" />
+    <Compile Include="Utility\ModChangeWatcher.cs" />
     <Compile Include="ViewModels\ModConflictPreviewVm.cs" />
     <Compile Include="ViewModels\ModFileVm.cs" />
     <Compile Include="ViewModels\ModVM.cs" />
@@ -223,7 +226,9 @@
     <AppDesigner Include="Properties\" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="App.config" />
+    <None Include="App.config">
+      <SubType>Designer</SubType>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\PDXModLib\PDXModLib.csproj">

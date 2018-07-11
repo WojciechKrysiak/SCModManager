@@ -13,7 +13,7 @@ namespace SCModManager.DiffMerge
     {
         Left,
         Right,
-        Result 
+        Result
     }
 
     public class Comparison
@@ -31,16 +31,17 @@ namespace SCModManager.DiffMerge
                 if (source[i].Operation.IsEqual)
                 {
                     result = new ResultBlock(source[i].Text, current);
-                    
-                } else if (!source[i+1].Operation.IsEqual)
+                }
+                else if (!source[i + 1].Operation.IsEqual)
                 {
-
-                    result = new ResultBlock(source[i].Text, source[i + 1].Text, current);
-
+                    var left = source[i].Operation.IsDelete ? source[i].Text : source[i + 1].Text;
+                    var right = source[i].Operation.IsDelete ? source[i + 1].Text : source[i].Text;
+                    result = new ResultBlock(left, right, current);
                     i += 1;
-                } else
+                }
+                else
                 {
-                    result = new ResultBlock(source[i].Text, source[i].Operation.IsInsert, current);
+                    result = new ResultBlock(source[i].Text, source[i].Operation.IsDelete, current);
                 }
 
                 if (current == null)
@@ -61,7 +62,7 @@ namespace SCModManager.DiffMerge
                 }
                 else
                 {
-                    result = new ResultBlock(source[i].Text, source[i].Operation.IsInsert, current);
+                    result = new ResultBlock(source[i].Text, source[i].Operation.IsDelete, current);
                 }
 
                 if (current == null)
@@ -141,13 +142,12 @@ namespace SCModManager.DiffMerge
         internal void Append(string insertedText)
         {
             var block = Root;
-            while(block?.NextBlock != null)
+            while (block?.NextBlock != null)
             {
                 block = block.NextBlock;
             }
 
             var newBlock = new ResultBlock(insertedText, block);
-
         }
 
         public event EventHandler RedrawRequested;
@@ -192,8 +192,9 @@ namespace SCModManager.DiffMerge
         bool hasLeft;
         bool hasRight;
 
-        public bool IsConflict { get; set; }
-        public bool IsEqual { get; set; }
+        public bool IsConflict { get; }
+        public bool IsEqual { get; }
+        public bool IsWhiteSpace { get; }
 
         public ResultBlock PrevBlock { get; private set; }
         public ResultBlock NextBlock { get; set; }
@@ -254,15 +255,16 @@ namespace SCModManager.DiffMerge
         }
 
         public ResultBlock(string both, ResultBlock previous)
-            :this(previous)
+            : this(previous)
         {
             left = right = effectiveLeft = effectiveRight = effectiveResult = both;
             IsEqual = hasLeft = hasRight = true;
+            IsWhiteSpace = String.IsNullOrWhiteSpace(both);
         }
 
 
         public ResultBlock(string either, bool isAdd, ResultBlock previous)
-            :this(previous)
+            : this(previous)
         {
             if (isAdd)
             {
@@ -278,10 +280,11 @@ namespace SCModManager.DiffMerge
                 left = effectiveLeft = string.Join(Environment.NewLine, leftLines.Select(l => new string(' ', l.Length)));
                 hasRight = true;
             }
+            IsWhiteSpace = String.IsNullOrWhiteSpace(either);
         }
 
         public ResultBlock(string left, string right, ResultBlock previous)
-            :this(previous)
+            : this(previous)
         {
             var totalLen = Math.Max(left.Length, right.Length);
 
@@ -293,20 +296,21 @@ namespace SCModManager.DiffMerge
 
             if (leftLines.Length < rightLines.Length)
             {
-                for (int i = leftLines.Length; i < rightLines.Length; i++)
-                {
-                    effectiveLeft += string.Concat(new string(' ', rightLines[i].Length), Environment.NewLine);
-                }
-            } else if (leftLines.Length > rightLines.Length)
+                var contents = string.Join(Environment.NewLine, rightLines.Skip(leftLines.Length).Select(s => new string(' ', s.Length)) );
+
+                effectiveLeft = $"{effectiveLeft}{Environment.NewLine}{contents}";
+            }
+            else if (leftLines.Length > rightLines.Length)
             {
-                for (int i = rightLines.Length; i < leftLines.Length; i++)
-                {
-                    effectiveRight += string.Concat(new string(' ', leftLines[i].Length), Environment.NewLine);
-                }
-            } 
+                var contents = string.Join(Environment.NewLine, leftLines.Skip(rightLines.Length).Select(s => new string(' ', s.Length)) );
+
+                effectiveRight = $"{effectiveRight}{Environment.NewLine}{contents}";
+            }
 
             effectiveResult = string.Empty;
-            for (int i = 0; i < Math.Max(leftLines.Length, rightLines.Length); i++)
+            var lineCount = Math.Max(leftLines.Length, rightLines.Length) ;
+
+            for (int i = 0; i < lineCount; i++)
             {
                 var l = i < leftLines.Length ? leftLines[i] : string.Empty;
                 var r = i < rightLines.Length ? rightLines[i] : string.Empty;
@@ -316,51 +320,38 @@ namespace SCModManager.DiffMerge
                 effectiveResult += string.Concat(new string(' ', ll), Environment.NewLine);
             }
 
-            effectiveLeft = effectiveLeft.TrimEnd(Environment.NewLine.ToArray());
-            effectiveRight = effectiveRight.TrimEnd(Environment.NewLine.ToArray());
-            effectiveResult = effectiveResult.TrimEnd(Environment.NewLine.ToArray());
-
             this.left = left;
             this.right = right;
 
             hasLeft = hasRight = true;
 
             IsConflict = true;
+            IsWhiteSpace = String.IsNullOrWhiteSpace(left) && String.IsNullOrWhiteSpace(right);
         }
 
         public void ResolveAs(Side side)
         {
+            ResultBlock result;
             if (!HasSide(side))
             {
-                if (PrevBlock != null)
-                {
-                    PrevBlock.NextBlock = NextBlock;
-                }
-                if (NextBlock != null)
-                {
-                    NextBlock.PrevBlock = PrevBlock;
-                }
-                RebuildRequested?.Invoke(this, new RebuildRequestEventArgs(this));
+                result = new ResultBlock(string.Empty, PrevBlock);
+            }
+            else if (side == Side.Left)
+            {
+                result = new ResultBlock(left, PrevBlock);
             }
             else
             {
-                ResultBlock result;
-
-                if (side == Side.Left)
-                {
-                    result = new ResultBlock(left, PrevBlock);
-                } else
-                {
-                    result = new ResultBlock(right, PrevBlock);
-                }
-
-                result.NextBlock = NextBlock;
-                if (NextBlock != null)
-                {
-                    NextBlock.PrevBlock = result;
-                }
-                RebuildRequested?.Invoke(this, new RebuildRequestEventArgs(result));
+                result = new ResultBlock(right, PrevBlock);
             }
+
+            result.NextBlock = NextBlock;
+            if (NextBlock != null)
+            {
+                NextBlock.PrevBlock = result;
+            }
+
+            RebuildRequested?.Invoke(this, new RebuildRequestEventArgs(result));
         }
 
         public void ResolveAs(Side first, Side second)
@@ -390,6 +381,7 @@ namespace SCModManager.DiffMerge
                 {
                     current.NextBlock.PrevBlock = result;
                 }
+
                 firstBlock = current = result;
             }
 
@@ -409,6 +401,7 @@ namespace SCModManager.DiffMerge
                 }
 
                 result.NextBlock = NextBlock;
+
                 if (NextBlock != null)
                 {
                     current.NextBlock.PrevBlock = result;
@@ -417,7 +410,8 @@ namespace SCModManager.DiffMerge
                 if (current == this)
                 {
                     firstBlock = current = result;
-                } else
+                }
+                else
                 {
                     secondBlock = result;
                 }
@@ -425,8 +419,8 @@ namespace SCModManager.DiffMerge
 
             args = new RebuildRequestEventArgs(firstBlock, secondBlock);
 
-
             RebuildRequested?.Invoke(this, args);
+            RebuildRequested = null;
         }
 
         public int Length(Side side)
@@ -491,5 +485,4 @@ namespace SCModManager.DiffMerge
             First = first;
         }
     }
-
 }

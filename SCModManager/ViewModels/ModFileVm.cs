@@ -42,7 +42,7 @@ namespace SCModManager.ViewModels
 
         public override bool HasConflicts => _hasConflicts;
 
-        public ModDirectory(string name, int level, IEnumerable<ModFileConflictDescriptor> source, Func<Mod, bool> initialModFilter)
+        private ModDirectory(string name, int level, IEnumerable<ModFileConflictDescriptor> source, Func<Mod, bool> initialModFilter)
             : base(name)
         {
             _level = level;
@@ -82,13 +82,16 @@ namespace SCModManager.ViewModels
             if (currentLevel == null)
             {
                 _source = conflicts;
+                var filesAtThisLevel = _source.Select(m => Tuple.Create(m.File.Path.Split(Separators), m)).ToList();
+
+                var filesToRemove = _files.Where(f => filesAtThisLevel.Any(t => t.Item2.File == f.File));
+
                 foreach (var file in _files)
                 {
                     _contents.Remove(file);
                 }
-                var kids = _source.Select(m => Tuple.Create(m.File.Path.Split(Separators), m)).ToList();
 
-                _files = CreateFiles(kids.Where(t => t.Item1.Length == _level + 1));
+                _files = CreateFiles(filesAtThisLevel.Where(t => t.Item1.Length == _level + 1));
                 foreach (var file in _files)
                 {
                     _contents.Add(file);
@@ -104,7 +107,7 @@ namespace SCModManager.ViewModels
                 subDir.UpdateDirectoryContents(nextLevel, conflicts);
             }
 
-            this.RaisePropertyChanged(nameof(HasConflicts));
+            this.RaiseAndSetIfChanged(ref _hasConflicts, _contents.Any(f => f.HasConflicts), nameof(HasConflicts));
         }
 
         private ObservableCollection<ModFileHolder> CreateChildren()
@@ -140,17 +143,17 @@ namespace SCModManager.ViewModels
 
         public override bool HasConflicts => _hasConflicts;
 
-        public ModFileEntry(string name, ModFileConflictDescriptor conflictDescriptor, Func<Mod, bool> modFilter)
+        internal ModFileEntry(string name, ModFileConflictDescriptor conflictDescriptor, Func<Mod, bool> modFilter)
             : base(name)
         {
             ConflictDescriptor = conflictDescriptor;
             File = ConflictDescriptor.File;
-            _hasConflicts = conflictDescriptor.ConflictingModFiles.Select(m => m.SourceMod).Any(modFilter);
+            _hasConflicts = conflictDescriptor.ConflictingModFiles.Select(m => m.SourceMod).Count(modFilter) > 1;
         }
 
         public override void ApplyModFilter(Func<Mod, bool> filter)
         {
-            this.RaiseAndSetIfChanged(ref _hasConflicts, ConflictDescriptor.ConflictingModFiles.Select(m => m.SourceMod).Any(filter), nameof(HasConflicts));
+            this.RaiseAndSetIfChanged(ref _hasConflicts, ConflictDescriptor.ConflictingModFiles.Select(m => m.SourceMod).Count(filter) > 1, nameof(HasConflicts));
         }
     }
 }

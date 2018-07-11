@@ -28,6 +28,8 @@ namespace PDXModLib.ModData
 
         protected static readonly Logger Log = LogManager.GetCurrentClassLogger();
 
+        internal virtual Encoding BoMEncoding { get; } = NoBomEncoding;
+
         public Mod SourceMod { get; }
 
         protected ModFile(string path, Mod sourceMod)
@@ -44,7 +46,7 @@ namespace PDXModLib.ModData
 
         public override int GetHashCode()
         {
-            return Path.GetHashCode();
+            return Path.GetHashCode() ;
         }
 
         public abstract string RawContents { get; }
@@ -76,7 +78,7 @@ namespace PDXModLib.ModData
 
         public virtual void Save(IModFileSaver saver)
         {
-            saver.Save(Path, RawContents, NoBomEncoding);
+            saver.Save(Path, RawContents, BoMEncoding);
         }
     }
 
@@ -176,6 +178,8 @@ namespace PDXModLib.ModData
         public string Contents { get; set; }
         private string _rawContents;
 
+        internal override Encoding BoMEncoding { get; } = Encoding.UTF8;
+
         public override string RawContents
         {
             get
@@ -198,11 +202,6 @@ namespace PDXModLib.ModData
             : base(path, sourceMod)
         {
             _loader = loader;
-        }
-
-        public override void Save(IModFileSaver saver)
-        {
-            saver.Save(Path, _rawContents, Encoding.UTF8);
         }
     }
 
@@ -230,27 +229,33 @@ namespace PDXModLib.ModData
     public class MergedModFile : ModFile
     {
         string contents;
+        private readonly List<ModFile> _sourceFiles;
 
-        public override string RawContents => contents;
+        internal override Encoding BoMEncoding { get; }
 
-        public List<ModFile> SourceFiles
-        {
-            get;
-        }
+        public override string RawContents => GetContents();
+
+        public IReadOnlyList<ModFile> SourceFiles => _sourceFiles;
 
         public int SourceFileCount => SourceFiles.Count;
 
-        public bool Resolved { get; set; }
+        public bool Resolved => contents != null && SourceFileCount == 0 || SourceFileCount == 1;
 
         public MergedModFile(string path, IEnumerable<ModFile> source, Mod sourceMod)
             :base(path, sourceMod)
         {
-            SourceFiles = source.ToList();
+            _sourceFiles = source.ToList();
+            BoMEncoding = _sourceFiles[0].BoMEncoding;
         }
 
         public void SaveResult(string toSave)
         {
             contents = toSave;
+        }
+
+        public void RemoveSourceFile(ModFile file)
+        {
+            _sourceFiles.Remove(file);
         }
 
         public override void Save(IModFileSaver saver)
@@ -264,6 +269,17 @@ namespace PDXModLib.ModData
                 var newPath = System.IO.Path.ChangeExtension(Path, $"{extension}.mzip");
                 saver.Save(newPath, stream);
             }
+        }
+
+        private string GetContents()
+        {
+            if (contents != null)
+                return contents;
+
+            if (SourceFileCount == 1)
+                return SourceFiles[0].RawContents;
+
+            return null;
         }
 
         private MemoryStream CreateMergeZip()
