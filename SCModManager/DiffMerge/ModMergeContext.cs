@@ -134,7 +134,7 @@ namespace SCModManager.DiffMerge
 
         private static bool ReferenceHasConflicts(ModFile mf)
         {
-            return !(mf as MergedModFile)?.Resolved ?? true;
+            return !((mf as MergedModFile)?.Resolved ?? true);
         }
 
         private void DoSave()
