@@ -94,7 +94,7 @@ namespace PDXModLib.ModData
             {
                 if (_rawContents == null)
                 {
-                    _rawContents = LoadSCFileContents(_loader);
+                    _rawContents = NormalizeLineEndings(LoadSCFileContents(_loader));
                 }
                 return _rawContents;
             }
@@ -239,7 +239,7 @@ namespace PDXModLib.ModData
 
         public int SourceFileCount => SourceFiles.Count;
 
-        public bool Resolved => contents != null && SourceFileCount == 0 || SourceFileCount == 1;
+        public bool Resolved => contents != null ? SourceFileCount == 0 : SourceFileCount == 1;
 
         public MergedModFile(string path, IEnumerable<ModFile> source, Mod sourceMod)
             :base(path, sourceMod)

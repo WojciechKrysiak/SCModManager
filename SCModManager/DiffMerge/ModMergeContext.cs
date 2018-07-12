@@ -79,7 +79,7 @@ namespace SCModManager.DiffMerge
         {
             get
             {
-                if (ReferenceHasConflicts(_selected))
+                if (_selected != null && ReferenceHasConflicts(_selected))
                 {
                     if (!_currentProcesses.ContainsKey(_selected))
                     {
@@ -134,7 +134,7 @@ namespace SCModManager.DiffMerge
 
         private static bool ReferenceHasConflicts(ModFile mf)
         {
-            return (mf as MergedModFile)?.SourceFileCount > 1;
+            return !(mf as MergedModFile)?.Resolved ?? true;
         }
 
         private void DoSave()
@@ -281,6 +281,12 @@ namespace SCModManager.DiffMerge
             
             var newContents = Result.ToModConflictDescriptor().FileConflicts.Where(fc => fc.File.Path.StartsWith(directory)).ToList();
             _rootDirectory.UpdateDirectoryContents(directory, newContents);
+
+            var file = _rootDirectory.GetFile(path);
+            if (file?.HasConflicts ?? false)
+            {
+                SelectedModFile = file.File;
+            }
         }
 
         private class ModNameParse

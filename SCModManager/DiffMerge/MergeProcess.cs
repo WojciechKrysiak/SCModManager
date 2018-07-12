@@ -9,6 +9,7 @@ using System.Windows;
 using System.Windows.Input;
 using PDXModLib.ModData;
 using ReactiveUI;
+using System.Text.RegularExpressions;
 
 namespace SCModManager.DiffMerge
 {
@@ -189,6 +190,7 @@ namespace SCModManager.DiffMerge
             }
             else
             {
+                LeftSelection.Reset();
                 Left = LeftSelection.First();
                 Right = RightSelection.First();
             }
@@ -267,13 +269,18 @@ namespace SCModManager.DiffMerge
 
         private void DoPickLeft()
         {
-            _sourceFiles.Remove(Right);
+            if (Right != _result)
+                _sourceFiles.Remove(Right);
+            else
+                file.SaveResult(null);
+
             if (file.Resolved)
             {
                 Left = Right = null;
             }
             else
             {
+                RightSelection.Reset();
                 Right = RightSelection.First();
             }
 
@@ -284,7 +291,10 @@ namespace SCModManager.DiffMerge
 
         private void DoPickRight()
         {
-            _sourceFiles.Remove(Left);
+            if (Left != _result)
+                _sourceFiles.Remove(Left);
+            else
+                file.SaveResult(null);
 
             if (file.Resolved)
             {
@@ -292,8 +302,8 @@ namespace SCModManager.DiffMerge
             }
             else
             {
-                var tmp = Right;
-                Left = tmp;
+                LeftSelection.Reset();
+                Left = LeftSelection.First();
             }
             FileResolved?.Invoke(this, EventArgs.Empty);
         }
@@ -323,8 +333,10 @@ namespace SCModManager.DiffMerge
             var left = Left;
             var right = Right;
 
-            _sourceFiles.Remove(left);
-            _sourceFiles.Remove(right);
+            if (left != _result)
+                _sourceFiles.Remove(left);
+            if (right != _result)
+                _sourceFiles.Remove(right);
 
             if (file.Resolved)
             {
@@ -332,6 +344,7 @@ namespace SCModManager.DiffMerge
             }
             else
             {
+                LeftSelection.Reset();
                 Left = _result;
                 Right = RightSelection.First();
             }

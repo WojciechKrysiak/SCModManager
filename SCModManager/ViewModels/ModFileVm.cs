@@ -131,6 +131,18 @@ namespace SCModManager.ViewModels
             return directoryConflicts.GroupBy(k => k.Item1[_level]).OrderBy(g => g.Key)
                 .Select(dc => new ModDirectory(dc.Key, _level + 1, dc.Select(k => k.Item2), _modFilter)).ToList();
         }
+
+        internal ModFileEntry GetFile(string path)
+        {
+            var split = path.Split(Separators, StringSplitOptions.RemoveEmptyEntries);
+            if (split.Length == 1)
+            {
+                return _files.FirstOrDefault(mfe => string.Compare(mfe.Filename, split[0], true) == 0);
+            }
+
+            var nextLevel = path.Substring(path.IndexOf(split[0]) + split[0].Length);
+            return _directories.FirstOrDefault(md => string.Compare(md.Filename, split[0], true) == 0)?.GetFile(nextLevel);
+        }
     }
 
     public class ModFileEntry : ModFileHolder
@@ -148,12 +160,19 @@ namespace SCModManager.ViewModels
         {
             ConflictDescriptor = conflictDescriptor;
             File = ConflictDescriptor.File;
-            _hasConflicts = conflictDescriptor.ConflictingModFiles.Select(m => m.SourceMod).Count(modFilter) > 1;
+            _hasConflicts = CalculateConflicts(modFilter);
         }
 
         public override void ApplyModFilter(Func<Mod, bool> filter)
         {
-            this.RaiseAndSetIfChanged(ref _hasConflicts, ConflictDescriptor.ConflictingModFiles.Select(m => m.SourceMod).Count(filter) > 1, nameof(HasConflicts));
+            this.RaiseAndSetIfChanged(ref _hasConflicts, CalculateConflicts(filter), nameof(HasConflicts));
+        }
+
+        private bool CalculateConflicts(Func<Mod, bool> filter)
+        {
+            var resolved = (File as MergedModFile)?.Resolved ?? !ConflictDescriptor.ConflictingModFiles.Select(m => m.SourceMod).Any(filter);
+
+            return !resolved;
         }
     }
 }
