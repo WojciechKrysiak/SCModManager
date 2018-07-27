@@ -1,0 +1,259 @@
+﻿<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:ui="clr-namespace:SCModManager.Avalonia.Ui;assembly=SCModManager.Avalonia"
+        xmlns:fa="clr-namespace:SCModManager.Ui.FontAwesome;assembly=SCModManager.Avalonia"
+        xmlns:viewModels="clr-namespace:SCModManager.ViewModels"
+        xmlns:diff="clr-namespace:SCModManager.DiffMerge;assembly=SCModManager.Avalonia"
+        xmlns:i="clr-namespace:Avalonia.Xaml.Interactivity;assembly=Avalonia.Xaml.Interactivity"
+        xmlns:ia="clr-namespace:Avalonia.Xaml.Interactions.Core;assembly=Avalonia.Xaml.Interactions"
+        Topmost="True"
+        Title="Merge">
+  <Window.Styles>
+    <Style Selector="diff:MergeView">
+      <Setter Property="ContextMenu">
+        <Setter.Value>
+          <ControlTemplate>
+            <ContextMenu>
+              <MenuItem Header="Take left" />
+              <!--Command = "block.Block.TakeLeft" });-->
+              <MenuItem Header="Take right"/>
+              <!--Command = "block.Block.TakeRight" });-->
+              <MenuItem Header="Take left then right"/>
+              <!--Command = "block.Block.TakeLeftThenRight" });-->
+              <MenuItem Header="Take right then left"/>
+              <!--Command = "block.Block.TakeRightThenLeft" });-->
+            </ContextMenu>
+          </ControlTemplate>
+        </Setter.Value>
+      </Setter>
+    </Style>
+  </Window.Styles>
+  <Grid RowDefinitions="Auto,Auto,*" ColumnDefinitions="3*,8*">
+    <Grid.Resources>
+
+
+      <ui:BoolNegatingConverter x:Key="BoolNegatingConverter" />
+      <ui:NullToBoolConverter x:Key="NullToVis" />
+      <ui:ExactTypeConverter x:Key="ExactTypeConverter" />
+      <ui:BooleanLogicConverter Operation="Or" x:Key ="BoolOrConverter"/>
+    </Grid.Resources>
+    <Button Command="{Binding Save}">Save</Button>
+    <StackPanel
+            Grid.Column="0"
+            Grid.Row="1"
+            Orientation="Horizontal">
+      <CheckBox x:Name="ShowOnlyConflicts"
+            IsChecked="{Binding OnlyConflicts}"
+            Margin="5 7"
+                  >
+        Show only conflicts
+      </CheckBox>
+      <CheckBox x:Name="HideWhiteSpace"
+            IsChecked="{Binding IgnoreWhiteSpace}"
+            Margin="5 7"
+                  >
+        Hide whitespace
+      </CheckBox>
+    </StackPanel>
+    <TreeView Grid.Column="0"
+              Grid.Row="2"
+              VerticalAlignment="Stretch"
+                  
+              Items="{Binding RootDirectory.Files}"
+              SelectedItem="{Binding SelectedModFile,
+                                     Converter={StaticResource ExactTypeConverter}}"
+                  >
+      <TreeView.Styles>
+        <Style Selector="TreeView TreeViewItem">
+          <Setter Property="IsVisible">
+            <Setter.Value>
+              <MultiBinding Converter="{StaticResource BoolOrConverter}">
+                <MultiBinding.Bindings>
+                  <Binding Path="HasConflicts"/>
+                  <Binding Path="DataContext.OnlyConflicts" Converter="{StaticResource BoolNegatingConverter}">
+                    <Binding.RelativeSource>
+                      <RelativeSource Mode="FindAncestor" AncestorType="{x:Type Window}"/>
+                    </Binding.RelativeSource>
+                  </Binding>
+                </MultiBinding.Bindings>
+              </MultiBinding>
+            </Setter.Value>
+          </Setter>
+        </Style>
+      </TreeView.Styles>
+      <TreeView.DataTemplates>
+        <TreeDataTemplate DataType="{x:Type viewModels:ModDirectory}" ItemsSource="{Binding Files}">
+          <StackPanel Orientation="Vertical">
+            <StackPanel Orientation="Horizontal"
+                                Opacity="0.4">
+              <fa:FontAwesome x:Name="FolderIcon"
+                              VerticalAlignment="Center"
+                              Icon="Folder"
+                              Margin="0 0 3 0"
+                                            />
+              <TextBlock x:Name="FolderName"
+                         VerticalAlignment="Center"
+                         Text="{Binding Filename}"
+                                       />
+              <i:Interaction.Behaviors>
+                <ia:DataTriggerBehavior Binding="{Binding HasConflicts}" Value="True">
+                  <ia:ChangePropertyAction PropertyName="Opacity" Value="1"/>
+                </ia:DataTriggerBehavior>
+              </i:Interaction.Behaviors>
+
+            </StackPanel>
+          </StackPanel>
+        </TreeDataTemplate>
+        <DataTemplate DataType="{x:Type viewModels:ModFileEntry}">
+          <DockPanel x:Name="Container"
+                     HorizontalAlignment="Stretch"
+                     LastChildFill="True"
+                      Opacity="0.4"
+                               >
+            <fa:FontAwesome x:Name="FileIcon"
+                            VerticalAlignment="Center"
+                            DockPanel.Dock="Left"
+                            Icon="File"
+                            Margin="0 0 3 0"
+                                        />
+            <TextBlock DockPanel.Dock="Right"
+                       Margin="5 0"
+                       Text="{Binding File.SourceFileCount,
+                                                  FallbackValue={x:Null}}"
+                       IsVisible="False"
+                       Name="ConflictCount"
+                       Opacity="1"
+                                   />
+            <TextBlock x:Name="FileName"
+                       VerticalAlignment="Center"
+                       Text="{Binding Filename}"
+                                   />
+            <i:Interaction.Behaviors>
+              <ia:DataTriggerBehavior Binding="{Binding HasConflicts}" Value="True">
+                <ia:ChangePropertyAction PropertyName="Opacity" Value="1"/>
+              </ia:DataTriggerBehavior>
+            </i:Interaction.Behaviors>
+          </DockPanel>
+
+        </DataTemplate>
+      </TreeView.DataTemplates>
+    </TreeView>
+
+    <Grid Grid.Column="1"
+          Grid.Row="0"
+          Grid.RowSpan="3"
+          DataContext="{Binding CurrentProcess}"
+          IsVisible="{Binding DataContext,
+                                   RelativeSource={RelativeSource Self},
+                                   Converter={StaticResource NullToVis}}"
+          ColumnDefinitions="*,Auto,*"
+          RowDefinitions="Auto,*,Auto,*"
+              >
+
+
+      <DockPanel Grid.Column="0"
+                 Grid.Row="0"
+                 LastChildFill="True"
+                       >
+        <TextBlock>Left file</TextBlock>
+        <DropDown
+                  Items="{Binding LeftSelection}"
+                  SelectedItem="{Binding Left}"
+                          >
+          <DropDown.ItemTemplate>
+            <DataTemplate>
+              <TextBlock Text="{Binding ModName}"/>
+            </DataTemplate>
+          </DropDown.ItemTemplate>
+        </DropDown>
+      </DockPanel>
+
+      <Button Grid.Column="1"
+              Grid.Row="0"
+              Command="{Binding Reset}"
+              ToolTip.Tip="Revert"
+                    >
+        <fa:FontAwesome Icon="Undo" />
+      </Button>
+
+
+      <DockPanel Grid.Column="2"
+                 Grid.Row="0"
+                 LastChildFill="True"
+                       >
+        <TextBlock>Right file</TextBlock>
+        <DropDown
+                  Items="{Binding RightSelection}"
+                  SelectedItem="{Binding Right}"
+                          >
+          <DropDown.ItemTemplate>
+            <DataTemplate>
+              <TextBlock Text="{Binding ModName}"/>
+            </DataTemplate>
+          </DropDown.ItemTemplate>
+        </DropDown>
+      </DockPanel>
+
+      <diff:MergeViewer Grid.Column="0"
+                        Grid.Row="1"
+                        Contents="{Binding Comparison}"
+                        Document="{Binding LeftDocument}"
+                        FontFamily="Consolas"
+                        IsReadOnly="True"
+                        ScrollOffset="{Binding ScrollOffset}"
+                        HideWhiteSpace="{Binding HideWhiteSpace}"
+                        ShowLineNumbers="True"
+                        Side="Left"
+                              >
+
+      </diff:MergeViewer>
+
+      <diff:MergeViewer Grid.Column="2"
+                        Grid.Row="1"
+                        Contents="{Binding Comparison}"
+                        Document="{Binding RightDocument}"
+                        FontFamily="Consolas"
+                        IsReadOnly="True"
+                        ScrollOffset="{Binding ScrollOffset}"
+                        HideWhiteSpace="{Binding HideWhiteSpace}"
+                        ShowLineNumbers="True"
+                        Side="Right"
+                              />
+
+      <DockPanel Grid.Column="0"
+                 Grid.ColumnSpan="3"
+                 Grid.Row="2"
+                 HorizontalAlignment="Stretch"
+                 LastChildFill="True"
+                       >
+        <StackPanel DockPanel.Dock="Left">
+          <Button Command="{Binding DataContext.LeftBefore, ElementName=MergeWindow}" CommandParameter="{Binding Left}">Left as new file before</Button>
+          <Button Command="{Binding DataContext.LeftAfter, ElementName=MergeWindow}" CommandParameter="{Binding Left}">Left as new file after</Button>
+        </StackPanel>
+        <StackPanel DockPanel.Dock="Right">
+          <Button Command="{Binding DataContext.RightBefore, ElementName=MergeWindow}" CommandParameter="{Binding Right}">Right as new file before</Button>
+          <Button Command="{Binding DataContext.RightAfter, ElementName=MergeWindow}" CommandParameter="{Binding Right}">Right as new file after</Button>
+        </StackPanel>
+        <StackPanel HorizontalAlignment="Center" Orientation="Horizontal">
+          <Button Command="{Binding PickLeft}">Pick left</Button>
+          <Button Command="{Binding SaveMerge}">Save</Button>
+          <Button Command="{Binding PickRight}">Pick right</Button>
+        </StackPanel>
+      </DockPanel>
+
+      <diff:MergeViewer Grid.Column="0"
+                        Grid.ColumnSpan="3"
+                        Grid.Row="3"
+                        Contents="{Binding Comparison}"
+                        Document="{Binding ResultDocument}"
+                        FontFamily="Consolas"
+                        ScrollOffset="{Binding ScrollOffset}"
+                        HideWhiteSpace="{Binding HideWhiteSpace}"
+                        ShowLineNumbers="True"
+                        Side="Result"
+                              />
+
+    </Grid>
+
+  </Grid>
+</Window>

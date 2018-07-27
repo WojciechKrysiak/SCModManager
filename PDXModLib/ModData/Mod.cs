@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
-using Ionic.Zip;
 using NLog;
 using PDXModLib.SCFormat;
 using PDXModLib.Utility;
@@ -11,7 +11,7 @@ namespace PDXModLib.ModData
 {
     public class Mod : IDisposable
     {
-        private ZipFile _zipFile;
+        private ZipArchive _zipFile;
 
         private static readonly Logger Log = LogManager.GetCurrentClassLogger();
 
@@ -98,16 +98,17 @@ namespace PDXModLib.ModData
 
             if (Path.GetExtension(mPath) == ".zip")
             {
-                _zipFile = ZipFile.Read(mPath);
+                
+                _zipFile = ZipFile.OpenRead(mPath);
 
-                foreach (var item in _zipFile)
+                foreach (var item in _zipFile.Entries)
                 {
-                    if (string.Compare(item.FileName, "descriptor.mod", true) == 0)
+                    if (string.Compare(item.Name, "descriptor.mod", true) == 0)
                     {
                         continue;
                     }
 
-                    var modFile = ModFile.Load(new ZipFileLoader(item), item.FileName, this);
+                    var modFile = ModFile.Load(new ZipFileLoader(item), item.FullName, this);
                     Files.Add(modFile);
                 }
             }
@@ -160,7 +161,12 @@ namespace PDXModLib.ModData
         {
             return (obj as Mod)?.Id == Id;
         }
-    }
+
+		public override string ToString()
+		{
+			return Name;
+		}
+	}
 
     public class SupportedVersion
     {

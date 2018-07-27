@@ -1,0 +1,68 @@
+﻿body {
+	background-color: #1b2838;
+	color: #acb2b8;
+	font-family: Arial, Helvetica, Verdana, sans-serif;
+	width: 638px;
+	text-align: left;
+	color: #acb2b8;
+	font-size: 18px;
+	word-wrap: break-word;
+	line-height: 20px;
+}
+
+.outerWrapper {
+	background-image: url('embed://SCModManager.Avalonia.Resources.TopBar.png');
+	background-position: -4px 0px;
+	background-repeat: no-repeat;
+	padding-top: 8px;
+	margin:0 auto;
+}
+
+.innerWrapper {
+	background-image: url('embed://SCModManager.Avalonia.Resources.TopShade.png');
+	background-repeat: no-repeat;
+}
+
+.description {
+	padding: 10px 0px 0 0;
+	position: relative;
+	background-image: url('embed://SCModManager.Avalonia.Resources.BottomShade.png');
+	background-position: bottom right;
+	background-repeat: no-repeat;
+	padding-bottom: 8px;
+	margin-bottom: 16px;
+}
+
+.DescriptionTitle {
+	font-size: 14px;
+	text-transform: uppercase;
+	color: #61696D;
+	margin: 3px 0 16px 0;
+}
+
+h1 {
+	font-size: 19px;
+	color: #5aa9d6;
+	font-weight: normal;
+}
+
+a {
+	color: #ffffff;
+	text-decoration: none;
+	cursor: pointer;
+}
+
+img {
+	max-width: 630px;
+	border: none;
+}
+
+ul {
+	list-style-type: disc;
+	line-height: 19px;
+	margin-bottom: 8px;
+}
+
+li {
+	display: list-item;
+}

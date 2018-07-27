@@ -98,7 +98,9 @@ namespace SCModManager.DiffMerge
         public bool OnlyConflicts
         {
             get { return onlyConflicts; }
-            set { this.RaiseAndSetIfChanged(ref onlyConflicts, value); }
+            set {
+				this.RaiseAndSetIfChanged(ref onlyConflicts, value);
+			}
         }
 
         public bool IgnoreWhiteSpace

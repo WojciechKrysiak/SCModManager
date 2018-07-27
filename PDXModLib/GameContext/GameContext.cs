@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Net.Mime;
 using System.Text;
+using System.Threading.Tasks;
 using NLog;
 using PDXModLib.Interfaces;
 using PDXModLib.ModData;
@@ -51,7 +52,7 @@ namespace PDXModLib.GameContext
 
         #region Public methods
 
-        public bool Initialize()
+        public async Task<bool> Initialize()
         {
             try
 
@@ -60,7 +61,7 @@ namespace PDXModLib.GameContext
                 {
                     if (File.Exists(_gameConfiguration.BackupPath))
                     {
-                        if (_notificationService.RequestConfirmation("Settings.txt corrupted, backup available, reload from backup?", "Error"))
+                        if (await _notificationService.RequestConfirmation("Settings.txt corrupted, backup available, reload from backup?", "Error"))
                         {
                             _settingsRoot = LoadGameSettings(_gameConfiguration.BackupPath);
                         }
@@ -72,7 +73,7 @@ namespace PDXModLib.GameContext
                     // haven't managed to load from backup
                     if (_settingsRoot == null)
                     {
-                        _notificationService.ShowMessage(
+                        await _notificationService.ShowMessage(
                             "Settings.txt corrupted - no backup available, please run stellaris to recreate default settings.", "Error");
                         return false;
                     }
@@ -87,7 +88,7 @@ namespace PDXModLib.GameContext
             }
             catch (Exception ex)
             {
-                _notificationService.ShowMessage(ex.Message, "Error");
+                await _notificationService.ShowMessage(ex.Message, "Error");
                 return false;
             }
 
@@ -160,7 +161,7 @@ namespace PDXModLib.GameContext
             return true;
         }
 
-        public bool SaveMergedMod(MergedMod mod)
+        public Task<bool> SaveMergedMod(MergedMod mod)
         {
             return _installedModManager.SaveMergedMod(mod);
         }

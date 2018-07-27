@@ -1,0 +1,9 @@
+[submodule "CodeKicker.BBCode-Mod"]
+	path = CodeKicker.BBCode-Mod
+	url = https://github.com/WojciechKrysiak/CodeKicker.BBCode-Mod.git
+[submodule "AvaloniaEdit"]
+	path = AvaloniaEdit
+	url = https://github.com/WojciechKrysiak/AvaloniaEdit.git
+[submodule "Avalonia.HtmlRenderer"]
+	path = Avalonia.HtmlRenderer
+	url = https://github.com/WojciechKrysiak/Avalonia.HtmlRenderer.git

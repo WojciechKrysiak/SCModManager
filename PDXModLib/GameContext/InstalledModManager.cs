@@ -61,7 +61,7 @@ namespace PDXModLib.GameContext
             }
         }
 
-        public bool SaveMergedMod(MergedMod mod)
+        public async Task<bool> SaveMergedMod(MergedMod mod)
         {
             try
             {
@@ -71,7 +71,7 @@ namespace PDXModLib.GameContext
 
                 if (Directory.Exists(path))
                 {
-                    if (!_notificationService.RequestConfirmation("Overwrite existing mod?", "Overwrite mod"))
+                    if (!await _notificationService.RequestConfirmation("Overwrite existing mod?", "Overwrite mod"))
                         return true;
                     foreach (var file in Directory.EnumerateFiles(path, "*.*", SearchOption.AllDirectories))
                         File.Delete(file);
@@ -88,13 +88,6 @@ namespace PDXModLib.GameContext
                 {
                     foreach (var modFile in mod.Files)
                     {
-                        //var dir = Path.Combine(path, modFile.Directory);
-                        //if (!Directory.Exists(dir))
-                        //{
-                        //    Directory.CreateDirectory(dir);
-                        //}
-                        //var fn = Path.Combine(path, modFile.Path);
-
                         modFile.Save(saver);
                     }
                 }

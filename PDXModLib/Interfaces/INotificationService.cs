@@ -8,8 +8,8 @@ namespace PDXModLib.Utility
 {
     public interface INotificationService
     {
-        bool RequestConfirmation(string message, string title);
+        Task<bool> RequestConfirmation(string message, string title);
 
-        void ShowMessage(string message, string title);
+        Task ShowMessage(string message, string title);
     }
 }
