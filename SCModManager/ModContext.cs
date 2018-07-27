@@ -9,7 +9,6 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using NLog;
-using Ionic.Zip;
 using SCModManager.DiffMerge;
 using SCModManager.SteamWorkshop;
 using System.Threading;
@@ -165,7 +164,7 @@ namespace SCModManager
 
             _modConflictCalculator = new ModConflictCalculator(_gameConfiguration, installedModManager);
 
-            if (!_gameContext.Initialize())
+            if (!_gameContext.Initialize().Result)
             {
                 return false;
             }
@@ -256,7 +255,7 @@ namespace SCModManager
         private void SaveMergedMod(ModMergeContext mod)
         {
 
-            if (!_gameContext.SaveMergedMod(mod.Result))
+            if (!_gameContext.SaveMergedMod(mod.Result).Result)
             {
                 MessageBox.Show("Error saving merged mod file. Please check the log file", "Error",
                     MessageBoxButton.OK);

@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Ionic.Zip;
 
 namespace PDXModLib.Utility
 {
@@ -58,21 +58,30 @@ namespace PDXModLib.Utility
 
     class ZipFileSaver : IModFileSaver
     {
-        private ZipFile _zipFile;
+        private ZipArchive _zipFile;
 
         public ZipFileSaver(string targetPath)
         {
-            _zipFile = new ZipFile(targetPath);
+            _zipFile = new ZipArchive(File.OpenWrite(targetPath), ZipArchiveMode.Create);
         }
 
         public void Save(string path, Stream stream)
         {
-            _zipFile.AddEntry(path, stream);
+            var entry = _zipFile.CreateEntry(path);
+            using (var zipStream = entry.Open())
+                stream.CopyTo(zipStream);
         }
 
         public void Save(string path, string text, Encoding encoding)
         {
-            _zipFile.AddEntry(path, text, encoding);
+            var entry = _zipFile.CreateEntry(path);
+            using (var zipStream = entry.Open())
+            {
+                using (var writer = new StreamWriter(zipStream, encoding))
+                {
+                    writer.Write(text);
+                }
+            }
         }
 
         public void Dispose()

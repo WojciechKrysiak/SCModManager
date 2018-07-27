@@ -1,0 +1,179 @@
+﻿<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:fa="clr-namespace:SCModManager.Ui.FontAwesome;assembly=SCModManager.Avalonia"
+             
+             xmlns:diff="clr-namespace:SCModManager.DiffMerge;assembly=SCModManager.Avalonia"
+             xmlns:AvaloniaEdit="clr-namespace:AvaloniaEdit;assembly=AvaloniaEdit"
+             xmlns:ui="clr-namespace:SCModManager.Avalonia.Ui;assembly=SCModManager.Avalonia"
+             xmlns:md="clr-namespace:PDXModLib.ModData;assembly=PDXModLib"
+             xmlns:viewModels="clr-namespace:SCModManager.ViewModels"
+             xmlns:i="clr-namespace:Avalonia.Xaml.Interactivity;assembly=Avalonia.Xaml.Interactivity"
+             xmlns:ia="clr-namespace:Avalonia.Xaml.Interactions.Core;assembly=Avalonia.Xaml.Interactions"
+             xmlns:core="clr-namespace:System;assembly=mscorlib"
+             MinWidth="300"
+             MinHeight="300">
+  <UserControl.Resources>
+    <ui:ExactTypeConverter x:Key="ModFileConverter"/>
+    <ui:NullToBoolConverter x:Key="NullToBoolConverter"/>
+    <ui:BoolToValueConverter x:TypeArguments="core:Double" x:Key="BoolToOpacityConverter">
+    <ui:BoolToValueConverter.TrueValue>
+      <core:Double>1</core:Double>
+    </ui:BoolToValueConverter.TrueValue>
+    <ui:BoolToValueConverter.FalseValue>
+      <core:Double>0.4</core:Double>
+    </ui:BoolToValueConverter.FalseValue>
+  <ui:BoolToValueConverter.UnsetValue>
+      <core:Double>0.1</core:Double>
+    </ui:BoolToValueConverter.UnsetValue>
+  </ui:BoolToValueConverter>
+  </UserControl.Resources>
+  <UserControl.Styles>
+  
+    <Style x:Key="ListBoxItemStyle" Selector="ListBox > ListBoxItem">
+      <Setter Property="HorizontalAlignment" Value="Stretch" />
+      <Setter Property="BorderBrush" Value="Gray" />
+      <Setter Property="BorderThickness" Value="1" />
+    </Style>
+  </UserControl.Styles>
+
+    <Grid ColumnDefinitions="*,10,*" RowDefinitions="Auto,*,Auto,*">
+      
+      <TextBlock>Files in mod:</TextBlock>
+       <Border Grid.Column="0"
+              Grid.Row="1"
+              BorderBrush="Black"
+              BorderThickness="1"
+                    >
+        <TreeView VerticalAlignment="Stretch"
+                         BorderThickness="0"
+                         Items="{Binding RootDirectory.Files}"
+                         SelectedItem="{Binding SelectedFile, Converter={StaticResource ModFileConverter}}"
+                         x:Name="ModFileTree"
+                                 >
+          <TreeView.DataTemplates>
+            <TreeDataTemplate DataType="{x:Type viewModels:ModDirectory}" ItemsSource="{Binding Files}" x:Key="Folder">
+               <StackPanel Orientation="Vertical">
+                <StackPanel Orientation="Horizontal" Opacity="0.4">
+                  <fa:FontAwesome x:Name="FolderIcon"
+                                  VerticalAlignment="Center"
+                                  Icon="Folder"
+                                  Margin="0 0 3 0"
+                                  Name="Icon"
+                                                    />
+                  <TextBlock x:Name="FolderName"
+                             VerticalAlignment="Center"
+                             Text="{Binding Filename}"
+                             Name="Name"
+                                               />
+                  <i:Interaction.Behaviors>
+                    <ia:DataTriggerBehavior Binding="{Binding HasConflicts}" Value="True">
+                      <ia:ChangePropertyAction PropertyName="Opacity" Value="1"/>
+                    </ia:DataTriggerBehavior>
+                  </i:Interaction.Behaviors>
+                </StackPanel>
+              </StackPanel>
+            </TreeDataTemplate>
+           <DataTemplate DataType="{x:Type viewModels:ModFileEntry}" x:Key="File">
+              <StackPanel Orientation="Horizontal" Opacity="0.4">
+                <fa:FontAwesome x:Name="FileIcon"
+                                VerticalAlignment="Center"
+                                Icon="File"
+                                Margin="0 0 3 0"
+                                
+                                Name="Icon"
+                                                />
+                <TextBlock x:Name="FileName"
+                           VerticalAlignment="Center"
+                           Text="{Binding Filename}"
+                           Name="Name"
+                                           />
+                <i:Interaction.Behaviors>
+                    <ia:DataTriggerBehavior Binding="{Binding HasConflicts}" Value="True">
+                      <ia:ChangePropertyAction PropertyName="Opacity" Value="1"/>
+                    </ia:DataTriggerBehavior>
+                  </i:Interaction.Behaviors>
+              </StackPanel>
+            </DataTemplate>
+          </TreeView.DataTemplates>
+      
+          </TreeView>
+      </Border>
+
+      <TextBlock Grid.Column="2" Grid.Row="0">Conflicting mod for file:</TextBlock>
+
+       <Border Grid.Column="2"
+              Grid.Row="1"
+              BorderBrush="Black"
+              BorderThickness="1"
+                    >
+        <ListBox VerticalAlignment="Stretch" 
+                 Items="{Binding FilesInOtherMods}"
+                 SelectedItem="{Binding SelectedModFile}"
+                 SelectionMode="Single"
+                 VirtualizationMode="None"
+                 IsEnabled="True"
+                 
+                         >
+          
+          <ListBox.ItemsPanel>
+            <ItemsPanelTemplate>
+              <StackPanel Orientation="Vertical" VerticalAlignment="Stretch"/>
+            </ItemsPanelTemplate>
+          </ListBox.ItemsPanel>
+          <ListBox.ItemTemplate>
+            <DataTemplate DataType="{x:Type md:ModFile}">
+              <TextBlock Text="{Binding SourceMod.Name}"/>
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        
+        </ListBox>
+      </Border>
+
+      <TextBlock Grid.Column="0" Grid.Row="2">File in selected mod:</TextBlock>
+      <Border Grid.Column="0"
+              Grid.Row="3"
+              BorderBrush="Black"
+              BorderThickness="1"
+                    >
+        <Panel IsVisible="{Binding ComparisonContext, Converter={StaticResource NullToBoolConverter}}">
+        <diff:MergeViewer MaxWidth="10000" 
+                          BorderThickness="0"
+                          Contents="{Binding Comparison}" 
+                          DataContext="{Binding ComparisonContext}"
+                          Document="{Binding LeftDocument}"
+                          FontFamily="Consolas"
+                          HorizontalScrollBarVisibility="Auto"
+                          IsReadOnly="True"
+                          ScrollOffset="{Binding ScrollOffset}"
+                          ShowLineNumbers="True"
+                          Side="Left"
+                          VerticalScrollBarVisibility="Auto"
+                        /> 
+          </Panel>
+        </Border>
+
+      <TextBlock Grid.Column="2" Grid.Row="2">File in conflicting mod:</TextBlock>
+      <Border Grid.Column="2"
+              Grid.Row="3"
+              BorderBrush="Black"
+              BorderThickness="1">
+                  
+        <Panel IsVisible="{Binding ComparisonContext, Converter={StaticResource NullToBoolConverter}}">
+        <diff:MergeViewer BorderThickness="0" MaxWidth="10000" 
+                          Contents="{Binding Comparison}"
+                          DataContext="{Binding ComparisonContext}"
+                          Document="{Binding RightDocument}"
+                          FontFamily="Consolas"
+                          HorizontalScrollBarVisibility="Auto"
+                          IsReadOnly="True"
+                          ScrollOffset="{Binding ScrollOffset}"
+                          ShowLineNumbers="True"
+                          Side="Right"
+                          VerticalScrollBarVisibility="Auto"
+                          
+                         />
+          </Panel>
+      </Border>
+    </Grid>
+
+</UserControl>

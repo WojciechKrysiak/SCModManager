@@ -10,6 +10,7 @@ using System.Windows.Input;
 using PDXModLib.ModData;
 using ReactiveUI;
 using System.Text.RegularExpressions;
+using System.Reactive.Linq;
 
 namespace SCModManager.DiffMerge
 {
@@ -37,70 +38,52 @@ namespace SCModManager.DiffMerge
         private bool _hideWhiteSpace;
 
         public bool HideWhiteSpace
-        {
-            get { return _hideWhiteSpace; }
-            set
-            {
-                this.RaiseAndSetIfChanged(ref _hideWhiteSpace, value);
-            }
-        }
+		{
+			get => _hideWhiteSpace;
+			set => this.RaiseAndSetIfChanged(ref _hideWhiteSpace, value);
+		}
 
-        public Vector ScrollOffset
-        {
-            get { return _scrollOffset; }
-            set
-            {
-                this.RaiseAndSetIfChanged(ref _scrollOffset, value);
-            }
-        }
+		public Vector ScrollOffset
+		{
+			get => _scrollOffset;
+			set => this.RaiseAndSetIfChanged(ref _scrollOffset, value);
+		}
 
-        public IReactiveCollection<ModFileToMerge> LeftSelection { get; }
+		public IReactiveCollection<ModFileToMerge> LeftSelection { get; }
 
-        public ModFileToMerge Left {
-            get { return _left; }
-            set
-            {
-                this.RaiseAndSetIfChanged(ref _left, value);
-                RightSelection.Reset();
-                UpdateCompareContent();
-            }
-        }
+        public ModFileToMerge Left
+		{
+			get => _left;
+			set => this.RaiseAndSetIfChanged(ref _left, value);
+		}
 
-        public TextDocument LeftDocument
-        {
-            get { return _leftDocument; }
-            set { this.RaiseAndSetIfChanged(ref _leftDocument, value); }
-        }
+		public TextDocument LeftDocument
+		{
+			get => _leftDocument;
+			set => this.RaiseAndSetIfChanged(ref _leftDocument, value);
+		}
 
-        public Comparison Comparison
-        {
-            get { return _comparison; }
-            private set
-            {
-                this.RaiseAndSetIfChanged(ref _comparison, value);
-            }
-        }
+		public Comparison Comparison
+		{
+			get => _comparison;
+			private set => this.RaiseAndSetIfChanged(ref _comparison, value);
+		}
 
-        public IReactiveCollection<ModFileToMerge> RightSelection { get; }
+		public IReactiveCollection<ModFileToMerge> RightSelection { get; }
 
         public ModFileToMerge Right
-        {
-            get { return _right; }
-            set
-            {
-                this.RaiseAndSetIfChanged(ref _right, value);
-                LeftSelection.Reset();
-                UpdateCompareContent();
-            }
-        }
+		{
+			get => _right;
+			set => this.RaiseAndSetIfChanged(ref _right, value);
+		}
 
-        public TextDocument RightDocument
-        {
-            get { return _rightDocument; }
-            set { this.RaiseAndSetIfChanged(ref _rightDocument, value); }
-        }
+		public TextDocument RightDocument
+		{
+			get => _rightDocument;
+			set => this.RaiseAndSetIfChanged(ref _rightDocument, value);
+		}
 
-        public TextDocument ResultDocument
+		public TextDocument ResultDocument
         {
             get { return _resultDocument; }
             set
@@ -129,11 +112,13 @@ namespace SCModManager.DiffMerge
             _sourceFiles.Add(_result);
             _sourceFiles.CollectionChanged += SourceFilesCollectionChanged;
 
-            LeftSelection = _sourceFiles.CreateDerivedCollection(f => f, f => f?.RawContents != null && f != Right);
-            RightSelection = _sourceFiles.CreateDerivedCollection(f => f, f => f?.RawContents != null && f != Left);
+			var leftTrigger = this.ObservableForProperty(x => x.Left).Do(x => UpdateCompareContent());
+			var rightTrigger = this.ObservableForProperty(x => x.Right).Do(x => UpdateCompareContent());
+
+			LeftSelection = _sourceFiles.CreateDerivedCollection(f => f, f => f?.RawContents != null && f != Right, null, rightTrigger);
+            RightSelection = _sourceFiles.CreateDerivedCollection(f => f, f => f?.RawContents != null && f != Left, null, leftTrigger);
 
             Left = LeftSelection.First();
-            Right = RightSelection.First();
 
             PickLeft = ReactiveCommand.Create(DoPickLeft);
             PickRight = ReactiveCommand.Create(DoPickRight);
@@ -215,7 +200,6 @@ namespace SCModManager.DiffMerge
 
                 LeftDocument.Text = Comparison.Root?.GetAsString(Side.Left);
                 RightDocument.Text = Comparison.Root?.GetAsString(Side.Right);
-
 
                 ResultDocument.Changed -= _resultDocument_Changed;
                 ResultDocument.Text = Comparison.Root?.GetAsString(Side.Result);

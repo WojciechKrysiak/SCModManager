@@ -1,0 +1,106 @@
+﻿<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="SC Mod Manager"
+        xmlns:fa="clr-namespace:SCModManager.Ui.FontAwesome;assembly=SCModManager.Avalonia"
+        xmlns:local="clr-namespace:SCModManager.Avalonia.Views;assembly=SCModManager.Avalonia"
+        xmlns:ui="clr-namespace:SCModManager.Avalonia.Ui;assembly=SCModManager.Avalonia"
+        xmlns:gc="clr-namespace:PDXModLib.GameContext;assembly=PDXModLib"
+        Height="800"
+        Width="1220">
+  <Window.Resources>
+    <ui:NullToBoolConverter x:Key="NullToBoolConverter"/>
+  </Window.Resources>
+  <Grid
+   ColumnDefinitions="400,*" RowDefinitions="Auto,*,*">
+
+    <Grid Grid.ColumnSpan="2" ColumnDefinitions="Auto,Auto,Auto,Auto,*,Auto,Auto,Auto" >
+
+      <Button Grid.Column="0" Command="{Binding SaveSettingsCommand}" Margin="5,0">Save To Stellaris</Button>
+      <Button Grid.Column="1" Command="{Binding MergeModsCommand}" Margin="5,0">Merge Selected</Button>
+      <ToggleButton Grid.Column="2" Name="MergeMode" Margin="5,0"
+                    IsChecked="{Binding ConflictMode}"
+                    IsEnabled="{Binding !IsVisible,ElementName=CommsError}"
+                          >
+        Preview conflicts
+      </ToggleButton >
+      <ToggleButton Grid.Column="3" IsChecked="{Binding FilterSelection}" Margin="5,0">
+        Selection only
+      </ToggleButton>
+
+
+      <StackPanel x:Name="CommsError"
+                Grid.Column="5"
+                HorizontalAlignment="Right"
+                Orientation="Horizontal"
+                ToolTip.Tip="{Binding ErrorReason}"
+                IsVisible="{Binding ErrorReason, Converter={StaticResource NullToBoolConverter}}"
+                Margin="5,0">
+
+        <fa:FontAwesome VerticalAlignment="Center"
+                        Fill="Red"
+                        Icon="ExclamationTriangle"
+                                    />
+        <TextBlock Text="Can't download mod data!"/>
+      </StackPanel>
+      <Button HorizontalAlignment="Right" Grid.Column="6" Command="{Binding ShowPreferences}">
+        <fa:FontAwesome VerticalAlignment="Center"
+                        Icon="Cogs"
+                        Margin="10,0"
+                                
+                />
+      </Button>
+    </Grid>
+
+    <DockPanel Grid.Column="0"
+               Grid.Row="1"
+               Grid.RowSpan="2"
+               VerticalAlignment="Stretch"
+               LastChildFill="True"
+                   >
+      <DockPanel DockPanel.Dock="Top" LastChildFill="True">
+        <TextBlock           DockPanel.Dock="Left">Mod list:</TextBlock>
+        <Button MinWidth="20"
+                Command="{Binding Duplicate}"
+                DockPanel.Dock="Right"
+                ToolTip.Tip="Duplicate current selection"
+                        >
+          <fa:FontAwesome Fill="{Binding Foreground, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type Button}}}" Icon="Plus" />
+        </Button>
+        <Button MinWidth="20"
+                Command="{Binding Delete}"
+                DockPanel.Dock="Right"
+                        >
+          <fa:FontAwesome Fill="{Binding Foreground, RelativeSource={RelativeSource FindAncestor, AncestorType={x:Type Button}}}" Icon="Trash" />
+        </Button>
+        <DropDown Items="{Binding Selections}"
+                  SelectedItem="{Binding CurrentSelection}"
+                          >
+          <DropDown.ItemTemplate>
+            <DataTemplate DataType="{x:Type gc:ModSelection}">
+              <TextBlock Text="{Binding Name}"/>
+            </DataTemplate>
+          </DropDown.ItemTemplate>
+        </DropDown>
+      </DockPanel>
+      <local:ModList/>
+    </DockPanel>
+
+    <local:ComparePanel Grid.Column="1"
+                   Grid.Row="1"
+                   Grid.RowSpan="2"
+                   DataContext="{Binding ConflictPreviewVm}"
+                   IsVisible="{Binding #MergeMode.IsChecked}"
+                        />
+
+    <Border Grid.Column="1"
+            Grid.Row="1"
+            Grid.RowSpan="2"
+            HorizontalAlignment="Stretch"
+            VerticalAlignment="Stretch"
+            IsVisible="{Binding !#MergeMode.IsChecked}"
+                >
+
+      <local:WorkshopPanel DataContext="{Binding SelectedMod}"  />
+    </Border>
+  </Grid>
+</Window>

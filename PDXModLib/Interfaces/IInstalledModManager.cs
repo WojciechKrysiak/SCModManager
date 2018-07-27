@@ -13,6 +13,6 @@ namespace PDXModLib.Interfaces
 
         void Initialize();
         void LoadMods();
-        bool SaveMergedMod(MergedMod mod);
+        Task<bool> SaveMergedMod(MergedMod mod);
     }
 }

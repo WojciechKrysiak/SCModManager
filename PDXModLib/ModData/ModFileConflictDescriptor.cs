@@ -20,12 +20,12 @@ namespace PDXModLib.ModData
 
         public override bool Equals(object obj)
         {
-            return File.Equals((obj as ModFileConflictDescriptor)?.File);
+            return File?.Path?.Equals((obj as ModFileConflictDescriptor)?.File?.Path) ?? false;
         }
 
         public override int GetHashCode()
         {
-            return File.GetHashCode();
+            return File?.Path?.GetHashCode() ?? -1;
         }
 
         public ModFileConflictDescriptor Filter(Func<Mod, bool> filterFunc)

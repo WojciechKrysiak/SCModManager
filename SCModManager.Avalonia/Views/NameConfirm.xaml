@@ -1,0 +1,27 @@
+﻿<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Width="300"
+        VerticalContentAlignment="Top"
+        SizeToContent="Height"
+        Topmost="True"
+        Title="Confirm Name">
+  <StackPanel Margin="5" Orientation="Vertical">
+    <TextBlock Margin="5">Enter a name for the selection:</TextBlock>
+    <TextBox Margin="5" Text="{Binding Name}" />
+    <StackPanel HorizontalAlignment="Right" Orientation="Horizontal">
+
+      <Button Width="50"
+              Command="{Binding Ok}"
+              Margin="5"
+                    >
+        OK
+      </Button>
+      <Button Width="50"
+              Command="{Binding Cancel}"
+              Margin="5"
+                    >
+        Cancel
+      </Button>
+    </StackPanel>
+  </StackPanel>
+</Window>

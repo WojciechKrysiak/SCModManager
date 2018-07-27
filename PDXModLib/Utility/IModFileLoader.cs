@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Ionic.Zip;
 
 namespace PDXModLib.Utility
 {
@@ -30,14 +30,14 @@ namespace PDXModLib.Utility
 
     public class ZipFileLoader : IModFileLoader
     {
-        private readonly ZipEntry _zipEntry;
+        private readonly ZipArchiveEntry _zipEntry;
 
         public Stream OpenStream()
         {
-            return _zipEntry.OpenReader();
+            return _zipEntry.Open();
         }
 
-        public ZipFileLoader(ZipEntry zipEntry)
+        public ZipFileLoader(ZipArchiveEntry zipEntry)
         {
             _zipEntry = zipEntry;
         }

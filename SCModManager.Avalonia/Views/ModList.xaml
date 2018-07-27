@@ -1,0 +1,36 @@
+﻿<UserControl xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:fa="clr-namespace:SCModManager.Ui.FontAwesome">
+  <DockPanel Grid.Column="0"
+           Grid.Row="1"
+           Grid.RowSpan="2"
+           VerticalAlignment="Stretch"
+           LastChildFill="True"
+                   >
+    <Grid ColumnDefinitions="30,*,30,30" DockPanel.Dock="Top">
+      <fa:FontAwesome Icon="Check" HorizontalAlignment="Center" Grid.Column="0"/>
+      <TextBlock Text="Mod Name" Grid.Column="1"/>
+      <fa:FontAwesome Icon="Bolt" HorizontalAlignment="Center" Grid.Column="2"/>
+      <fa:FontAwesome Icon="Steam" HorizontalAlignment="Center" Grid.Column="3"/>
+    </Grid>
+    <ListBox 
+         Items="{Binding Mods}"
+         SelectedItem="{Binding SelectedMod}">
+      <ListBox.ItemTemplate>
+        <DataTemplate>
+          <Grid>
+          <DockPanel LastChildFill="True">
+            <CheckBox DockPanel.Dock="Left" IsChecked="{Binding Selected}" />
+ 
+            <fa:FontAwesome DockPanel.Dock="Right" Icon="Steam" HorizontalAlignment="Center" Width="15"/>
+            <TextBlock DockPanel.Dock="Right" Text="{Binding ConflictCount}" Margin="5,0" TextAlignment="Right" Width="20"/>
+            
+            <TextBlock Text="{Binding Name}" />
+          </DockPanel>
+          <Panel Background="Red" Opacity="0.3" IsVisible="{Binding HasConflictWithSelected}"/>
+        </Grid>
+      </DataTemplate>
+      </ListBox.ItemTemplate>
+    </ListBox>
+  </DockPanel>
+</UserControl>

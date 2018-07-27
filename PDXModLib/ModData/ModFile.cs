@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
-using Ionic.Zip;
 using NLog;
 using PDXModLib.Interfaces;
 using PDXModLib.SCFormat;
@@ -38,17 +38,6 @@ namespace PDXModLib.ModData
             SourceMod = sourceMod;
         }
 
-        public override bool Equals(object obj)
-        {
-            var other = obj as ModFile;
-            return other != null && string.Compare(other.Path, this.Path, StringComparison.OrdinalIgnoreCase) == 0;
-        }
-
-        public override int GetHashCode()
-        {
-            return Path.GetHashCode() ;
-        }
-
         public abstract string RawContents { get; }
 
         internal static ModFile Load(IModFileLoader loader, string path , Mod sourceMod)
@@ -80,7 +69,12 @@ namespace PDXModLib.ModData
         {
             saver.Save(Path, RawContents, BoMEncoding);
         }
-    }
+
+		public override string ToString()
+		{
+			return Filename;
+		}
+	}
 
     internal class SCModFile : ModFile
     {
@@ -285,14 +279,12 @@ namespace PDXModLib.ModData
         private MemoryStream CreateMergeZip()
         {
             var result = new MemoryStream();
-            using (var saver = new MergeZipFileSaver())
+            using (var saver = new MergeZipFileSaver(result))
             {
                 foreach (var sourceFile in SourceFiles)
                 {
                     sourceFile.Save(saver);
                 }
-
-                saver.ZipFile.Save(result);
             }
 
             return result;
@@ -301,21 +293,30 @@ namespace PDXModLib.ModData
         private class MergeZipFileSaver : IModFileSaver
         {
             private int _index;
-            public ZipFile ZipFile { get; }
+            public ZipArchive ZipFile; 
 
-            public MergeZipFileSaver()
+            public MergeZipFileSaver(Stream outputStream)
             {
-                ZipFile = new ZipFile();
+                ZipFile = new ZipArchive(outputStream, ZipArchiveMode.Create);
             }
 
             public void Save(string path, Stream stream)
             {
-                ZipFile.AddEntry(GetPath(path), stream);
+                var entry = ZipFile.CreateEntry(GetPath(path));
+                using (var zipStream = entry.Open())
+                    stream.CopyTo(zipStream);
             }
 
             public void Save(string path, string text, Encoding encoding)
             {
-                ZipFile.AddEntry(GetPath(path), text, encoding);
+                var entry = ZipFile.CreateEntry(GetPath(path));
+                using (var zipStream = entry.Open())
+                {
+                    using (var writer = new StreamWriter(zipStream, encoding))
+                    {
+                        writer.Write(text);
+                    }
+                }
             }
 
             public void Dispose()
