@@ -21,6 +21,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "AvaloniaEdit", "AvaloniaEdi
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Avalonia.HtmlRenderer", "Avalonia.HtmlRenderer\Avalonia.HtmlRenderer.csproj", "{2512B8CE-DAD6-4763-A577-B1E9DED10EF9}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "SolutionConfig", "SolutionConfig", "{17C921E8-18BC-4C2F-B033-00E45F118A3E}"
+	ProjectSection(SolutionItems) = preProject
+		Nuget.config = Nuget.config
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU

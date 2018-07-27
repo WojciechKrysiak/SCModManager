@@ -216,3 +216,4 @@ ModelManifest.xml
 /PDXModLib/SCFormat/Scanner.cs
 /PDXModLib/SCFormat/Parser.cs
 /packages
+/SCModManager.Windows/Properties/launchSettings.json
