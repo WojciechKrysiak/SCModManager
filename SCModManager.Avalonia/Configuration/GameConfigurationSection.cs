@@ -5,6 +5,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Runtime.Versioning;
+using System.Xml;
 
 namespace SCModManager.Configuration
 {
@@ -31,7 +33,7 @@ namespace SCModManager.Configuration
             set { this[WhiteListedFileCollection.WhiteListedFiles] = value; }
         }
 
-        public GameConfigurationSection(IGameConfiguration source)
+        public void Init(IGameConfiguration source)
         {
             BasePath = source.BasePath;
             WhiteListedFilesConfigSection = new WhiteListedFileCollection();
@@ -43,9 +45,8 @@ namespace SCModManager.Configuration
 
         public GameConfigurationSection()
         {
-            
-        }
-    }
+		}
+	}
 
     public class WhiteListedFileCollection : ConfigurationElementCollection, ICollection<string>, IReadOnlyCollection<string>
     {

@@ -1,10 +1,15 @@
 ﻿<Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:fa="clr-namespace:SCModManager.Ui.FontAwesome"
+        xmlns:ui="clr-namespace:SCModManager.Avalonia.Ui"
         xmlns:viewModels="clr-namespace:SCModManager.ViewModels"
         Topmost="True"
         Title="Preferences Window"
         Height="500" Width="500">
+  <Window.Resources>
+    <ui:NullToBoolConverter x:Key="NullToBoolConverter"/>
+    <ui:BooleanLogicConverter x:Key="BoolAndConverter"/>
+  </Window.Resources>
   <DockPanel LastChildFill="True" Margin="10">
     <StackPanel Orientation="Horizontal" DockPanel.Dock="Bottom" HorizontalAlignment="Right">
       <Button Command="{Binding Ok}" Width="60" Margin="5, 2">Ok</Button>
@@ -21,24 +26,23 @@
       <ListBox Items="{Binding WhiteListedFiles}" Grid.Column="0" Grid.Row="3" Grid.ColumnSpan="3" Margin="0 5">
         <ListBox.ItemTemplate>
           <DataTemplate DataType="{x:Type viewModels:WhitelistedFileEditableObject}">
-            <TextBox Text="{Binding Value}" />
+            <Grid>
+              <TextBox Text="{Binding Value}" />
+              <fa:FontAwesome Margin="10,0" HorizontalAlignment="Right" Icon="Exclamation" Fill="Red" IsVisible="{Binding !IsValid}"/>
+              <Button HorizontalAlignment="Right" Command="{Binding $parent[Window].DataContext.DeleteItem}" CommandParameter="{Binding}" >
+                <Button.IsVisible>
+                  <MultiBinding Converter="{StaticResource BoolAndConverter}">
+                    <Binding Path="!IsNew"/>
+                    <Binding Path="$parent.IsPointerOver"/>
+                  </MultiBinding>
+                </Button.IsVisible>
+                <fa:FontAwesome Icon="TimesCircle"/>
+              </Button>
+            </Grid>
           </DataTemplate>
         </ListBox.ItemTemplate>
       </ListBox>
     </Grid>
-    <!--   <DataGrid ItemsSource="{Binding WhiteListedFiles}"
-                CanUserAddRows="True"
-                CanUserDeleteRows="True"
-                ColumnWidth="*"
-                AutoGenerateColumns="False"
-                CanUserResizeRows="False"
-                SelectionMode="Single"
-                SelectionUnit="FullRow"
-                RowHeaderWidth="0"
-                      >
-        <DataGrid.Columns>
-          <DataGridTextColumn Binding="{Binding Value}" Header="File"/>
-        </DataGrid.Columns>
-      </DataGrid>-->
+
   </DockPanel>
 </Window>

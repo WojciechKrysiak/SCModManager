@@ -161,7 +161,7 @@ namespace SCModManager
 
         public async Task<bool> Initialize()
         {
-            LoadConfiguration(product);
+            await LoadConfiguration(product);
 
             _notificationService = new NotificationService();
             var installedModManager = new InstalledModManager(_gameConfiguration, _notificationService);
@@ -319,7 +319,7 @@ namespace SCModManager
             {
                 if (save)
                 {
-                    _configuration.Save(ConfigurationSaveMode.Full);
+                    _configuration.Save(ConfigurationSaveMode.Modified);
                     await Initialize();
                 }
                 pw.Close();
@@ -327,29 +327,23 @@ namespace SCModManager
             pw.ShowDialog();
         }
 
-        private void LoadConfiguration(string game)
+        private async Task LoadConfiguration(string game)
         {
             var section = _configuration.Sections[game] as GameConfigurationSection;
 
-            //TODO: fixme
-            section = new GameConfigurationSection(new StellarisConfiguration());
-
-
             if (section == null)
             {
-                section = new GameConfigurationSection(new StellarisConfiguration());
-                _configuration.Sections.Remove(game);
+                section = new GameConfigurationSection();
                 _configuration.Sections.Add(game, section);
-                _configuration.Save(ConfigurationSaveMode.Full);
-            }
+				section.Init(new StellarisConfiguration());
+				_configuration.Save(ConfigurationSaveMode.Modified);
+			}
 
-            _gameConfiguration = section;
+			_gameConfiguration = section;
 
             if (string.IsNullOrEmpty(_gameConfiguration.BasePath) || !Directory.Exists(_gameConfiguration.BasePath) || !File.Exists(_gameConfiguration.SettingsPath))
             {
-                // TODO: fixme
-                //MessageBox.Show(
-                //    $"There is an error configuration, please sellect a valid documents directory for {game}");
+				await _notificationService.ShowMessage("error", $"There is an error configuration, please sellect a valid documents directory for {game}");
                 DoShowPreferences();
             }
         }
