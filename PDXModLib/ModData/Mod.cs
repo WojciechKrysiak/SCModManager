@@ -3,69 +3,76 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
+using System.Text;
+using CWTools.Process;
+using Microsoft.FSharp.Compiler;
 using NLog;
-using PDXModLib.SCFormat;
 using PDXModLib.Utility;
+using static CWTools.Parser.Types;
 
 namespace PDXModLib.ModData
 {
-    public class Mod : IDisposable
-    {
-        private ZipArchive _zipFile;
+	public class Mod : IDisposable
+	{
+		private ZipArchive _zipFile;
 
-        private static readonly Logger Log = LogManager.GetCurrentClassLogger();
+		private static readonly Logger Log = LogManager.GetCurrentClassLogger();
 
-        private string _archive;
+		private string _archive;
 
-        private string _folder;
+		private string _folder;
 
-        protected Mod(string id)
-        {
-            Id = id;
-        }
+		protected Mod(string id)
+		{
+			Id = id;
+		}
 
-        public string Id { get; }
+		public string Id { get; }
 
-        public string Key => $"mod/{Id}";
+		public string Key => $"mod/{Id}";
 
-        public string Name { get; set; }
+		public string Name { get; set; }
 
-        public List<ModFile> Files { get; } = new List<ModFile>();
+		public List<ModFile> Files { get; } = new List<ModFile>();
 
-        public List<string> Tags { get; } = new List<string>();
+		public List<string> Tags { get; } = new List<string>();
 
-        public virtual string FileName => _archive;
+		public virtual string FileName => _archive;
 
-        public virtual string Folder => _folder;
+		public virtual string Folder => _folder;
 
-        public bool ParseError { get; set; }
+		public bool ParseError { get; set; }
 
-        public string Description { get; private set; }
+		public string Description { get; private set; }
 
-        public string PictureName { get; private set; }
+		public string PictureName { get; private set; }
 
-        public string RemoteFileId { get; private set; }
+		public string RemoteFileId { get; private set; }
 
-        public SupportedVersion SupportedVersion { get; protected set; }
+		public SupportedVersion SupportedVersion { get; protected set; }
 
-        public static Mod Load(string modDescriptor)
+		static Mod()
+		{
+		}
+
+		public static Mod Load(string modDescriptor)
         {
             var id = Path.GetFileName(modDescriptor);
             var mod = new Mod(id);
 
             IEnumerable<string> tags;
-            using (var stream = new FileStream(modDescriptor, FileMode.Open, FileAccess.Read))
+			var adapter = CWToolsAdapter.Parse(modDescriptor);
+
+            //using (var stream = new FileStream(modDescriptor, FileMode.Open, FileAccess.Read))
             {
-                var parser = new Parser(new Scanner(stream));
+                //var parser = new Parser(new Scanner(stream));
+				//
+                //parser.Parse();
 
-                parser.Parse();
+				mod.Name = adapter.Root.Get("name").AsString(); 
 
-                var name = parser.Root["name"];
-
-                mod.Name = (name as SCString)?.Text ?? name?.ToString();
-
-                mod._archive = (parser.Root["archive"] as SCString)?.Text;
-                mod._folder = (parser.Root["path"] as SCString)?.Text;
+                mod._archive = adapter.Root.Get("archive").AsString();
+                mod._folder = adapter.Root.Get("path").AsString();
 
                 if (string.IsNullOrEmpty(mod._archive) &&
                     string.IsNullOrEmpty(mod._folder))
@@ -76,12 +83,12 @@ namespace PDXModLib.ModData
                     return mod;
                 }
 
-                mod.PictureName = (parser.Root["picture"] as SCString)?.Text;
+				mod.PictureName = adapter.Root.Get("picture").AsString();
 
-                tags = (parser.Root["tags"] as SCObject)?.Select(i => (i.Value as SCString)?.Text);
+                tags = adapter.Root.Child("tags").Value.LeafValues.Select(s => s.Value.ToRawString()).ToList();
 
-                mod.SupportedVersion = new SupportedVersion((parser.Root["supported_version"] as SCString)?.Text);
-                mod.RemoteFileId = (parser.Root["remote_file_id"] as SCString)?.Text;
+                mod.SupportedVersion = new SupportedVersion(adapter.Root.Get("supported_version").AsString());
+				mod.RemoteFileId = (adapter.Root.Get("remote_file_id").AsString());
             }
 
             if (tags != null)
@@ -129,22 +136,29 @@ namespace PDXModLib.ModData
             }
         }
 
-        protected virtual SCKeyValObject SCName => SCKeyValObject.Create("name", Name);
-        protected virtual SCKeyValObject SCFileName => SCKeyValObject.Create("archive", FileName);
-        protected virtual SCKeyValObject SCTags => new SCKeyValObject(new SCIdentifier("tags"), SCObject.Create(Tags));
-        protected virtual SCKeyValObject SCSupportedVersion => new SCKeyValObject(new SCIdentifier("supported_version"), new SCString(SupportedVersion.ToString()));
+        protected virtual Child SCName => Child.NewLeafC(new Leaf("name", Value.NewQString(Name), Range.range0));
+        protected virtual Child SCFileName => Child.NewLeafC(new Leaf("archive", Value.NewQString(FileName), Range.range0));
+        protected virtual Child SCTags => Child.NewNodeC(CreateTags());
+        protected virtual Child SCSupportedVersion => Child.NewLeafC(new Leaf("supported_version", Value.NewQString(SupportedVersion.ToString()), Range.range0));
 
-        public IEnumerable<SCKeyValObject> DescriptorContents => ToDescriptor();
+		private Node CreateTags()
+		{
+			var result = new Node("tags");
+			result.AllChildren = Tags.Select(s => Child.NewLeafValueC(new LeafValue(Value.NewQString(s), Range.range0))).ToList();
+			return result;
+		}
 
-        public IEnumerable<SCKeyValObject> ToDescriptor()
+        public IEnumerable<Child> DescriptorContents => ToDescriptor();
+
+        public IEnumerable<Child> ToDescriptor()
         {
             yield return SCName;
             yield return SCFileName;
             yield return SCTags;
             if (!string.IsNullOrEmpty(PictureName))
-                yield return new SCKeyValObject(new SCIdentifier("picture"), new SCString(PictureName));
+                yield return Child.NewLeafC(new Leaf("picture", Value.NewQString(PictureName), Range.range0));
 
-            yield return SCSupportedVersion;
+			yield return SCSupportedVersion;
         }
 
         public void Dispose()
@@ -265,7 +279,7 @@ namespace PDXModLib.ModData
 
         public override string FileName => Name;
 
-        protected override SCKeyValObject SCFileName => SCKeyValObject.Create("path", $"mod/{FileName}");
+        protected override Child SCFileName => Child.NewLeafC(new Leaf("path", Value.NewQString($"mod/{FileName}"), Range.range0));
 
         public ModConflictDescriptor ToModConflictDescriptor()
         {

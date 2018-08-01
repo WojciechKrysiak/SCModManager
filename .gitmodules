@@ -7,3 +7,6 @@
 [submodule "Avalonia.HtmlRenderer"]
 	path = Avalonia.HtmlRenderer
 	url = https://github.com/WojciechKrysiak/Avalonia.HtmlRenderer.git
+[submodule "CWTools"]
+	path = CWTools
+	url = https://github.com/WojciechKrysiak/cwtools.git

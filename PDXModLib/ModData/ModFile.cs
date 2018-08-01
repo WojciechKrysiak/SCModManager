@@ -7,8 +7,8 @@ using System.Text;
 using System.Text.RegularExpressions;
 using NLog;
 using PDXModLib.Interfaces;
-using PDXModLib.SCFormat;
 using PDXModLib.Utility;
+using static CWTools.Process.CK2Process;
 
 namespace PDXModLib.ModData
 {
@@ -80,7 +80,7 @@ namespace PDXModLib.ModData
     {
         private readonly IModFileLoader _loader;
         private string _rawContents;
-        internal SCObject Contents { get; private set; }
+        internal EventRoot Contents { get; private set; }
 
         public override string RawContents
         {
@@ -106,30 +106,15 @@ namespace PDXModLib.ModData
         {
             using (var stream = loader.OpenStream())
             {
-
-                using (var mr = new MemoryStream())
+                using (var sr = new StreamReader(stream))
                 {
-                    byte[] buffer = new byte[1024];
-                    int size = 0;
-                    while (stream.CanRead && ((size = stream.Read(buffer, 0, 1024)) > 0))
-                    {
-                        mr.Write(buffer, 0, size);
-                    }
+					var contents = sr.ReadToEnd();
 
-                    mr.Seek(0, SeekOrigin.Begin);
+					var adapter = CWToolsAdapter.Parse(Path, contents);
 
-                    var parser = new Parser(new Scanner(mr));
-
-                    parser.Parse();
-
-                    mr.Seek(0, SeekOrigin.Begin);
-
-                    using (var sr = new StreamReader(mr))
-                    {
-                        ParseError = parser.ParseError;
-                        Contents = parser.Root;
-                        return sr.ReadToEnd();
-                    }
+                    ParseError = adapter.ParseError != null;
+                    Contents = adapter.Root;
+					return contents;
                 }
             }
         }

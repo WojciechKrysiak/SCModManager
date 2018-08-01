@@ -17,7 +17,6 @@ using System.Reactive.Subjects;
 using PDXModLib.GameContext;
 using PDXModLib.Interfaces;
 using PDXModLib.ModData;
-using PDXModLib.SCFormat;
 using ReactiveUI;
 using SCModManager.Configuration;
 using SCModManager.ViewModels;

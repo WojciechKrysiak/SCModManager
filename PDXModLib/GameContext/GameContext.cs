@@ -8,8 +8,12 @@ using System.Threading.Tasks;
 using NLog;
 using PDXModLib.Interfaces;
 using PDXModLib.ModData;
-using PDXModLib.SCFormat;
 using PDXModLib.Utility;
+using static CWTools.Parser.Types;
+using CWTools.CSharp;
+using static CWTools.Process.CK2Process;
+using CWTools.Process;
+using Microsoft.FSharp.Compiler;
 
 namespace PDXModLib.GameContext
 {
@@ -29,7 +33,7 @@ namespace PDXModLib.GameContext
 
         private readonly IInstalledModManager _installedModManager;
 
-        private SCObject _settingsRoot;
+        private EventRoot _settingsRoot;
 
         #endregion Private fields
 
@@ -41,9 +45,14 @@ namespace PDXModLib.GameContext
 
         public ModSelection CurrentSelection { get; set; }
 
-        #endregion Public properties
+		#endregion Public properties
 
-        public GameContext(IGameConfiguration gameConfiguration, INotificationService notificationService, IInstalledModManager installedModManager)
+		static GameContext()
+		{
+			Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
+		}
+
+		public GameContext(IGameConfiguration gameConfiguration, INotificationService notificationService, IInstalledModManager installedModManager)
         {
             _gameConfiguration = gameConfiguration;
             _notificationService = notificationService;
@@ -102,12 +111,16 @@ namespace PDXModLib.GameContext
                 _currentlySaved = CurrentSelection;
                 SaveSelection();
 
-                var mods = new SCObject();
+				var mods = _settingsRoot.Child("last_mods");
 
-                foreach (var sm in CurrentSelection.Contents)
-                    mods.Add(SCKeyValObject.Create(sm.Key));
+				if (mods == null)
+				{
+					mods = new Node("last_mods");
+					_settingsRoot.AllChildren = _settingsRoot.AllChildren.Concat( new[] { Child.NewNodeC(mods.Value) }).ToList();
+				}
+				
+				mods.Value.AllChildren = CurrentSelection.Contents.Select(c => Child.NewLeafValueC(new LeafValue(Value.NewQString(c.Key), Range.range0))).ToList();
 
-                _settingsRoot["last_mods"] = mods;
 
                 if (File.Exists(_gameConfiguration.BackupPath))
                 {
@@ -115,10 +128,11 @@ namespace PDXModLib.GameContext
                 }
                 File.Move(_gameConfiguration.SettingsPath, _gameConfiguration.BackupPath);
 
-                using (var stream = new FileStream(_gameConfiguration.SettingsPath, FileMode.Create, FileAccess.Write))
-                {
-                    _settingsRoot.WriteToStream(stream);
-                }
+				var visitor = new PrintingVisitor();
+
+				visitor.Visit(_settingsRoot);
+
+				File.WriteAllText(_gameConfiguration.SettingsPath, visitor.Result);
             }
             catch (Exception ex)
             {
@@ -133,24 +147,28 @@ namespace PDXModLib.GameContext
         {
             try
             {
-                var selections = new SCObject();
+				var selectionsToSave = new Node("root");
+				var selections = new Node(SelectionsKey);
 
-                var selectionsToSave = new SCObject { [SavedSelectionKey] = new SCString(_currentlySaved?.Name), [SelectionsKey] = selections };
+				var savedSelection = Child.NewLeafC(new Leaf(SavedSelectionKey, Value.NewQString(_currentlySaved?.Name), Range.range0));
 
-                foreach (var modSelection in Selections)
-                {
-                    var mods = new SCObject();
 
-                    foreach (var sm in modSelection.Contents)
-                        mods.Add(SCKeyValObject.Create(sm.Key));
+				var children = Selections.Select(s =>
+				{
+					var r = new Node(s.Name);
+					r.AllChildren = s.Contents.Select(c => Child.NewLeafValueC(new LeafValue(Value.NewQString(c.Key), Range.range0))).ToList();
+					return Child.NewNodeC(r);
+				});
 
-                    selections[new SCString(modSelection.Name)] = mods;
-                }
+				selectionsToSave.AllChildren = 
+					new[] { Child.NewNodeC(selections), savedSelection }.Concat(children).ToList();
 
-                using (var stream = new FileStream(_gameConfiguration.SavedSelections, FileMode.Create, FileAccess.Write))
-                {
-                    selectionsToSave.WriteToStream(stream);
-                }
+
+				var visitor = new PrintingVisitor();
+
+				visitor.Visit(selectionsToSave);
+
+				File.WriteAllText(_gameConfiguration.SavedSelections, visitor.Result);
             }
             catch (Exception ex)
             {
@@ -170,24 +188,21 @@ namespace PDXModLib.GameContext
         {
             if (File.Exists(_gameConfiguration.SavedSelections))
             {
-                using (var stream = new FileStream(_gameConfiguration.SavedSelections, FileMode.Open, FileAccess.Read))
+               // using (var stream = new FileStream(_gameConfiguration.SavedSelections, FileMode.Open, FileAccess.Read))
                 {
-                    var selectionParser = new Parser(new Scanner(stream));
+					var adapter = CWToolsAdapter.Parse(_gameConfiguration.SavedSelections);
 
-                    selectionParser.Parse();
+					if (adapter.Root != null) 
+					{
+						UpgradeFormat(adapter.Root);
 
-                    if (!selectionParser.ParseError && selectionParser.Root.Any())
-                    {
-                        var selectionDocument = selectionParser.Root;
-                        UpgradeFormat(selectionDocument);
+						var selectionIdx = adapter.Root.Leafs(SavedSelectionKey).FirstOrDefault().Value.ToRawString();
 
-                        var selectionIdx = selectionDocument[SavedSelectionKey] as SCString;
+                        var selections = adapter.Root.Child(SelectionsKey).Value?.AllChildren ?? Enumerable.Empty<Child>();
 
-                        var selections = selectionDocument[SelectionsKey] as SCObject ?? new SCObject();
-
-                        foreach (var selection in selections)
+                        foreach (var selection in selections.Where(s => s.IsNodeC).Select(s => s.node))
                         {
-                            var key = (selection.Key as SCString).Text;
+							var key = selection.Key;
                             ModSelection modSelection;
                             if (selection.Key.Equals(selectionIdx))
                             {
@@ -196,7 +211,7 @@ namespace PDXModLib.GameContext
                             }
                             else
                             {
-                                modSelection = CreateFromScObject(key, selection.Value);
+                                modSelection = CreateFromScObject(key, selection.AllChildren);
                             }
 
                             Selections.Add(modSelection);
@@ -245,43 +260,69 @@ namespace PDXModLib.GameContext
 
         #region Private methods
 
-        private SCObject LoadGameSettings(string path)
+        private EventRoot LoadGameSettings(string path)
         {
-            using (var stream = new FileStream(path, FileMode.Open, FileAccess.Read))
+            //using (var stream = new FileStream(path, FileMode.Open, FileAccess.Read))
             {
-                var settingsParser = new Parser(new Scanner(stream));
+				var result = CWTools.Parser.CKParser.parseEventFile(path);
 
-                settingsParser.Parse();
-                if (!settingsParser.Root.Any() || settingsParser.ParseError)
-                    return null;
-                return settingsParser.Root;
+				if (result.IsFailure)
+					return null;
+
+				var root = CWTools.Process.CK2Process.processEventFile(result.GetResult());
+
+				if (!root.All.Any())
+					return null;
+				
+                return root;
             }
         }
 
-        private void UpgradeFormat(SCObject selectionsDocument)
+        private void UpgradeFormat(Node selectionsDocument)
         {
             //Upgrade from Stellaris only names; 
-            var upgradeNeeded = selectionsDocument["SavedToStellaris"] != null;
+            var upgradeNeeded = selectionsDocument.Child("SavedToStellaris") != null;
             if (upgradeNeeded)
             {
-                selectionsDocument[SavedSelectionKey] = selectionsDocument["SavedToStellaris"];
-                selectionsDocument.Remove("SavedToStellaris");
+				var newNode = new Node(SavedSelectionKey);
+				newNode.AllChildren = selectionsDocument.Child("SavedToStellaris").Value.AllChildren;
+
+				var replacements = selectionsDocument.AllChildren.Where(f => !(f.IsNodeC && f.node.Key == "SavedToStellaris")).ToList(); ;
+
+				replacements.Add(Child.NewNodeC(newNode));
+
+				selectionsDocument.AllChildren = replacements;
             }
-        }
+
+			var upgradeSelectionKeys = selectionsDocument.Child(SelectionsKey).Value?.Nodes.All(c => c.Key.StartsWith("\"") && c.Key.EndsWith("\"")) ?? false;
+			if (upgradeSelectionKeys)
+			{
+				var selections = selectionsDocument.Child(SelectionsKey).Value;
+				var nodes = selections.Nodes.ToList();
+				var newChildren = new List<Child>();
+				foreach (var node in nodes)
+				{
+					var nn = new Node(node.Key.Trim('"'), Range.range0);
+					nn.AllChildren = node.AllChildren;
+					newChildren.Add(Child.NewNodeC(nn));
+				}
+				selections.AllChildren = newChildren;
+			}
+			var ss2 = selectionsDocument.Child(SelectionsKey).Value;
+		}
 
         private ModSelection CreateDefaultSelection(string name = "Default selection")
         {
-            return CreateFromScObject(name, _settingsRoot["last_mods"]);
+            return CreateFromScObject(name, _settingsRoot.Child("last_mods").Value?.AllChildren ?? Enumerable.Empty<Child>());
         }
 
-        private ModSelection CreateFromScObject(string name, SCValue contents)
+        private ModSelection CreateFromScObject(string name, IEnumerable<Child> contents)
         {
             var selection = new ModSelection(name);
-            var defSelection = contents as SCObject ?? new SCObject();
 
-            foreach (var mod in defSelection)
+            foreach (var mod in contents.Where(c => c.IsLeafValueC).Select(c => c.lefavalue))
             {
-                var installed = _installedModManager.Mods.FirstOrDefault(m => m.Key == (mod.Value as SCString)?.Text);
+                var installed = _installedModManager.Mods.FirstOrDefault(m => m.Key == mod.Value.ToRawString());
                 if (installed != null)
                     selection.Contents.Add(installed);
             }

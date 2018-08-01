@@ -4,10 +4,6 @@
     <TargetFramework>netstandard2.0</TargetFramework>
   </PropertyGroup>
 
-  <Target Name="PreBuild" BeforeTargets="PreBuildEvent">
-    <Exec Command="&quot;$(ProjectDir)\BinTools\GpLex&quot; /out:&quot;$(ProjectDir)\ScFormat\Scanner.cs&quot; &quot;$(ProjectDir)\ScFormat\Scanner.lex&quot;&#xD;&#xA;&quot;$(ProjectDir)\BinTools\Gppg&quot; /out:&quot;$(ProjectDir)\ScFormat\Parser.cs&quot; &quot;$(ProjectDir)\ScFormat\Parser.par&quot;" />
-  </Target>
-
   <ItemGroup>
     <None Remove="App.xaml" />
     <None Remove="MainWindow.xaml" />
@@ -20,6 +16,7 @@
 
   <ItemGroup>
     <PackageReference Include="NLog" Version="4.5.6" />
+    <PackageReference Include="System.Text.Encoding.CodePages" Version="4.5.0" />
   </ItemGroup>
 
   <ItemGroup>
@@ -29,6 +26,10 @@
   <ItemGroup>
     <Page Include="MainWindow.xaml" />
     <Page Include="NameConfirm.xaml" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\CWTools\CWTools\CWTools.fsproj" />
   </ItemGroup>
 
   <ItemGroup>
