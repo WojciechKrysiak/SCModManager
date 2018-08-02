@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.IO.Compression;
 using System.Linq;
 using System.Text;
 using CWTools.Process;
+using ICSharpCode.SharpZipLib.Zip;
 using Microsoft.FSharp.Compiler;
 using NLog;
 using PDXModLib.Utility;
@@ -14,7 +14,7 @@ namespace PDXModLib.ModData
 {
 	public class Mod : IDisposable
 	{
-		private ZipArchive _zipFile;
+		private ZipFile _zipFile;
 
 		private static readonly Logger Log = LogManager.GetCurrentClassLogger();
 
@@ -106,16 +106,17 @@ namespace PDXModLib.ModData
             if (Path.GetExtension(mPath) == ".zip")
             {
                 
-                _zipFile = ZipFile.OpenRead(mPath);
+				_zipFile = new ZipFile(mPath);
 
-                foreach (var item in _zipFile.Entries)
+
+				foreach (var item in _zipFile.OfType<ZipEntry>())
                 {
                     if (string.Compare(item.Name, "descriptor.mod", true) == 0)
                     {
                         continue;
                     }
 
-                    var modFile = ModFile.Load(new ZipFileLoader(item), item.FullName, this);
+                    var modFile = ModFile.Load(new ZipFileLoader(_zipFile, item), item.Name, this);
                     Files.Add(modFile);
                 }
             }
@@ -163,7 +164,7 @@ namespace PDXModLib.ModData
 
         public void Dispose()
         {
-            _zipFile?.Dispose();
+            _zipFile?.Close();
         }
 
         public override int GetHashCode()

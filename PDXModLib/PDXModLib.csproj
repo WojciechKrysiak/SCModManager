@@ -16,6 +16,7 @@
 
   <ItemGroup>
     <PackageReference Include="NLog" Version="4.5.6" />
+    <PackageReference Include="SharpZipLib" Version="1.0.0-rc2" />
     <PackageReference Include="System.Text.Encoding.CodePages" Version="4.5.0" />
   </ItemGroup>
 

@@ -1,8 +1,7 @@
 {
   "profiles": {
-    "SCModManager.Windows": {
-      "commandName": "Project",
-      "workingDirectory": "C:\\Users\\Ciehoo\\Documents\\Visual Studio 2015\\Projects\\SCModManager\\SCModManager.Windows\\bin\\Debug\\netcoreapp2.0"
+    "SCModManager": {
+      "commandName": "Project"
     }
   }
 }

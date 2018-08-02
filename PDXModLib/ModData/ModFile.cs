@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-using System.IO.Compression;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using ICSharpCode.SharpZipLib.Zip;
 using NLog;
 using PDXModLib.Interfaces;
 using PDXModLib.Utility;
@@ -198,10 +198,7 @@ namespace PDXModLib.ModData
 
         public override void Save(IModFileSaver saver)
         {
-            using (var stream = _loader.OpenStream())
-            {
-                saver.Save(Path, stream);
-            }
+            saver.Save(Path, _loader.OpenStream);
         }
     }
 
@@ -243,10 +240,9 @@ namespace PDXModLib.ModData
                 base.Save(saver);
             else
             {
-                var stream = CreateMergeZip();
                 var extension = System.IO.Path.GetExtension(Path);
                 var newPath = System.IO.Path.ChangeExtension(Path, $"{extension}.mzip");
-                saver.Save(newPath, stream);
+                saver.Save(newPath, CreateMergeZip);
             }
         }
 
@@ -278,35 +274,28 @@ namespace PDXModLib.ModData
         private class MergeZipFileSaver : IModFileSaver
         {
             private int _index;
-            public ZipArchive ZipFile; 
+            private ZipFile _zipFile; 
 
             public MergeZipFileSaver(Stream outputStream)
             {
-                ZipFile = new ZipArchive(outputStream, ZipArchiveMode.Create);
-            }
+				_zipFile = ZipFile.Create(outputStream);
+				_zipFile.BeginUpdate(new MemoryArchiveStorage());
+			}
 
-            public void Save(string path, Stream stream)
-            {
-                var entry = ZipFile.CreateEntry(GetPath(path));
-                using (var zipStream = entry.Open())
-                    stream.CopyTo(zipStream);
-            }
+			public void Save(string path, Func<Stream> getStream)
+			{
+				_zipFile.Add(new FunctorDataSource(getStream), GetPath(path));
+			}
 
-            public void Save(string path, string text, Encoding encoding)
-            {
-                var entry = ZipFile.CreateEntry(GetPath(path));
-                using (var zipStream = entry.Open())
-                {
-                    using (var writer = new StreamWriter(zipStream, encoding))
-                    {
-                        writer.Write(text);
-                    }
-                }
-            }
+			public void Save(string path, string text, Encoding encoding)
+			{
+				_zipFile.Add(new FunctorDataSource(text, encoding), GetPath(path));
+			}
 
             public void Dispose()
             {
-                ZipFile?.Dispose();
+				_zipFile.CommitUpdate();
+                _zipFile?.Close();
             }
 
             private string GetPath(string path)

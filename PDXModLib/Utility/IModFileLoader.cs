@@ -1,7 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
+using ICSharpCode.SharpZipLib.Zip;
 using System.IO;
-using System.IO.Compression;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -30,16 +29,18 @@ namespace PDXModLib.Utility
 
     public class ZipFileLoader : IModFileLoader
     {
-        private readonly ZipArchiveEntry _zipEntry;
+		private readonly ZipFile file;
+		private readonly ZipEntry _zipEntry;
 
         public Stream OpenStream()
         {
-            return _zipEntry.Open();
+			return file.GetInputStream(_zipEntry);
         }
 
-        public ZipFileLoader(ZipArchiveEntry zipEntry)
+        public ZipFileLoader(ZipFile file, ZipEntry zipEntry)
         {
-            _zipEntry = zipEntry;
+			this.file = file;
+			_zipEntry = zipEntry;
         }
     }
 }
