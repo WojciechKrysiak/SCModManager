@@ -55,9 +55,9 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\SCModManager\SCModManager.csproj">
-      <Project>{01b50ace-825d-4524-bccc-68ab9f01cbb0}</Project>
-      <Name>SCModManager</Name>
+    <ProjectReference Include="..\SCModManager.Avalonia\SCModManager.Avalonia.csproj">
+      <Project>{cfd5e2fe-64d1-4128-bfcf-4498b77edfdb}</Project>
+      <Name>SCModManager.Avalonia</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VSToolsPath)\TeamTest\Microsoft.TestTools.targets" Condition="Exists('$(VSToolsPath)\TeamTest\Microsoft.TestTools.targets')" />

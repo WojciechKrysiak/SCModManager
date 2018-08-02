@@ -3,13 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.27004.2005
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SCModManager", "SCModManager\SCModManager.csproj", "{01B50ACE-825D-4524-BCCC-68AB9F01CBB0}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SCModManagerTests", "SCModManagerTests\SCModManagerTests.csproj", "{AC7364A5-C141-4C48-8A36-0B2438087619}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PDXModLib", "PDXModLib\PDXModLib.csproj", "{86DC0BC9-E965-4637-A400-6FF0E4FB4782}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SCModManager.Windows", "SCModManager.Windows\SCModManager.Windows.csproj", "{B8BE0FD2-0148-488F-B7CA-BF17BAF5FBD0}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SCModManager", "SCModManager.Windows\SCModManager.csproj", "{B8BE0FD2-0148-488F-B7CA-BF17BAF5FBD0}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SCModManager.Avalonia", "SCModManager.Avalonia\SCModManager.Avalonia.csproj", "{CFD5E2FE-64D1-4128-BFCF-4498B77EDFDB}"
 EndProject
@@ -34,10 +32,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{01B50ACE-825D-4524-BCCC-68AB9F01CBB0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{01B50ACE-825D-4524-BCCC-68AB9F01CBB0}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{01B50ACE-825D-4524-BCCC-68AB9F01CBB0}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{01B50ACE-825D-4524-BCCC-68AB9F01CBB0}.Release|Any CPU.Build.0 = Release|Any CPU
 		{AC7364A5-C141-4C48-8A36-0B2438087619}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{AC7364A5-C141-4C48-8A36-0B2438087619}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AC7364A5-C141-4C48-8A36-0B2438087619}.Release|Any CPU.ActiveCfg = Release|Any CPU
