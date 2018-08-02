@@ -7,7 +7,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SCModManagerTests", "SCModM
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "PDXModLib", "PDXModLib\PDXModLib.csproj", "{86DC0BC9-E965-4637-A400-6FF0E4FB4782}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SCModManager", "SCModManager.Windows\SCModManager.csproj", "{B8BE0FD2-0148-488F-B7CA-BF17BAF5FBD0}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SCModManager", "SCModManager\SCModManager.csproj", "{B8BE0FD2-0148-488F-B7CA-BF17BAF5FBD0}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "SCModManager.Avalonia", "SCModManager.Avalonia\SCModManager.Avalonia.csproj", "{CFD5E2FE-64D1-4128-BFCF-4498B77EDFDB}"
 EndProject
