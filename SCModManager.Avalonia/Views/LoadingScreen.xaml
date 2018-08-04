@@ -1,0 +1,7 @@
+﻿<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Width="400" Height="200"
+        HasSystemDecorations="False"
+        WindowStartupLocation="CenterScreen">
+  <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" Text="Loading"/>
+</Window>

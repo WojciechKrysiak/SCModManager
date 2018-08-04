@@ -1,5 +1,4 @@
-﻿using System;
-using Avalonia;
+﻿using Avalonia;
 using Avalonia.Logging;
 using Avalonia.Logging.Serilog;
 using SCModManager.Avalonia;
@@ -11,11 +10,11 @@ namespace SCModManager.Windows
     {
         static void Main(string[] args)
         {
-			BuildAvaloniaApp().Start<MainWindow>(() => {
-				var viewModel = new ModContext("Stellaris");
-				viewModel.Initialize();
-				return viewModel;
-			});
+		//	BuildAvaloniaApp().Start<LoadingScreen>();
+			using (var context = new AppContext())
+			{
+				context.EnterInitialContext(BuildAvaloniaApp());
+			}
 		}
 
 		public static AppBuilder BuildAvaloniaApp()

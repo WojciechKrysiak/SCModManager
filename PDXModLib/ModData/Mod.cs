@@ -63,12 +63,7 @@ namespace PDXModLib.ModData
             IEnumerable<string> tags;
 			var adapter = CWToolsAdapter.Parse(modDescriptor);
 
-            //using (var stream = new FileStream(modDescriptor, FileMode.Open, FileAccess.Read))
             {
-                //var parser = new Parser(new Scanner(stream));
-				//
-                //parser.Parse();
-
 				mod.Name = adapter.Root.Get("name").AsString(); 
 
                 mod._archive = adapter.Root.Get("archive").AsString();
@@ -107,7 +102,6 @@ namespace PDXModLib.ModData
             {
                 
 				_zipFile = new ZipFile(mPath);
-
 
 				foreach (var item in _zipFile.OfType<ZipEntry>())
                 {

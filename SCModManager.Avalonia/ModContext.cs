@@ -23,7 +23,7 @@ using SCModManager.ViewModels;
 using SCModManager.Avalonia.Views;
 using Avalonia;
 using Avalonia.Controls;
-
+using PDXModLib.Utility;
 
 namespace SCModManager
 {
@@ -32,7 +32,7 @@ namespace SCModManager
         private System.Configuration.Configuration _configuration;
         private static readonly Logger Log = LogManager.GetCurrentClassLogger();
 
-        private GameContext _gameContext;
+        private IGameContext _gameContext;
         private IModConflictCalculator _modConflictCalculator;
         private GameConfigurationSection _gameConfiguration;
 
@@ -60,7 +60,7 @@ namespace SCModManager
         private string _errorReason;
         private bool _conflictsMode;
         private ModVM _selectedMod;
-		private NotificationService _notificationService;
+		private INotificationService _notificationService;
 
 		private Func<Mod, bool> CurrentFilter
         {
@@ -146,10 +146,13 @@ namespace SCModManager
             }
         }
 
-        public ModContext(string product)
+        public ModContext(string product, INotificationService notificationService, IGameContext gameContext, IModConflictCalculator modConflictCalculator)
         {
             this.product = product;
-            SaveSettingsCommand = ReactiveCommand.Create(() => _gameContext.SaveSettings());
+			_notificationService = notificationService;
+			_gameContext = gameContext;
+			_modConflictCalculator = modConflictCalculator;
+			SaveSettingsCommand = ReactiveCommand.Create(() => _gameContext.SaveSettings());
             MergeModsCommand = ReactiveCommand.Create(MergeMods, _canMerge);
             Duplicate = ReactiveCommand.Create(DoDuplicate);
             Delete = ReactiveCommand.Create(DoDelete, _canDelete);
@@ -161,12 +164,6 @@ namespace SCModManager
         public async Task<bool> Initialize()
         {
             await LoadConfiguration(product);
-
-            _notificationService = new NotificationService();
-            var installedModManager = new InstalledModManager(_gameConfiguration, _notificationService);
-            _gameContext = new GameContext(_gameConfiguration, _notificationService, installedModManager);
-
-            _modConflictCalculator = new ModConflictCalculator(_gameConfiguration, installedModManager);
 
             if (! await _gameContext.Initialize())
             {
@@ -326,6 +323,7 @@ namespace SCModManager
             pw.ShowDialog();
         }
 
+		// TODO: fixme
         private async Task LoadConfiguration(string game)
         {
             var section = _configuration.Sections[game] as GameConfigurationSection;

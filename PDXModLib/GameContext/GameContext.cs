@@ -17,7 +17,7 @@ using Microsoft.FSharp.Compiler;
 
 namespace PDXModLib.GameContext
 {
-    public class GameContext
+    public class GameContext : IGameContext
     {
         private static readonly Logger Log = LogManager.GetCurrentClassLogger();
 
@@ -41,7 +41,8 @@ namespace PDXModLib.GameContext
 
         public IEnumerable<Mod> Mods => _installedModManager.Mods;
 
-        public List<ModSelection> Selections { get; } = new List<ModSelection>();
+		private List<ModSelection> _selections = new List<ModSelection>();
+		public IReadOnlyList<ModSelection> Selections => _selections;
 
         public ModSelection CurrentSelection { get; set; }
 
@@ -184,7 +185,7 @@ namespace PDXModLib.GameContext
             return _installedModManager.SaveMergedMod(mod);
         }
 
-        public void LoadSavedSelection()
+        private void LoadSavedSelection()
         {
             if (File.Exists(_gameConfiguration.SavedSelections))
             {
@@ -214,7 +215,7 @@ namespace PDXModLib.GameContext
                                 modSelection = CreateFromScObject(key, selection.AllChildren);
                             }
 
-                            Selections.Add(modSelection);
+                            _selections.Add(modSelection);
                         }
                     }
                 }
@@ -224,7 +225,7 @@ namespace PDXModLib.GameContext
             if (CurrentSelection == null)
             {
                 CurrentSelection = CreateDefaultSelection();
-                Selections.Add(CurrentSelection);
+				_selections.Add(CurrentSelection);
             }
 
             _currentlySaved = CurrentSelection;
@@ -238,7 +239,7 @@ namespace PDXModLib.GameContext
 
         public void DeleteCurrentSelection()
         {
-            Selections.Remove(CurrentSelection);
+			_selections.Remove(CurrentSelection);
             CurrentSelection = Selections.FirstOrDefault();
             if (!Selections.Contains(_currentlySaved))
             {
@@ -252,7 +253,7 @@ namespace PDXModLib.GameContext
             var sel = new ModSelection(newName);
             sel.Contents.AddRange(CurrentSelection.Contents);
             CurrentSelection = sel;
-            Selections.Add(sel);
+			_selections.Add(sel);
             SaveSelection();
         }
 

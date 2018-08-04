@@ -11,6 +11,7 @@
     <None Remove="Resources\TopShade.png" />
     <None Remove="Resources\WorkshopStylesheet.css" />
     <None Remove="Views\ComparePanel.xaml" />
+    <None Remove="Views\LoadingScreen.xaml" />
     <None Remove="Views\MainWindow.xaml" />
     <None Remove="Views\Merge.xaml" />
     <None Remove="Views\ModList.xaml" />
@@ -40,6 +41,9 @@
     <EmbeddedResource Include="App.xaml">
       <SubType>Designer</SubType>
     </EmbeddedResource>
+    <EmbeddedResource Include="Views\LoadingScreen.xaml">
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
     <EmbeddedResource Include="Views\MainWindow.xaml">
       <SubType>Designer</SubType>
     </EmbeddedResource>
@@ -67,6 +71,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Autofac" Version="4.8.1" />
     <PackageReference Include="Avalonia" Version="0.6.2-build5794-beta" />
     <PackageReference Include="Avalonia.Desktop" Version="0.6.2-build5794-beta" />
     <PackageReference Include="Avalonia.ReactiveUI" Version="0.6.2-build5794-beta" />
@@ -97,6 +102,9 @@
       <DependentUpon>%(Filename)</DependentUpon>
     </Compile>
     <Compile Update="Views\Merge.xaml.cs">
+      <DependentUpon>%(Filename)</DependentUpon>
+    </Compile>
+    <Compile Update="Views\LoadingScreen.xaml.cs">
       <DependentUpon>%(Filename)</DependentUpon>
     </Compile>
     <Compile Update="Views\NameConfirm.xaml.cs">
