@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 using System.Windows;
 using PDXModLib.Interfaces;
 
-namespace SCModManager.Utility
+namespace SCModManager.Avalonia.Utility
 {
     public sealed class ModChangeWatcher : IDisposable
     {
@@ -26,7 +26,7 @@ namespace SCModManager.Utility
         private readonly Subject<string> _modContentChanged= new Subject<string>();
         private readonly Subject<string> _modContentDeleted = new Subject<string>();
 
-        public ModChangeWatcher(IGameConfiguration configuration)
+        public ModChangeWatcher(IDefaultGameConfiguration configuration)
         {
             _watcher = new FileSystemWatcher(configuration.ModsDir);
 

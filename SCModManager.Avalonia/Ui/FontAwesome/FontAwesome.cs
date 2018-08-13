@@ -5,7 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 
-namespace SCModManager.Ui.FontAwesome
+namespace SCModManager.Avalonia.Ui.FontAwesome
 {
     public class FontAwesome : Shape
     {

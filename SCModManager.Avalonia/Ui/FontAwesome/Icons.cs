@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace SCModManager.Ui.FontAwesome
+namespace SCModManager.Avalonia.Ui.FontAwesome
  {
 	internal static class Icons
 	{

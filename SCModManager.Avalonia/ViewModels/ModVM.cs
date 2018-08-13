@@ -1,18 +1,16 @@
-﻿using System;
+﻿using Avalonia.Media.Imaging;
+using Avalonia.Threading;
+using PDXModLib.ModData;
+using ReactiveUI;
+using SCModManager.Avalonia.SteamWorkshop;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Reactive.Linq;
-using System.Text;
 using System.Threading.Tasks;
-using Avalonia.Media;
-using Avalonia.Media.Imaging;
-using Avalonia.Threading;
-using PDXModLib.ModData;
-using ReactiveUI;
-using SCModManager.SteamWorkshop;
 
-namespace SCModManager.ViewModels
+namespace SCModManager.Avalonia.ViewModels
 {
 	public class ModVM : ReactiveObject
 	{

@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SCModManager.SteamWorkshop
+namespace SCModManager.Avalonia.SteamWorkshop
 {
     public class SteamWorkshopDescriptor
     {

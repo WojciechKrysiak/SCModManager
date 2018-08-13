@@ -19,7 +19,7 @@ namespace PDXModLib.GameContext
 {
     public class GameContext : IGameContext
     {
-        private static readonly Logger Log = LogManager.GetCurrentClassLogger();
+        private readonly ILogger _logger;
 
         private const string SavedSelectionKey = "CurrentlySaved";
         private const string SelectionsKey = "Selections";
@@ -53,9 +53,10 @@ namespace PDXModLib.GameContext
 			Encoding.RegisterProvider(CodePagesEncodingProvider.Instance);
 		}
 
-		public GameContext(IGameConfiguration gameConfiguration, INotificationService notificationService, IInstalledModManager installedModManager)
+		public GameContext(IGameConfiguration gameConfiguration, INotificationService notificationService, IInstalledModManager installedModManager, ILogger logger)
         {
-            _gameConfiguration = gameConfiguration;
+			_logger = logger;
+			_gameConfiguration = gameConfiguration;
             _notificationService = notificationService;
             _installedModManager = installedModManager;
         }
@@ -65,32 +66,44 @@ namespace PDXModLib.GameContext
         public async Task<bool> Initialize()
         {
             try
-
             {
-                if (null == (_settingsRoot = LoadGameSettings(_gameConfiguration.SettingsPath)))
+				_logger.Debug($"Loading settings from {_gameConfiguration.SettingsPath}");
+
+				if (null == (_settingsRoot = LoadGameSettings(_gameConfiguration.SettingsPath)))
                 {
-                    if (File.Exists(_gameConfiguration.BackupPath))
+					_logger.Debug($"Settings not loading, attempting backup");
+
+					if (File.Exists(_gameConfiguration.BackupPath))
                     {
-                        if (await _notificationService.RequestConfirmation("Settings.txt corrupted, backup available, reload from backup?", "Error"))
+						_logger.Debug($"Backup exists, asking user.");
+
+						if (await _notificationService.RequestConfirmation("Settings.txt corrupted, backup available, reload from backup?", "Error"))
                         {
-                            _settingsRoot = LoadGameSettings(_gameConfiguration.BackupPath);
+							_logger.Debug($"Loading backup from {_gameConfiguration.BackupPath}.");
+
+							_settingsRoot = LoadGameSettings(_gameConfiguration.BackupPath);
                         }
                         else
                         {
-                            return false;
+							_logger.Debug($"User declined, exiting.");
+
+							return false;
                         }
                     }
                     // haven't managed to load from backup
                     if (_settingsRoot == null)
                     {
-                        await _notificationService.ShowMessage(
+						_logger.Debug($"Loading failed, notifying user and exiting");
+
+						await _notificationService.ShowMessage(
                             "Settings.txt corrupted - no backup available, please run stellaris to recreate default settings.", "Error");
                         return false;
                     }
 
                     SaveSettings();
-                    // this is a backup of an incorrect file, we should delete it. 
-                    File.Delete(_gameConfiguration.BackupPath);
+
+					// this is a backup of an incorrect file, we should delete it. 
+					File.Delete(_gameConfiguration.BackupPath);
                 }
 
                 _installedModManager.Initialize();
@@ -109,13 +122,16 @@ namespace PDXModLib.GameContext
         {
             try
             {
-                _currentlySaved = CurrentSelection;
+				_logger.Debug($"Saving settings");
+				_currentlySaved = CurrentSelection;
                 SaveSelection();
 
 				var mods = _settingsRoot.Child("last_mods");
 
 				if (mods == null)
 				{
+					_logger.Debug($"No mods selected previously, creating a default selection node");
+
 					mods = new Node("last_mods");
 					_settingsRoot.AllChildren = _settingsRoot.AllChildren.Concat( new[] { Child.NewNodeC(mods.Value) }).ToList();
 				}
@@ -125,19 +141,24 @@ namespace PDXModLib.GameContext
 
                 if (File.Exists(_gameConfiguration.BackupPath))
                 {
-                    File.Delete(_gameConfiguration.BackupPath);
+					_logger.Debug($"Deleting backup path at {_gameConfiguration.BackupPath}");
+					File.Delete(_gameConfiguration.BackupPath);
                 }
-                File.Move(_gameConfiguration.SettingsPath, _gameConfiguration.BackupPath);
+
+				_logger.Debug($"Creating backup at {_gameConfiguration.BackupPath}");
+				File.Move(_gameConfiguration.SettingsPath, _gameConfiguration.BackupPath);
 
 				var visitor = new PrintingVisitor();
 
 				visitor.Visit(_settingsRoot);
 
+				_logger.Debug($"Saving game selection at {_gameConfiguration.SettingsPath}");
+
 				File.WriteAllText(_gameConfiguration.SettingsPath, visitor.Result);
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error saving game settings");
+				_logger.Error(ex, "Error saving game settings");
                 return false;
             }
 
@@ -148,32 +169,36 @@ namespace PDXModLib.GameContext
         {
             try
             {
+				_logger.Debug($"Saving selections");
+
 				var selectionsToSave = new Node("root");
 				var selections = new Node(SelectionsKey);
 
 				var savedSelection = Child.NewLeafC(new Leaf(SavedSelectionKey, Value.NewQString(_currentlySaved?.Name), Range.range0));
 
-
-				var children = Selections.Select(s =>
+				selections.AllChildren = Selections.Select(s =>
 				{
-					var r = new Node(s.Name);
+
+					var r = new Node($"\"{s.Name}\"");
 					r.AllChildren = s.Contents.Select(c => Child.NewLeafValueC(new LeafValue(Value.NewQString(c.Key), Range.range0))).ToList();
 					return Child.NewNodeC(r);
-				});
+				}).ToList();
 
 				selectionsToSave.AllChildren = 
-					new[] { Child.NewNodeC(selections), savedSelection }.Concat(children).ToList();
+					new[] { Child.NewNodeC(selections), savedSelection }.ToList();
 
 
 				var visitor = new PrintingVisitor();
 
 				visitor.Visit(selectionsToSave);
 
+				_logger.Debug($"Writing all selections to {_gameConfiguration.SavedSelections}");
+
 				File.WriteAllText(_gameConfiguration.SavedSelections, visitor.Result);
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error saving mod selection settings");
+                _logger.Error(ex, "Error saving mod selection settings");
                 return false;
             }
 
@@ -187,36 +212,38 @@ namespace PDXModLib.GameContext
 
         private void LoadSavedSelection()
         {
+			_logger.Debug($"Attempting to load saved selections from {_gameConfiguration.SavedSelections}");
             if (File.Exists(_gameConfiguration.SavedSelections))
             {
-               // using (var stream = new FileStream(_gameConfiguration.SavedSelections, FileMode.Open, FileAccess.Read))
-                {
-					var adapter = CWToolsAdapter.Parse(_gameConfiguration.SavedSelections);
+				_logger.Debug($"Settings file exists, parsing.");
 
-					if (adapter.Root != null) 
-					{
-						UpgradeFormat(adapter.Root);
+				var adapter = CWToolsAdapter.Parse(_gameConfiguration.SavedSelections);
 
-						var selectionIdx = adapter.Root.Leafs(SavedSelectionKey).FirstOrDefault().Value.ToRawString();
+				if (adapter.Root != null) 
+				{
+					UpgradeFormat(adapter.Root);
 
-                        var selections = adapter.Root.Child(SelectionsKey).Value?.AllChildren ?? Enumerable.Empty<Child>();
+					var selectionIdx = adapter.Root.Leafs(SavedSelectionKey).FirstOrDefault().Value.ToRawString();
 
-                        foreach (var selection in selections.Where(s => s.IsNodeC).Select(s => s.node))
+					_logger.Debug($"Current selection was previously saved as {selectionIdx}");
+
+					var selections = adapter.Root.Child(SelectionsKey).Value?.AllChildren ?? Enumerable.Empty<Child>();
+
+                    foreach (var selection in selections.Where(s => s.IsNodeC).Select(s => s.node))
+                    {
+						var key = selection.Key.Trim('"');
+                        ModSelection modSelection;
+                        if (selection.Key.Equals(selectionIdx))
                         {
-							var key = selection.Key;
-                            ModSelection modSelection;
-                            if (selection.Key.Equals(selectionIdx))
-                            {
-                                modSelection = CreateDefaultSelection(key);
-                                CurrentSelection = modSelection;
-                            }
-                            else
-                            {
-                                modSelection = CreateFromScObject(key, selection.AllChildren);
-                            }
-
-                            _selections.Add(modSelection);
+                            modSelection = CreateDefaultSelection(key);
+                            CurrentSelection = modSelection;
                         }
+                        else
+                        {
+                            modSelection = CreateFromScObject(key, selection.AllChildren);
+                        }
+
+                        _selections.Add(modSelection);
                     }
                 }
             }
@@ -224,6 +251,7 @@ namespace PDXModLib.GameContext
             // only happens if the config file couldn't have been loaded
             if (CurrentSelection == null)
             {
+				_logger.Debug($"Settings file does not exist, creating default selection.");
                 CurrentSelection = CreateDefaultSelection();
 				_selections.Add(CurrentSelection);
             }
@@ -250,6 +278,7 @@ namespace PDXModLib.GameContext
 
         public void DuplicateCurrentSelection(string newName)
         {
+			_logger.Debug($"Duplicating current selection and naming it {newName}");
             var sel = new ModSelection(newName);
             sel.Contents.AddRange(CurrentSelection.Contents);
             CurrentSelection = sel;
@@ -263,20 +292,17 @@ namespace PDXModLib.GameContext
 
         private EventRoot LoadGameSettings(string path)
         {
-            //using (var stream = new FileStream(path, FileMode.Open, FileAccess.Read))
-            {
-				var result = CWTools.Parser.CKParser.parseEventFile(path);
+			var result = CWTools.Parser.CKParser.parseEventFile(path);
 
-				if (result.IsFailure)
-					return null;
+			if (result.IsFailure)
+				return null;
 
-				var root = CWTools.Process.CK2Process.processEventFile(result.GetResult());
+			var root = CWTools.Process.CK2Process.processEventFile(result.GetResult());
 
-				if (!root.All.Any())
-					return null;
+			if (!root.All.Any())
+				return null;
 				
-                return root;
-            }
+            return root;
         }
 
         private void UpgradeFormat(Node selectionsDocument)
@@ -285,6 +311,8 @@ namespace PDXModLib.GameContext
             var upgradeNeeded = selectionsDocument.Child("SavedToStellaris") != null;
             if (upgradeNeeded)
             {
+				_logger.Debug($"Upgrading selection from old Stellaris format");
+
 				var newNode = new Node(SavedSelectionKey);
 				newNode.AllChildren = selectionsDocument.Child("SavedToStellaris").Value.AllChildren;
 
@@ -298,6 +326,7 @@ namespace PDXModLib.GameContext
 			var upgradeSelectionKeys = selectionsDocument.Child(SelectionsKey).Value?.Nodes.All(c => c.Key.StartsWith("\"") && c.Key.EndsWith("\"")) ?? false;
 			if (upgradeSelectionKeys)
 			{
+				_logger.Debug($"Upgrading selection from old parser format");
 				var selections = selectionsDocument.Child(SelectionsKey).Value;
 				var nodes = selections.Nodes.ToList();
 				var newChildren = new List<Child>();
@@ -314,11 +343,12 @@ namespace PDXModLib.GameContext
 
         private ModSelection CreateDefaultSelection(string name = "Default selection")
         {
-            return CreateFromScObject(name, _settingsRoot.Child("last_mods").Value?.AllChildren ?? Enumerable.Empty<Child>());
+            return CreateFromScObject(name, _settingsRoot.Child("last_mods")?.Value.AllChildren ?? Enumerable.Empty<Child>());
         }
 
         private ModSelection CreateFromScObject(string name, IEnumerable<Child> contents)
         {
+			_logger.Debug($"Creating selection named {name}");
             var selection = new ModSelection(name);
 
             foreach (var mod in contents.Where(c => c.IsLeafValueC).Select(c => c.lefavalue))

@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using AvaloniaEdit.Document;
 
-namespace SCModManager.DiffMerge
+namespace SCModManager.Avalonia.DiffMerge
 {
     class ReadOnlyProvider : IReadOnlySectionProvider
     {

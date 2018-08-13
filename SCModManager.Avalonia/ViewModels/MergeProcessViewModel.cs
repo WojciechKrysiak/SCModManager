@@ -11,10 +11,11 @@ using System.Windows.Input;
 using PDXModLib.ModData;
 using ReactiveUI;
 using System.Text.RegularExpressions;
+using SCModManager.Avalonia.DiffMerge;
 
-namespace SCModManager.DiffMerge
+namespace SCModManager.Avalonia.ViewModels
 {
-    public class MergeProcess : ReactiveObject
+    public class MergeProcessViewModel : ReactiveObject
     {
         public static DiffMatchPatch.DiffMatchPatch DiffModule = new DiffMatchPatch.DiffMatchPatch(1f, (short)128, 0, 0.3f, 1000, 512, 0.2f, (short)64);
 
@@ -122,7 +123,7 @@ namespace SCModManager.DiffMerge
             set { this.RaiseAndSetIfChanged(ref _overviewMap, value); }
         }
 
-        public MergeProcess(MergedModFile fileToMerge)
+        public MergeProcessViewModel(MergedModFile fileToMerge)
         {
             file = fileToMerge;
             _result = new ModFileToMerge(file);

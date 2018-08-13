@@ -10,7 +10,7 @@ using PDXModLib.ModData;
 using ReactiveUI;
 using Unit = System.Reactive.Unit;
 
-namespace SCModManager.ViewModels
+namespace SCModManager.Avalonia.ViewModels
 {
     public abstract class ModFileHolder : ReactiveObject
     {

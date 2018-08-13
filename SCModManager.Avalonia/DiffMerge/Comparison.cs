@@ -7,7 +7,7 @@ using System.Text;
 using System.Windows.Input;
 using ReactiveUI;
 
-namespace SCModManager.DiffMerge
+namespace SCModManager.Avalonia.DiffMerge
 {
     public enum Side
     {

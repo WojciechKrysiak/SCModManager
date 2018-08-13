@@ -1,14 +1,14 @@
 ﻿<Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ui="clr-namespace:SCModManager.Avalonia.Ui"
-        xmlns:fa="clr-namespace:SCModManager.Ui.FontAwesome"
-        xmlns:viewModels="clr-namespace:SCModManager.ViewModels"
+        xmlns:fa="clr-namespace:SCModManager.Avalonia.Ui.FontAwesome"
+        xmlns:viewModels="clr-namespace:SCModManager.Avalonia.ViewModels"
         xmlns:i="clr-namespace:Avalonia.Xaml.Interactivity;assembly=Avalonia.Xaml.Interactivity"
         xmlns:ia="clr-namespace:Avalonia.Xaml.Interactions.Core;assembly=Avalonia.Xaml.Interactions"
         VerticalContentAlignment="Top"
-        SizeToContent="Height"
+        SizeToContent="WidthAndHeight"
         Topmost="True"
-        Width="400"
+        MinWidth="400"
         CanResize="False">
   
   <Grid RowDefinitions="Auto,Auto">

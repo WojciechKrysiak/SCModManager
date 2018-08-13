@@ -5,6 +5,10 @@ using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 using System.ComponentModel;
+using Avalonia.Threading;
+using NLog;
+using Avalonia;
+using System.Linq;
 
 namespace SCModManager.Avalonia.Ui
 {
@@ -18,13 +22,37 @@ namespace SCModManager.Avalonia.Ui
 		where TVM : DialogResultProvider<TResult>
 	{
 		private TVM _viewModel;
+		private ILogger _logger;
 
-		public DialogWrapper(TVM viewModel)
+		public DialogWrapper(ILogger logger, TVM viewModel)
 		{
+			_logger = logger;
 			_viewModel = viewModel;
 		}
 
-		public Task<TResult> ShowDialog<TV>() where TV : Window, new()
+		public async Task<TResult> ShowDialog<TV>() where TV : Window, new()
+		{
+			if (Dispatcher.UIThread.CheckAccess())
+			{
+				_logger.Debug("Displaying dialog with dispatcher access");
+				return await ShowDialogImpl<TV>();
+			}
+
+			_logger.Debug("Displaying dialog without dispatcher access");
+
+			TaskCompletionSource<TResult> taskCompletionSource = new TaskCompletionSource<TResult>();
+
+			await Dispatcher.UIThread.InvokeAsync(async () =>
+			{
+				_logger.Debug("Invoking ShowDialog on UIThread.");
+				var result = await ShowDialogImpl<TV>();
+				taskCompletionSource.SetResult(result);
+			});
+
+			return await taskCompletionSource.Task;
+		}
+
+		private Task<TResult> ShowDialogImpl<TV>() where TV : Window, new()
 		{
 			var dialog = new TV
 			{
@@ -34,7 +62,7 @@ namespace SCModManager.Avalonia.Ui
 			void onClosing(object sender, EventArgs a)
 			{
 				dialog.Closing -= onClosing;
-				_viewModel.Close -= onClosing; 
+				_viewModel.Close -= onClosing;
 				dialog.Close(_viewModel.Result);
 			}
 

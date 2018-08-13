@@ -9,8 +9,8 @@ using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using NLog;
-using SCModManager.DiffMerge;
-using SCModManager.SteamWorkshop;
+using SCModManager.Avalonia.DiffMerge;
+using SCModManager.Avalonia.SteamWorkshop;
 using System.Threading;
 using System.Linq.Expressions;
 using System.Reactive.Subjects;
@@ -18,25 +18,28 @@ using PDXModLib.GameContext;
 using PDXModLib.Interfaces;
 using PDXModLib.ModData;
 using ReactiveUI;
-using SCModManager.Configuration;
-using SCModManager.ViewModels;
+using SCModManager.Avalonia.Configuration;
+using SCModManager.Avalonia.ViewModels;
 using SCModManager.Avalonia.Views;
 using Avalonia;
 using Avalonia.Controls;
 using PDXModLib.Utility;
+using SCModManager.Avalonia;
+using SCModManager.Avalonia.Utility;
 
-namespace SCModManager
+namespace SCModManager.Avalonia
 {
     public class ModContext : ReactiveObject
     {
-        private System.Configuration.Configuration _configuration;
-        private static readonly Logger Log = LogManager.GetCurrentClassLogger();
-
         private IGameContext _gameContext;
         private IModConflictCalculator _modConflictCalculator;
-        private GameConfigurationSection _gameConfiguration;
-
-        private readonly Subject<bool> _canMerge = new Subject<bool>();
+		private readonly IAppContext _appContext;
+		private IGameConfiguration _gameConfiguration;
+		private readonly ILogger _logger;
+		private readonly IShowDialog<PreferencesWindowViewModel, bool> _newPreferencesWindow;
+		private readonly IShowDialog<NameConfirmVM, string, string> newNameConfirmDialog;
+		private readonly IShowDialog<ModMergeViewModel, MergedMod, IEnumerable<ModConflictDescriptor>> newModMergeDialog;
+		private readonly Subject<bool> _canMerge = new Subject<bool>();
         private readonly Subject<bool> _canDelete = new Subject<bool>();
         private ModConflictPreviewVm _conflictPreviewVm;
         private bool _filterSelection;
@@ -56,7 +59,6 @@ namespace SCModManager
         public IEnumerable<ModVM> Mods => _mods.Where(mvm => CurrentFilter(mvm.Mod));
         public IEnumerable<ModSelection> Selections => _gameContext.Selections.ToArray();
 
-        private Window mergeWindow;
         private string _errorReason;
         private bool _conflictsMode;
         private ModVM _selectedMod;
@@ -71,7 +73,6 @@ namespace SCModManager
                 return IncludeAll;
             }
         }
-
 
         public ModSelection CurrentSelection
         {
@@ -146,26 +147,42 @@ namespace SCModManager
             }
         }
 
-        public ModContext(string product, INotificationService notificationService, IGameContext gameContext, IModConflictCalculator modConflictCalculator)
+        public ModContext(INotificationService notificationService, 
+						  IGameContext gameContext, 
+						  IModConflictCalculator modConflictCalculator, 
+						  IAppContext appContext, 
+						  IGameConfiguration gameConfiguration,
+						  ILogger logger,
+						  IShowDialog<PreferencesWindowViewModel, bool> newPreferencesWindow,
+						  IShowDialog<NameConfirmVM, string, string> newNameConfirmDialog,
+						  IShowDialog<ModMergeViewModel, MergedMod, IEnumerable<ModConflictDescriptor>> newModMergeDialog
+			
+			)
         {
-            this.product = product;
+			logger.Debug($"Creating ModContext for {gameConfiguration.GameName}");
+
 			_notificationService = notificationService;
 			_gameContext = gameContext;
 			_modConflictCalculator = modConflictCalculator;
+			_appContext = appContext;
+			_gameConfiguration = gameConfiguration;
+			_logger = logger;
+			_newPreferencesWindow = newPreferencesWindow;
+			this.newNameConfirmDialog = newNameConfirmDialog;
+			this.newModMergeDialog = newModMergeDialog;
 			SaveSettingsCommand = ReactiveCommand.Create(() => _gameContext.SaveSettings());
             MergeModsCommand = ReactiveCommand.Create(MergeMods, _canMerge);
             Duplicate = ReactiveCommand.Create(DoDuplicate);
             Delete = ReactiveCommand.Create(DoDelete, _canDelete);
 			ShowPreferences = ReactiveCommand.Create(DoShowPreferences);
 			
-            _configuration = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
         }
 
         public async Task<bool> Initialize()
         {
-            await LoadConfiguration(product);
+			_logger.Debug($"Initializing ModContext for {_gameConfiguration.GameName}");
 
-            if (! await _gameContext.Initialize())
+			if (! await _gameContext.Initialize())
             {
                 return false;
             }
@@ -189,8 +206,8 @@ namespace SCModManager
             _mods?.ForEach(mvm =>
             {
                 mvm.PropertyChanged -= ModOnPropertyChanged;
-                mvm.Mod.Dispose();
             });
+
             _mods = _modConflicts.Select(mc => new ModVM(mc, IsSelected(mc.Mod))).OrderBy(m => m.Name).ToList();
             _mods.ForEach(mvm => mvm.PropertyChanged += ModOnPropertyChanged);
 
@@ -212,25 +229,13 @@ namespace SCModManager
             }
         }
 
-        private void DoDuplicate()
+        private async void DoDuplicate()
         {
             int cnt = _gameContext.Selections.Count();
 
             var name = $"Selection {cnt + 1}";
 
-            var confirm = new NameConfirm();
-            var confirmVM = new NameConfirmVM(name);
-            confirmVM.ShouldClose += (o, b) =>
-            {
-                if (b)
-                {
-                    name = confirmVM.Name;
-                }
-                confirm.Close();
-            };
-
-            confirm.DataContext = confirmVM;
-            confirm.ShowDialog();
+			name = await newNameConfirmDialog.Show(name) ?? name;
 
             _gameContext.DuplicateCurrentSelection(name);
 
@@ -238,32 +243,22 @@ namespace SCModManager
             this.RaisePropertyChanged(nameof(CurrentSelection));
         }
 
-        private void MergeMods()
+        private async void MergeMods()
         {
-			mergeWindow = new Merge { Owner = Avalonia.App.Current.MainWindow };
-            mergeWindow.Closed += MergeWindow_Closed;
-            mergeWindow.DataContext = new ModMergeContext(Mods.Where(m => m.Selected).Select(m => m.ModConflict.Filter(IsSelected)), SaveMergedMod);
-            mergeWindow.ShowDialog();
-        }
+			var result = await newModMergeDialog.Show(Mods.Where(m => m.Selected).Select(m => m.ModConflict.Filter(IsSelected)));
 
-        private void MergeWindow_Closed(object sender, EventArgs e)
-        {
-            mergeWindow.Closed -= MergeWindow_Closed;
-            mergeWindow = null;
-        }
+			if (result != null)
+			{
+				if (!await _gameContext.SaveMergedMod(result))
+				{
+					await _notificationService.ShowMessage("Error saving merged mod file. Please check the log file", "Error");
+					return;
+				}
 
-        private async Task SaveMergedMod(ModMergeContext mod)
-        {
+				_gameContext.LoadMods();
+				SortAndCreateViewModels();
+			}
 
-            if (! await _gameContext.SaveMergedMod(mod.Result))
-            {
-				await _notificationService.ShowMessage("Error saving merged mod file. Please check the log file", "Error");
-                return;
-            }
-
-            mergeWindow.Close();
-            _gameContext.LoadMods();
-            SortAndCreateViewModels();
         }
 
         private bool IsSelected(Mod mod)
@@ -306,41 +301,20 @@ namespace SCModManager
             }
         }
 
-        private void DoShowPreferences()
+        private async void DoShowPreferences()
         {
-            var vm = new PreferencesWindowViewModel(_gameConfiguration);
-            var pw = new PreferencesWindow {DataContext = vm};
-
-            vm.ShouldClose += async (sender, save) =>
-            {
-                if (save)
-                {
-                    _configuration.Save(ConfigurationSaveMode.Modified);
-                    await Initialize();
-                }
-                pw.Close();
-            };
-            pw.ShowDialog();
-        }
+			if (await _newPreferencesWindow.Show())
+			{
+				await Initialize();
+			}
+		}
 
 		// TODO: fixme
-        private async Task LoadConfiguration(string game)
+        private async Task CheckConfiguration()
         {
-            var section = _configuration.Sections[game] as GameConfigurationSection;
-
-            if (section == null)
+            if (!_gameConfiguration.SettingsDirectoryValid || !_gameConfiguration.GameDirectoryValid)
             {
-                section = new GameConfigurationSection();
-                _configuration.Sections.Add(game, section);
-				section.Init(new StellarisConfiguration());
-				_configuration.Save(ConfigurationSaveMode.Modified);
-			}
-
-			_gameConfiguration = section;
-
-            if (string.IsNullOrEmpty(_gameConfiguration.BasePath) || !Directory.Exists(_gameConfiguration.BasePath) || !File.Exists(_gameConfiguration.SettingsPath))
-            {
-				await _notificationService.ShowMessage("error", $"There is an error configuration, please sellect a valid documents directory for {game}");
+				await _notificationService.ShowMessage("error", $"There is an error configuration, please sellect a valid documents directory for {_gameConfiguration.GameName}");
                 DoShowPreferences();
             }
         }

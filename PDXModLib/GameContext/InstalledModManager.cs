@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using CWTools.Process;
 using NLog;
 using NLog.Targets.Wrappers;
 using PDXModLib.Interfaces;
@@ -16,16 +17,17 @@ namespace PDXModLib.GameContext
     {
         private readonly IGameConfiguration _gameConfiguration;
         private readonly INotificationService _notificationService;
-        private readonly List<Mod> _mods = new List<Mod>();
-        private static readonly Logger Log = LogManager.GetCurrentClassLogger();
+		private readonly ILogger _logger;
+		private readonly List<Mod> _mods = new List<Mod>();
 
         public IEnumerable<Mod> Mods => _mods;
 
-        public InstalledModManager(IGameConfiguration gameConfiguration, INotificationService notificationService)
+        public InstalledModManager(IGameConfiguration gameConfiguration, INotificationService notificationService, ILogger logger)
         {
             _gameConfiguration = gameConfiguration;
             _notificationService = notificationService;
-        }
+			_logger = logger;
+		}
 
         public void Initialize()
         {
@@ -36,14 +38,17 @@ namespace PDXModLib.GameContext
         { 
             foreach (var file in Directory.EnumerateFiles(_gameConfiguration.ModsDir, "*.mod"))
             {
-                var fileName = Path.GetFileName(file);
+				var fileName = Path.GetFileName(file);
 
                 if (Mods.Any(m => m.Id == fileName))
                 {
-                    continue;
+					_logger.Debug($"Mod file skipped as it is already loaded: {fileName}");
+
+					continue;
                 }
 
-                Mod mod = null;
+				_logger.Debug($"Loading mod file: {file}");
+				Mod mod = null;
                 try
                 {
                     mod = Mod.Load(file);
@@ -51,7 +56,7 @@ namespace PDXModLib.GameContext
                 }
                 catch (Exception exception)
                 {
-                    Log.Error(exception, $"Error loading Mod {fileName}");
+                    _logger.Error(exception, $"Error loading Mod {fileName}");
                 }
 
                 if (mod != null)
@@ -65,7 +70,9 @@ namespace PDXModLib.GameContext
         {
             try
             {
-                var path = Path.Combine(_gameConfiguration.ModsDir, mod.FileName);
+				_logger.Debug($"Saving mod: {mod.FileName} to {_gameConfiguration.ModsDir}");
+
+				var path = Path.Combine(_gameConfiguration.ModsDir, mod.FileName);
 
                 var descPath = Path.Combine(_gameConfiguration.ModsDir, $"{mod.FileName}.mod");
 
@@ -80,7 +87,12 @@ namespace PDXModLib.GameContext
                     File.Delete(descPath);
                 }
 
-                var contents = string.Join(Environment.NewLine, mod.ToDescriptor());
+				var node = new Node(mod.Name);
+				node.AllChildren = mod.ToDescriptor().ToList();
+				var visitor = new PrintingVisitor();
+				visitor.Visit(node);
+
+				var contents = visitor.Result;
 
                 File.WriteAllText(descPath, contents);
 
@@ -94,7 +106,7 @@ namespace PDXModLib.GameContext
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Error saving mod!");
+                _logger.Error(ex, "Error saving mod!");
                 return false;
             }
 

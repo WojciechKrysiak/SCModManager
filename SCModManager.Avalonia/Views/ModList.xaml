@@ -1,6 +1,6 @@
 ﻿<UserControl xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:fa="clr-namespace:SCModManager.Ui.FontAwesome">
+        xmlns:fa="clr-namespace:SCModManager.Avalonia.Ui.FontAwesome">
   <DockPanel Grid.Column="0"
            Grid.Row="1"
            Grid.RowSpan="2"

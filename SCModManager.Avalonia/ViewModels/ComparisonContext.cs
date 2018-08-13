@@ -3,8 +3,9 @@ using Avalonia;
 using System.Windows;
 using PDXModLib.ModData;
 using ReactiveUI;
+using SCModManager.Avalonia.DiffMerge;
 
-namespace SCModManager.DiffMerge
+namespace SCModManager.Avalonia.ViewModels
 {
     public class ComparisonContext : ReactiveObject
     {
@@ -49,9 +50,9 @@ namespace SCModManager.DiffMerge
             LeftDocument = new TextDocument();
             RightDocument = new TextDocument();
 
-            var diff = MergeProcess.DiffModule.DiffMain(left.RawContents, right.RawContents);
+            var diff = MergeProcessViewModel.DiffModule.DiffMain(left.RawContents, right.RawContents);
 
-            MergeProcess.DiffModule.DiffCleanupSemantic(diff);
+			MergeProcessViewModel.DiffModule.DiffCleanupSemantic(diff);
 
             Comparison = new Comparison(diff);
 

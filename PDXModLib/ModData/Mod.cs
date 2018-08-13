@@ -100,11 +100,11 @@ namespace PDXModLib.ModData
 
             if (Path.GetExtension(mPath) == ".zip")
             {
-                
 				_zipFile = new ZipFile(mPath);
 
 				foreach (var item in _zipFile.OfType<ZipEntry>())
                 {
+					var filename = Path.GetFileName(item.Name);
                     if (string.Compare(item.Name, "descriptor.mod", true) == 0)
                     {
                         continue;
@@ -116,14 +116,14 @@ namespace PDXModLib.ModData
             }
             else
             {
-                mPath = mPath + "\\";
-                var items = Directory.EnumerateFiles(mPath, "*.*", SearchOption.AllDirectories);
-                foreach (var item in items)
+                mPath = mPath + Path.DirectorySeparatorChar;
+                var paths = Directory.EnumerateFiles(mPath, "*.*", SearchOption.AllDirectories);
+                foreach (var path in paths)
                 {
-                    if (string.Compare(Path.GetFileName(item), "descriptor.mod", true) != 0)
+                    if (string.Compare(Path.GetFileName(path), "descriptor.mod", true) != 0)
                     {
-                        var refPath = Uri.UnescapeDataString(new Uri(mPath).MakeRelativeUri(new Uri(item)).OriginalString);
-                        var modFile = ModFile.Load(new DiskFileLoader(item), refPath, this);
+                        var refPath = Uri.UnescapeDataString(new Uri(mPath).MakeRelativeUri(new Uri(path)).OriginalString);
+                        var modFile = ModFile.Load(new DiskFileLoader(path), refPath, this);
                         Files.Add(modFile);
                     }
                 }

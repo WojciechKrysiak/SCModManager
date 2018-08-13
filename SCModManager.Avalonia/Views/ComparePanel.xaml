@@ -1,12 +1,10 @@
 ﻿<UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:fa="clr-namespace:SCModManager.Ui.FontAwesome;assembly=SCModManager.Avalonia"
-             
-             xmlns:diff="clr-namespace:SCModManager.DiffMerge;assembly=SCModManager.Avalonia"
+             xmlns:fa="clr-namespace:SCModManager.Avalonia.Ui.FontAwesome;assembly=SCModManager.Avalonia"
              xmlns:AvaloniaEdit="clr-namespace:AvaloniaEdit;assembly=AvaloniaEdit"
              xmlns:ui="clr-namespace:SCModManager.Avalonia.Ui;assembly=SCModManager.Avalonia"
              xmlns:md="clr-namespace:PDXModLib.ModData;assembly=PDXModLib"
-             xmlns:viewModels="clr-namespace:SCModManager.ViewModels"
+             xmlns:viewModels="clr-namespace:SCModManager.Avalonia.ViewModels"
              xmlns:i="clr-namespace:Avalonia.Xaml.Interactivity;assembly=Avalonia.Xaml.Interactivity"
              xmlns:ia="clr-namespace:Avalonia.Xaml.Interactions.Core;assembly=Avalonia.Xaml.Interactions"
              xmlns:core="clr-namespace:System;assembly=mscorlib"
@@ -136,7 +134,7 @@
               BorderThickness="1"
                     >
         <Panel IsVisible="{Binding ComparisonContext, Converter={StaticResource NullToBoolConverter}}">
-        <diff:MergeViewer MaxWidth="10000" 
+        <ui:MergeViewer MaxWidth="10000" 
                           BorderThickness="0"
                           Contents="{Binding Comparison}" 
                           DataContext="{Binding ComparisonContext}"
@@ -159,7 +157,7 @@
               BorderThickness="1">
                   
         <Panel IsVisible="{Binding ComparisonContext, Converter={StaticResource NullToBoolConverter}}">
-        <diff:MergeViewer BorderThickness="0" MaxWidth="10000" 
+        <ui:MergeViewer BorderThickness="0" MaxWidth="10000" 
                           Contents="{Binding Comparison}"
                           DataContext="{Binding ComparisonContext}"
                           Document="{Binding RightDocument}"

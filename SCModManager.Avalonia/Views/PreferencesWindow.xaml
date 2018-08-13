@@ -1,8 +1,8 @@
 ﻿<Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:fa="clr-namespace:SCModManager.Ui.FontAwesome"
+        xmlns:fa="clr-namespace:SCModManager.Avalonia.Ui.FontAwesome"
         xmlns:ui="clr-namespace:SCModManager.Avalonia.Ui"
-        xmlns:viewModels="clr-namespace:SCModManager.ViewModels"
+        xmlns:viewModels="clr-namespace:SCModManager.Avalonia.ViewModels"
         Topmost="True"
         Title="Preferences Window"
         Height="500" Width="500">

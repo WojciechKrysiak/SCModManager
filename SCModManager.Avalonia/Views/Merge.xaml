@@ -1,15 +1,15 @@
 ﻿<Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:ui="clr-namespace:SCModManager.Avalonia.Ui;assembly=SCModManager.Avalonia"
-        xmlns:fa="clr-namespace:SCModManager.Ui.FontAwesome;assembly=SCModManager.Avalonia"
-        xmlns:viewModels="clr-namespace:SCModManager.ViewModels"
-        xmlns:diff="clr-namespace:SCModManager.DiffMerge;assembly=SCModManager.Avalonia"
+        xmlns:fa="clr-namespace:SCModManager.Avalonia.Ui.FontAwesome;assembly=SCModManager.Avalonia"
+        xmlns:viewModels="clr-namespace:SCModManager.Avalonia.ViewModels"
+        xmlns:diff="clr-namespace:SCModManager.Avalonia.DiffMerge;assembly=SCModManager.Avalonia"
         xmlns:i="clr-namespace:Avalonia.Xaml.Interactivity;assembly=Avalonia.Xaml.Interactivity"
         xmlns:ia="clr-namespace:Avalonia.Xaml.Interactions.Core;assembly=Avalonia.Xaml.Interactions"
         Topmost="True"
         Title="Merge">
   <Window.Styles>
-    <Style Selector="diff:MergeView">
+    <Style Selector="ui:MergeViewer">
       <Setter Property="ContextMenu">
         <Setter.Value>
           <ControlTemplate>
@@ -30,8 +30,6 @@
   </Window.Styles>
   <Grid RowDefinitions="Auto,Auto,*" ColumnDefinitions="3*,8*">
     <Grid.Resources>
-
-
       <ui:BoolNegatingConverter x:Key="BoolNegatingConverter" />
       <ui:NullToBoolConverter x:Key="NullToVis" />
       <ui:ExactTypeConverter x:Key="ExactTypeConverter" />
@@ -194,7 +192,7 @@
         </DropDown>
       </DockPanel>
 
-      <diff:MergeViewer Grid.Column="0"
+      <ui:MergeViewer Grid.Column="0"
                         Grid.Row="1"
                         Contents="{Binding Comparison}"
                         Document="{Binding LeftDocument}"
@@ -205,10 +203,12 @@
                         ShowLineNumbers="True"
                         Side="Left"
                               >
+        <ui:MergeViewer.ContextMenu>
+          <ContextMenu/>
+        </ui:MergeViewer.ContextMenu>
+      </ui:MergeViewer>
 
-      </diff:MergeViewer>
-
-      <diff:MergeViewer Grid.Column="2"
+      <ui:MergeViewer Grid.Column="2"
                         Grid.Row="1"
                         Contents="{Binding Comparison}"
                         Document="{Binding RightDocument}"
@@ -218,7 +218,11 @@
                         HideWhiteSpace="{Binding HideWhiteSpace}"
                         ShowLineNumbers="True"
                         Side="Right"
-                              />
+                              >
+        <ui:MergeViewer.ContextMenu>
+          <ContextMenu/>
+        </ui:MergeViewer.ContextMenu>
+      </ui:MergeViewer>
 
       <DockPanel Grid.Column="0"
                  Grid.ColumnSpan="3"
@@ -241,7 +245,7 @@
         </StackPanel>
       </DockPanel>
 
-      <diff:MergeViewer Grid.Column="0"
+      <ui:MergeViewer Grid.Column="0"
                         Grid.ColumnSpan="3"
                         Grid.Row="3"
                         Contents="{Binding Comparison}"
@@ -251,7 +255,11 @@
                         HideWhiteSpace="{Binding HideWhiteSpace}"
                         ShowLineNumbers="True"
                         Side="Result"
-                              />
+                              >
+        <ui:MergeViewer.ContextMenu>
+          <ContextMenu/>
+        </ui:MergeViewer.ContextMenu>
+      </ui:MergeViewer>
 
     </Grid>
 

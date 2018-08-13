@@ -7,9 +7,9 @@ using System.Threading.Tasks;
 using System.Windows.Input;
 using ReactiveUI;
 
-namespace SCModManager
+namespace SCModManager.Avalonia.ViewModels
 {
-    class NameConfirmVM : ReactiveObject
+    public class NameConfirmVM : DialogViewModel<string>
     {
         private string _name;
 
@@ -17,6 +17,7 @@ namespace SCModManager
         {
             get { return _name; }
             set { this.RaiseAndSetIfChanged(ref _name, value);
+				  this.Result = value;
                 _canSave.OnNext(_name.Length > 0);
             }
         }
@@ -29,11 +30,13 @@ namespace SCModManager
 
         public NameConfirmVM(string name)
         {
-            Ok = ReactiveCommand.Create(() => ShouldClose?.Invoke(this, true), _canSave);
-            Cancel = ReactiveCommand.Create(() => ShouldClose?.Invoke(this, false));
+            Ok = ReactiveCommand.Create(OnClosing, _canSave);
+            Cancel = ReactiveCommand.Create(() => {
+				Result = null;
+				OnClosing();
+			});
             Name = name;
         }
 
-        public event EventHandler<bool> ShouldClose;
     }
 }

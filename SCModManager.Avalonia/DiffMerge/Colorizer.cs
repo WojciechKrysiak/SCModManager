@@ -3,7 +3,7 @@ using AvaloniaEdit.Rendering;
 using System;
 using Avalonia.Media;
 
-namespace SCModManager.DiffMerge
+namespace SCModManager.Avalonia.DiffMerge
 {
     class Colorizer : DocumentColorizingTransformer
     {

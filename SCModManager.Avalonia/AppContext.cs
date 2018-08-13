@@ -5,22 +5,31 @@ using Avalonia.Threading;
 using NLog;
 using PDXModLib.Interfaces;
 using PDXModLib.Utility;
+using SCModManager.Avalonia.Configuration;
 using SCModManager.Avalonia.Views;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Text;
 using System.Threading.Tasks;
 
 namespace SCModManager.Avalonia
 {
-    public sealed class AppContext : IDisposable
+	public interface IAppContext
+	{
+		Task SwitchContext(string context);
+	}
+
+    public sealed class AppContext : IAppContext, IDisposable
     {
 		IContainer container;
 		ILifetimeScope contextScope;
 
+		IConfigurationService configuretionService;
 		Lazy<INotificationService> notificationService;
-
 		private static ILogger logger = LogManager.GetCurrentClassLogger();
+
+		private Window _mainAppWindow;
 
 		public AppContext()
 		{
@@ -31,9 +40,14 @@ namespace SCModManager.Avalonia
 			builder.RegisterModule<PDXModLib.RegistrationModule>();
 			builder.RegisterModule<SCModManager.Avalonia.RegistrationModule>();
 
+			builder.RegisterInstance(this).As<IAppContext>();
+
+			builder.Register(cc => _mainAppWindow ?? App.Current.MainWindow);
+
 			container = builder.Build();
 
 			notificationService = container.Resolve<Lazy<INotificationService>>();
+			configuretionService = container.Resolve<IConfigurationService>();
 			logger.Info("AppContext created");
 		}
 
@@ -49,11 +63,19 @@ namespace SCModManager.Avalonia
 
 			logger.Info("Loading configuration");
 
-			var context = "Stellaris";
+			var context = configuretionService.InitialContext;
 
+			logger.Info($"Using default context: {context}");
+
+			logger.Info($"Setting up Avalonia infractructure");
 			appBuilderBase.SetupWithoutStarting();
 			var loadingWindow = new LoadingScreen();
-			loadingWindow.Activated += (o, e) => Task.Run(() => EnterScope(context));
+			void RunInitTask(object sender, EventArgs args)
+			{
+				loadingWindow.Activated -= RunInitTask;
+				Task.Run(() => InitialEnterScope(context));
+			}
+			loadingWindow.Activated += RunInitTask;
 
 			appBuilderBase.Instance.Run(loadingWindow);
 		}
@@ -66,9 +88,9 @@ namespace SCModManager.Avalonia
 
 			contextScope.Dispose();
 
-			await EnterScope(context);
+			if (!await EnterScope(context))
+				Environment.Exit(-1);
 		}
-
 
 		public void Dispose()
 		{
@@ -76,14 +98,28 @@ namespace SCModManager.Avalonia
 			container?.Dispose();
 		}
 
-		private Task EnterScope(string context)
+		private void InitialEnterScope(string context)
 		{
+			try
+			{
+				logger.Debug($"Initial enter for scope {context}");
+				if (!EnterScope(context).Result)
+					Environment.Exit(-1);
+			}
+			catch (Exception e)
+			{
+				logger.Fatal(e, "Unhadled exception starting initial scope, exiting!");
+				Environment.Exit(-1);
+			}
+		}
+
+		private Task<bool> EnterScope(string context)
+		{
+			logger.Debug($"Entering scope {context}");
+
 			void ConfigureContextScope(ContainerBuilder builder)
 			{
-				builder.RegisterInstance(new StellarisConfiguration()).As<IGameConfiguration>();
-				builder.RegisterType<ModContext>().AsSelf().WithParameter(
-					(pi, ctx) => pi.ParameterType == typeof(string),
-					(pi, ctx) => context);
+				builder.RegisterInstance(configuretionService.LoadConfiguration(context)).As<IGameConfiguration>();
 			}
 
 			contextScope = container.BeginLifetimeScope(ConfigureContextScope);
@@ -95,6 +131,8 @@ namespace SCModManager.Avalonia
 		{
 			await Dispatcher.UIThread.InvokeAsync(() =>
 			{
+				Debug.Assert(App.Current.MainWindow == _mainAppWindow, "Something changed the main application window");
+				_mainAppWindow = null;
 				var oldWindow = App.Current.MainWindow;
 				oldWindow.Hide();
 				var loadingScreen = new LoadingScreen();
@@ -105,22 +143,34 @@ namespace SCModManager.Avalonia
 			}, DispatcherPriority.Normal);
 		}
 
-
-		private async Task StartContext(ILifetimeScope scope)
+		private async Task<bool> StartContext(ILifetimeScope scope)
 		{
+			logger.Debug($"Starting context");
+			logger.Debug($"creating new main window");
+			Debug.Assert(_mainAppWindow == null, "Main application window is not null!");
+
+			await Dispatcher.UIThread.InvokeAsync(() =>
+			{
+				_mainAppWindow = new MainWindow();
+			});
+
+			logger.Debug($"Resolving viewModel");
 			var viewModel = scope.Resolve<ModContext>();
-			await viewModel.Initialize();
+			logger.Debug($"ViewModel resolved");
+			if (!await viewModel.Initialize())
+				return false;
 
 			await Dispatcher.UIThread.InvokeAsync(() =>
 			{
 				var oldWindow = App.Current.MainWindow;
 				oldWindow.Hide();
-				var window = new MainWindow { DataContext = viewModel };
-				App.Current.MainWindow = window;
-				window.Show();
+				_mainAppWindow.DataContext = viewModel;
+				App.Current.MainWindow = _mainAppWindow;
+				_mainAppWindow.Show();
 				oldWindow.Close();
-				window.BringIntoView();
+				_mainAppWindow.BringIntoView();
 			}, DispatcherPriority.Normal);
+			return true;
 		}
 	}
 }

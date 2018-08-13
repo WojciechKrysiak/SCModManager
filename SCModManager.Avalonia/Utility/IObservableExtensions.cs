@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 using System.Reactive.Concurrency;
 using System.Reactive;
 
-namespace SCModManager.Utility
+namespace SCModManager.Avalonia.Utility
 {
     public static class IObservableExtensions
 	{

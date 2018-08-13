@@ -1,9 +1,6 @@
 ﻿using ReactiveUI;
 using SCModManager.Avalonia.Ui;
-using SCModManager.Ui.FontAwesome;
 using System;
-using System.Collections.Generic;
-using System.Text;
 using System.Windows.Input;
 
 namespace SCModManager.Avalonia.ViewModels
@@ -25,19 +22,19 @@ namespace SCModManager.Avalonia.ViewModels
 
 	public enum DialogResult
 	{
-		Ok,
-		Cancel,
-		Yes,
-		No
+		Cancel = 0,
+		Ok = 1,
+		No = 0,
+		Yes = 1,
 	}
 
 
-	public class NotificationViewModel : ReactiveObject, DialogResultProvider<DialogResult>
+	public class NotificationViewModel : DialogViewModel<DialogResult>
 	{
 		private readonly ButtonTypes buttons;
 		private bool isFocused;
 
-		public event EventHandler Close;
+		public delegate NotificationViewModel Factory(string message, string title, ButtonTypes buttons, NotificationType type);
 
 		public NotificationViewModel(string message, string title = "Notification", ButtonTypes buttons = ButtonTypes.Ok, NotificationType type = NotificationType.Information)
 		{
@@ -65,8 +62,6 @@ namespace SCModManager.Avalonia.ViewModels
 		public string Title { get; set; }
 		public NotificationType Type { get; }
 
-		public DialogResult DefaultResult => ShowCancel ? DialogResult.Cancel : DialogResult.No;
-
 		public bool ShowOk => buttons == ButtonTypes.Ok || buttons == ButtonTypes.OkCancel;
 		public bool ShowCancel => buttons == ButtonTypes.OkCancel;
 		public bool ShowYes => buttons == ButtonTypes.YesNo;
@@ -77,20 +72,16 @@ namespace SCModManager.Avalonia.ViewModels
 		public bool IsWarning => Type == NotificationType.Warning;
 		public bool IsError => Type == NotificationType.Error;
 
-		public DialogResult Result { get; private set; }
-
 		private void DoOk()
 		{
-			Result = ShowOk ? DialogResult.Ok : DialogResult.Yes;
-			Close?.Invoke(this, EventArgs.Empty);
+			Result = DialogResult.Ok;
+			OnClosing();
 		}
 
 		private void DoCancel()
 		{
-			Result = ShowCancel ? DialogResult.Cancel : DialogResult.No;
-			Close?.Invoke(this, EventArgs.Empty);
+			Result = DialogResult.Cancel;
+			OnClosing();
 		}
-
-
 	}
 }

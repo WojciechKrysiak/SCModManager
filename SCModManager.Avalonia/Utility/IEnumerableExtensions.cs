@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SCModManager.Utility
+namespace SCModManager.Avalonia.Utility
 {
     public static class IEnumerableExtensions
     {

@@ -1,6 +1,6 @@
 using System;
 
-namespace SCModManager.Ui.FontAwesome
+namespace SCModManager.Avalonia.Ui.FontAwesome
  {
 	public enum AwesomeIcon
 	{

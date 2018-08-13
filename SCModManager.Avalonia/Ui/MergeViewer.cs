@@ -1,19 +1,20 @@
-﻿using AvaloniaEdit;
-using AvaloniaEdit.Editing;
-using AvaloniaEdit.Rendering;
-using System;
-using System.Linq;
-using System.Windows;
-using Avalonia;
-using System.Windows.Input;
+﻿using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Controls.Primitives;
 using Avalonia.Data;
 using Avalonia.Input;
 using Avalonia.Styling;
+using AvaloniaEdit;
+using AvaloniaEdit.Editing;
+using NLog;
+using SCModManager.Avalonia.DiffMerge;
+using System;
+using System.ComponentModel;
+using System.Linq;
 
-namespace SCModManager.DiffMerge
+namespace SCModManager.Avalonia.Ui
 {
-    public class MergeViewer : TextEditor, IStyleable
+	public class MergeViewer : TextEditor, IStyleable
     {
         public static StyledProperty<Vector> ScrollOffsetProperty = AvaloniaProperty.Register<MergeViewer, Vector>(nameof(ScrollOffset),new Vector(), false, BindingMode.TwoWay);
 
@@ -22,7 +23,6 @@ namespace SCModManager.DiffMerge
             get { return (Vector)GetValue(ScrollOffsetProperty); }
             set { SetValue(ScrollOffsetProperty, value); }
         }
-
 
         public static StyledProperty<Comparison> ContentsProperty = AvaloniaProperty.Register<MergeViewer, Comparison>(nameof(Contents), null);
 
@@ -40,7 +40,6 @@ namespace SCModManager.DiffMerge
             set { SetValue(SideProperty, value); }
         }
 
-
         public static StyledProperty<bool> HideWhitespaceProperty = AvaloniaProperty.Register<MergeViewer, bool>(nameof(HideWhiteSpace), false);
 
         public bool HideWhiteSpace
@@ -53,6 +52,8 @@ namespace SCModManager.DiffMerge
         private Colorizer colorizer;
         private ReadOnlyProvider readonlyProvider;
         private bool suspendScroll;
+		private Point lastPointerReleased;
+
 
         static MergeViewer()
         {
@@ -67,13 +68,22 @@ namespace SCModManager.DiffMerge
         public MergeViewer()
         {
             TextArea.TextView.ScrollOffsetChanged += TextView_ScrollOffsetChanged;
-        }
+			
+		}
 
 
 		Type IStyleable.StyleKey => typeof(TextEditor);
 
+		protected override void OnTemplateApplied(TemplateAppliedEventArgs e)
+		{
+			base.OnTemplateApplied(e);
 
-        private void ScrollOffsetPropertyChanged(AvaloniaPropertyChangedEventArgs args)
+			if (ContextMenu != null)
+				ContextMenu.ContextMenuOpening += OnContextMenuOpening;
+		}
+
+
+		private void ScrollOffsetPropertyChanged(AvaloniaPropertyChangedEventArgs args)
         {
             var v = (Vector)args.NewValue;
 
@@ -182,48 +192,43 @@ namespace SCModManager.DiffMerge
             TextArea.TextView.Redraw();
         }
 
-#if false
+		ILogger _logger = LogManager.GetCurrentClassLogger();
 
-        protected override void OnContextMenuOpening(ContextMenuEventArgs e)
+        private void OnContextMenuOpening(object sender, CancelEventArgs e)
         {
-            var delta = 0.0;
+			e.Cancel = true;
 
-            foreach(var margin in TextArea.LeftMargins.OfType<FrameworkElement>())
-            {
-                delta += margin.ActualWidth;
-            }
+            var pos = this.GetPositionFromPoint(lastPointerReleased);
 
-            var pos = this.GetPositionFromPoint(new Point(e.CursorLeft + delta, e.CursorTop));
+			if (pos != null)
+			{
+				var offs = Document.GetOffset(pos.Value.Location);
+				var block = Contents.GetBlockContainingOffset(offs, Side);
+				if (block != null && !block.Block.IsEqual)
+				{
+					ContextMenu.Items = new[] {
+					new MenuItem { Header = "Take left", Command = block.Block.TakeLeft },
+					new MenuItem { Header = "Take right", Command = block.Block.TakeRight },
+					new MenuItem { Header = "Take left then right", Command = block.Block.TakeLeftThenRight },
+					new MenuItem { Header = "Take right then left", Command = block.Block.TakeRightThenLeft }
+					};
+					e.Cancel = false;
+				}
+				else
+					_logger.Debug($"Block not found or is equal for point {lastPointerReleased}");
+			}
+			else
+				_logger.Debug($"Pos not found for point {lastPointerReleased}");
 
-            if (pos != null)
-            {
-                var offs = Document.GetOffset(pos.Value.Location);
-                var block = Contents.GetBlockContainingOffset(offs, Side);
-                if (block != null && !block.Block.IsEqual)
-                {
-                    ContextMenu = new ContextMenu();
-
-                    ContextMenu.Items.Add(new MenuItem { Header = "Take left", Command = block.Block.TakeLeft });
-                    ContextMenu.Items.Add(new MenuItem { Header = "Take right", Command = block.Block.TakeRight });
-                    ContextMenu.Items.Add(new MenuItem { Header = "Take left then right", Command = block.Block.TakeLeftThenRight });
-                    ContextMenu.Items.Add(new MenuItem { Header = "Take right then left", Command = block.Block.TakeRightThenLeft });
-                }
-            }
-
-            base.OnContextMenuOpening(e);
         }
-
-        protected override void OnContextMenuClosing(ContextMenuEventArgs e)
-        {
-            ContextMenu = null;
-            base.OnContextMenuOpening(e);
-        }
-#endif 
 		
         protected override void OnPointerPressed(PointerPressedEventArgs e)
         {
-            var vpos = e.GetPosition(this);
-            var pos = this.GetPositionFromPoint(vpos);
+            lastPointerReleased = e.GetPosition(this);
+
+			_logger.Debug($"OnPointerPressed at {lastPointerReleased}, ContextMenu is null: {ContextMenu == null}");
+
+			var pos = this.GetPositionFromPoint(lastPointerReleased);
             if (pos != null)
             {
                 if (selectedBlock != null)

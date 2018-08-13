@@ -1,5 +1,5 @@
 ﻿using ReactiveUI;
-using SCModManager.Configuration;
+using SCModManager.Avalonia.Configuration;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -13,14 +13,16 @@ using System.Threading.Tasks;
 using Avalonia;
 using System.Windows.Input;
 using Avalonia.Controls;
+using PDXModLib.Interfaces;
+using SCModManager.Avalonia.Configuration;
+using SCModManager.Avalonia.ViewModels;
 
-namespace SCModManager.ViewModels
+namespace SCModManager.Avalonia.ViewModels
 {
-    public class PreferencesWindowViewModel : ReactiveObject
+    public class PreferencesWindowViewModel : DialogViewModel<bool>
     {
         private readonly GameConfigurationSection _configurationSection;
-        private string _basePath;
-
+		private readonly IConfigurationService configurationService;
 		private IDisposable _newFileEditedDisposable;
 
         private IObservable<bool> _canSave;
@@ -29,26 +31,42 @@ namespace SCModManager.ViewModels
 
         public string BasePath
         {
-            get { return _basePath; }
+            get { return _configurationSection.BasePath; }
             set
             {
-                this.RaiseAndSetIfChanged(ref _basePath, value);
+				if (_configurationSection.BasePath != value)
+				{
+					_configurationSection.BasePath = value;
+					this.RaisePropertyChanged(nameof(BasePath));
+				}
             }
         }
 
-        public ICommand Ok { get; }
+		public string InstallationPath
+		{
+			get { return _configurationSection.GameInstallationDirectory; }
+			set
+			{
+				if (_configurationSection.GameInstallationDirectory != value)
+				{
+					_configurationSection.GameInstallationDirectory = value;
+					this.RaisePropertyChanged(nameof(InstallationPath));
+				}
+			}
+		}
+
+		public ICommand Ok { get; }
 
         public ICommand Cancel { get; }
 
 		public ICommand DeleteItem { get; }
 
-        public event EventHandler<bool> ShouldClose;
-
         public ReactiveList<WhitelistedFileEditableObject> WhiteListedFiles { get; }
 
-		public PreferencesWindowViewModel(GameConfigurationSection configurationSection)
+		public PreferencesWindowViewModel(IGameConfiguration configurationSection, IConfigurationService configurationService)
 		{
-			_configurationSection = configurationSection;
+			_configurationSection = new GameConfigurationSection();
+			_configurationSection.Init(configurationSection);
 			WhiteListedFiles = new ReactiveList<WhitelistedFileEditableObject>()
 			{
 				ChangeTrackingEnabled = true 
@@ -64,11 +82,11 @@ namespace SCModManager.ViewModels
 			var newFile = new WhitelistedFileEditableObject { IsNew = true };
 			_newFileEditedDisposable = newFile.WhenAny(t => t.Value, x => x).Subscribe(NewFileEdited);
 			WhiteListedFiles.Add(newFile);
-            BasePath = configurationSection.BasePath;
             SelectBasePath = ReactiveCommand.Create(DoSelectBasePath);
             Ok = ReactiveCommand.Create(DoSave, _canSave);
-            Cancel = ReactiveCommand.Create(() => ShouldClose?.Invoke(this, false));
+            Cancel = ReactiveCommand.Create(() => OnClosing());
 			DeleteItem = ReactiveCommand.Create<WhitelistedFileEditableObject>(DoDelete);
+			this.configurationService = configurationService;
 		}
 
 		async void DoSelectBasePath()
@@ -85,11 +103,13 @@ namespace SCModManager.ViewModels
         {
             _configurationSection.BasePath = BasePath;
             _configurationSection.WhiteListedFilesConfigSection.Clear();
-            foreach(var file in WhiteListedFiles)
+            foreach(var file in WhiteListedFiles.Where(v => !string.IsNullOrWhiteSpace(v.Value)))
             {
                 _configurationSection.WhiteListedFilesConfigSection.Add(file.Value);
             }
-            ShouldClose?.Invoke(this, true);
+			configurationService.SaveConfiguration(_configurationSection);
+			Result = true;
+			OnClosing();
         }
 
 		private void DoDelete(WhitelistedFileEditableObject obj)

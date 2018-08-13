@@ -1,7 +1,7 @@
 ﻿<Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="SC Mod Manager"
-        xmlns:fa="clr-namespace:SCModManager.Ui.FontAwesome;assembly=SCModManager.Avalonia"
+        xmlns:fa="clr-namespace:SCModManager.Avalonia.Ui.FontAwesome;assembly=SCModManager.Avalonia"
         xmlns:local="clr-namespace:SCModManager.Avalonia.Views;assembly=SCModManager.Avalonia"
         xmlns:ui="clr-namespace:SCModManager.Avalonia.Ui;assembly=SCModManager.Avalonia"
         xmlns:gc="clr-namespace:PDXModLib.GameContext;assembly=PDXModLib"

@@ -1,19 +1,22 @@
-﻿using System;
+﻿using PDXModLib.ModData;
+using ReactiveUI;
+using SCModManager.Avalonia.DiffMerge;
+using SCModManager.Avalonia.Utility;
+using SCModManager.Avalonia.ViewModels;
+using SCModManager.Avalonia.Views;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reactive;
 using System.Reactive.Subjects;
 using System.Text.RegularExpressions;
-using System.Windows.Input;
-using PDXModLib.ModData;
-using ReactiveUI;
-using SCModManager.ViewModels;
-using SCModManager.Avalonia.Views;
 using System.Threading.Tasks;
+using System.Windows.Input;
 
-namespace SCModManager.DiffMerge
+namespace SCModManager.Avalonia.ViewModels
 {
-    class ModMergeContext : ReactiveObject
+	public class ModMergeViewModel : DialogViewModel<MergedMod>
     {
         public List<Mod> BaseMods { get; }
         private ModFileEntry _selected;
@@ -21,14 +24,15 @@ namespace SCModManager.DiffMerge
         private bool onlyConflicts;
 
         private readonly IEnumerable<ModFile> modFiles;
-
-        private readonly Func<ModMergeContext, Task> saveAction;
+		private readonly IShowDialog<NameConfirmVM, string, string> newNameConfirmDialog;
 
         private readonly Subject<bool> _canSave = new Subject<bool>();
 
-        readonly Dictionary<ModFile, MergeProcess> _currentProcesses = new Dictionary<ModFile, MergeProcess>(ReferenceEqualityComparer.Default);
+        readonly Dictionary<ModFile, MergeProcessViewModel> _currentProcesses = new Dictionary<ModFile, MergeProcessViewModel>(ReferenceEqualityComparer.Default);
 
         private readonly ModDirectory _rootDirectory;
+
+		private MergedMod _result;
 
         private bool _ignoreWhiteSpace;
 
@@ -77,7 +81,7 @@ namespace SCModManager.DiffMerge
             _canSave.OnNext(!modFiles.Any(ReferenceHasConflicts));
         }
 
-        public MergeProcess CurrentProcess
+        public MergeProcessViewModel CurrentProcess
         {
             get
             {
@@ -85,7 +89,7 @@ namespace SCModManager.DiffMerge
                 {
                     if (!_currentProcesses.ContainsKey(_selected.File))
                     {
-                        _currentProcesses.Add(_selected.File, new MergeProcess(_selected.File as MergedModFile));
+                        _currentProcesses.Add(_selected.File, new MergeProcessViewModel(_selected.File as MergedModFile));
                     }
 
                     _currentProcesses[_selected.File].HideWhiteSpace = IgnoreWhiteSpace;
@@ -113,25 +117,23 @@ namespace SCModManager.DiffMerge
             }
         }
 
-        public MergedMod Result { get; }
-
         public ICommand Save { get; }
 
-        public ModMergeContext(IEnumerable<ModConflictDescriptor> source, Func<ModMergeContext, Task> save)
+        public ModMergeViewModel(IShowDialog<NameConfirmVM, string, string> newNameConfirmDialog,
+								 IEnumerable<ModConflictDescriptor> source)
         {
-            Result = new MergedMod("Merge result", source);
+            _result = new MergedMod("Merge result", source);
 
-            modFiles = Result.Files;
+            modFiles = _result.Files;
 
             LeftBefore = ReactiveCommand.Create<ModFileToMerge>(DoBefore);
             LeftAfter = ReactiveCommand.Create<ModFileToMerge>(DoAfter);
             RightBefore = ReactiveCommand.Create<ModFileToMerge>(DoBefore);
             RightAfter = ReactiveCommand.Create<ModFileToMerge>(DoAfter);
-
-            saveAction = save;
+			this.newNameConfirmDialog = newNameConfirmDialog;
             Save = ReactiveCommand.Create(DoSave, _canSave);
 
-            _rootDirectory = ModDirectory.CreateRoot(Result.ToModConflictDescriptor());
+            _rootDirectory = ModDirectory.CreateRoot(_result.ToModConflictDescriptor());
         }
 
         private static bool ReferenceHasConflicts(ModFile mf)
@@ -139,23 +141,12 @@ namespace SCModManager.DiffMerge
             return !((mf as MergedModFile)?.Resolved ?? true);
         }
 
-        private void DoSave()
+        private async void DoSave()
         {
-            var confirm = new NameConfirm();
-            var confirmVM = new NameConfirmVM(Result.Name);
-            confirmVM.ShouldClose += async (o, b) =>
-            {
-                if (b)
-                {
-                    Result.Name = confirmVM.Name;
-                    await saveAction(this);
-                }
-                confirm.Close();
-            };
-
-            confirm.DataContext = confirmVM;
-            confirm.ShowDialog();
-        }
+			_result.Name = await newNameConfirmDialog.Show(_result.Name) ?? _result.Name;
+			Result = _result;
+			OnClosing();
+		}
 
         private List<ModNameParse> GetMatchingFiles(ModNameParse modFile)
         {
@@ -210,7 +201,7 @@ namespace SCModManager.DiffMerge
                 modFile.Path = match.Path;
             }
 
-            Result.Files.Add(modFile);
+			_result.Files.Add(modFile);
 
             CurrentProcess.Remove(modFile);
         }
@@ -267,7 +258,7 @@ namespace SCModManager.DiffMerge
                 modFile.Path = newPath;
             }
 
-            Result.Files.Add(modFile);
+			_result.Files.Add(modFile);
 
             CurrentProcess.Remove(modFile);
         }
@@ -281,7 +272,7 @@ namespace SCModManager.DiffMerge
         {
             var directory = Path.GetDirectoryName(path) ?? string.Empty;
             
-            var newContents = Result.ToModConflictDescriptor().FileConflicts.Where(fc => fc.File.Path.StartsWith(directory)).ToList();
+            var newContents = _result.ToModConflictDescriptor().FileConflicts.Where(fc => fc.File.Path.StartsWith(directory)).ToList();
             _rootDirectory.UpdateDirectoryContents(directory, newContents);
 
             var file = _rootDirectory.GetFile(path);

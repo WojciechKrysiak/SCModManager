@@ -1,9 +1,20 @@
 ﻿using Autofac;
 using Autofac.Core;
 using NLog;
+using PDXModLib.Interfaces;
 using PDXModLib.Utility;
+using SCModManager.Avalonia.Configuration;
+using SCModManager.Avalonia.Configuration.Defaults;
+using SCModManager.Avalonia.Platform;
+using SCModManager.Avalonia.Utility.VMExtensions;
+using SCModManager.Avalonia.Views;
+using SCModManager.Avalonia.ViewModels;
+using System;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
+using SCModManager.Avalonia.DiffMerge;
+using PDXModLib.ModData;
 
 namespace SCModManager.Avalonia
 {
@@ -12,7 +23,26 @@ namespace SCModManager.Avalonia
 		protected override void Load(ContainerBuilder builder)
 		{
 			base.Load(builder);
+			builder.RegisterSource(new AutoWindowDisplayRegistrationSource());
+
 			builder.RegisterType<NotificationService>().As<INotificationService>();
+			builder.RegisterType<ConfigurationService>().As<IConfigurationService>();
+			builder.RegisterType<StellarisConfiguration>().Keyed<IDefaultGameConfiguration>("Stellaris");
+			builder.RegisterType<ModContext>().AsSelf();
+			builder.RegisterType<SteamService>().As<ISteamService>();
+
+			builder.RegisterDialog<PreferencesWindow, PreferencesWindowViewModel, bool>();
+			builder.RegisterDialog<NameConfirm, NameConfirmVM, string>();
+			builder.RegisterDialog<Merge, ModMergeViewModel, MergedMod>();
+			builder.RegisterDialog<NotificationView, NotificationViewModel, DialogResult, NotificationViewModel.Factory>();
+
+
+			if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+				builder.RegisterType<PlatformWindows>().As<IPlatfomValues>();
+			if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+				builder.RegisterType<PlatformLinux>().As<IPlatfomValues>();
+			if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+				builder.RegisterType<PlatformOSX>().As<IPlatfomValues>();
 		}
 
 		protected override void AttachToComponentRegistration(IComponentRegistry componentRegistry, IComponentRegistration registration)

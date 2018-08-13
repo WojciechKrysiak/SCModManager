@@ -6,7 +6,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace SCModManager.DiffMerge
+namespace SCModManager.Avalonia.Utility
 {
     public sealed class ReferenceEqualityComparer : IEqualityComparer, IEqualityComparer<object>
     {

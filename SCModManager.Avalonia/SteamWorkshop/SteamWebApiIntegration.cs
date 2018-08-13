@@ -1,19 +1,17 @@
 ﻿using Newtonsoft.Json;
+using NLog;
+using SCModManager.Avalonia.ViewModels;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
-using System.Text;
 using System.Threading.Tasks;
-using NLog;
-using SCModManager.ViewModels;
 
-namespace SCModManager.SteamWorkshop
+namespace SCModManager.Avalonia.SteamWorkshop
 {
-    static class SteamWebApiIntegration
+	static class SteamWebApiIntegration
     {
         static string requestPath = "/ISteamRemoteStorage/GetPublishedFileDetails/v1/";
 

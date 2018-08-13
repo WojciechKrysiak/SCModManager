@@ -1,25 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Avalonia;
-using Avalonia.Controls;
-
-using System.Windows;
-using System.Diagnostics;
-using System.Xml;
-using System.Xml.Linq;
-using System.IO;
-using System.Text.RegularExpressions;
-using System.Windows.Input;
+﻿using Avalonia;
 using Avalonia.Controls.Html;
-using CodeKicker.BBCode;
-using TheArtOfDev.HtmlRenderer.Core.Entities;
 using Avalonia.Media.Imaging;
+using CodeKicker.BBCode;
+using System;
+using System.IO;
+using TheArtOfDev.HtmlRenderer.Core.Entities;
 
-namespace SCModManager.SteamWorkshop
+namespace SCModManager.Avalonia.Ui
 {
-    public class BBControl : HtmlLabel
+	public class BBControl : HtmlLabel
     {
         public static StyledProperty<string> BBCodeProperty = AvaloniaProperty.Register<BBControl, string>("BBCode", string.Empty);
 

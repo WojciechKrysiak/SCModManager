@@ -1,19 +1,17 @@
-﻿using System;
+﻿using PDXModLib.ModData;
+using ReactiveUI;
+using SCModManager.Avalonia.DiffMerge;
+using SCModManager.Avalonia.Utility;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reactive;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
-using System.Text;
-using System.Threading.Tasks;
-using PDXModLib.ModData;
-using ReactiveUI;
-using SCModManager.DiffMerge;
-using SCModManager.Utility;
 
-namespace SCModManager.ViewModels
+namespace SCModManager.Avalonia.ViewModels
 {
-    public class ModConflictPreviewVm : ReactiveObject
+	public class ModConflictPreviewVm : ReactiveObject
     {
         private Func<Mod, bool> _modFilter;
         private readonly ModConflictDescriptor _modConflict;

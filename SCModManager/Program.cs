@@ -1,17 +1,23 @@
 ﻿using Avalonia;
 using Avalonia.Logging;
 using Avalonia.Logging.Serilog;
+using NLog;
 using SCModManager.Avalonia;
-using SCModManager.Avalonia.Views;
+using System;
 
-namespace SCModManager.Windows
+namespace SCModManager
 {
     class Program
     {
+		private static ILogger logger = LogManager.GetCurrentClassLogger();
+
         static void Main(string[] args)
         {
-		//	BuildAvaloniaApp().Start<LoadingScreen>();
-			using (var context = new AppContext())
+			logger.Info("====================== Starting SCModManager ======================");
+
+			AppDomain.CurrentDomain.UnhandledException += OnUnhandledException;
+
+			using (var context = new Avalonia.AppContext())
 			{
 				context.EnterInitialContext(BuildAvaloniaApp());
 			}
@@ -20,7 +26,14 @@ namespace SCModManager.Windows
 		public static AppBuilder BuildAvaloniaApp()
 			=> AppBuilder.Configure<App>()
 				.UseReactiveUI()
-                .UsePlatformDetect()
-                .LogToDebug(LogEventLevel.Information);
-    }
+				.UsePlatformDetect().LogToFile("log.txt", LogEventLevel.Verbose);
+
+
+		private static void OnUnhandledException(object sender, UnhandledExceptionEventArgs e)
+		{
+			logger.Fatal(e.ExceptionObject as Exception, "Unhandled exception!");
+			if (e.IsTerminating)
+				Environment.Exit(-1);
+		}
+	}
 }
