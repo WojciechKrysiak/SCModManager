@@ -192,8 +192,6 @@ namespace SCModManager.Avalonia.Ui
             TextArea.TextView.Redraw();
         }
 
-		ILogger _logger = LogManager.GetCurrentClassLogger();
-
         private void OnContextMenuOpening(object sender, CancelEventArgs e)
         {
 			e.Cancel = true;
@@ -212,21 +210,15 @@ namespace SCModManager.Avalonia.Ui
 					new MenuItem { Header = "Take left then right", Command = block.Block.TakeLeftThenRight },
 					new MenuItem { Header = "Take right then left", Command = block.Block.TakeRightThenLeft }
 					};
+
 					e.Cancel = false;
 				}
-				else
-					_logger.Debug($"Block not found or is equal for point {lastPointerReleased}");
 			}
-			else
-				_logger.Debug($"Pos not found for point {lastPointerReleased}");
-
         }
 		
         protected override void OnPointerPressed(PointerPressedEventArgs e)
         {
             lastPointerReleased = e.GetPosition(this);
-
-			_logger.Debug($"OnPointerPressed at {lastPointerReleased}, ContextMenu is null: {ContextMenu == null}");
 
 			var pos = this.GetPositionFromPoint(lastPointerReleased);
             if (pos != null)

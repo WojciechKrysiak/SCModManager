@@ -36,6 +36,8 @@ namespace SCModManager.Avalonia
 		private readonly IAppContext _appContext;
 		private IGameConfiguration _gameConfiguration;
 		private readonly ILogger _logger;
+		private readonly ISteamIntegration steamIntegration;
+		private readonly Func<ModConflictDescriptor, bool, ModVM> newModVM;
 		private readonly IShowDialog<PreferencesWindowViewModel, bool> _newPreferencesWindow;
 		private readonly IShowDialog<NameConfirmVM, string, string> newNameConfirmDialog;
 		private readonly IShowDialog<ModMergeViewModel, MergedMod, IEnumerable<ModConflictDescriptor>> newModMergeDialog;
@@ -153,6 +155,8 @@ namespace SCModManager.Avalonia
 						  IAppContext appContext, 
 						  IGameConfiguration gameConfiguration,
 						  ILogger logger,
+						  ISteamIntegration steamIntegration,
+						  Func<ModConflictDescriptor, bool, ModVM> newModVM,
 						  IShowDialog<PreferencesWindowViewModel, bool> newPreferencesWindow,
 						  IShowDialog<NameConfirmVM, string, string> newNameConfirmDialog,
 						  IShowDialog<ModMergeViewModel, MergedMod, IEnumerable<ModConflictDescriptor>> newModMergeDialog
@@ -167,6 +171,8 @@ namespace SCModManager.Avalonia
 			_appContext = appContext;
 			_gameConfiguration = gameConfiguration;
 			_logger = logger;
+			this.steamIntegration = steamIntegration;
+			this.newModVM = newModVM;
 			_newPreferencesWindow = newPreferencesWindow;
 			this.newNameConfirmDialog = newNameConfirmDialog;
 			this.newModMergeDialog = newModMergeDialog;
@@ -187,10 +193,9 @@ namespace SCModManager.Avalonia
                 return false;
             }
 
-            SortAndCreateViewModels();
+            await SortAndCreateViewModels();
             
             _canDelete.OnNext(_gameContext.Selections.Count > 1);
-			await SteamWebApiIntegration.LoadModDescriptors(_mods, (s) => { });
             return true;
 		}
 
@@ -199,7 +204,7 @@ namespace SCModManager.Avalonia
             return Mods?.Where(mvm => mvm.Selected).Any(mvm => mvm.ModConflict.ConflictingMods.Any(IsSelected))?? false;
         }
 
-        private void SortAndCreateViewModels()
+        private async Task SortAndCreateViewModels()
         {
             _modConflicts = _modConflictCalculator.CalculateAllConflicts().ToList();
 
@@ -208,8 +213,10 @@ namespace SCModManager.Avalonia
                 mvm.PropertyChanged -= ModOnPropertyChanged;
             });
 
-            _mods = _modConflicts.Select(mc => new ModVM(mc, IsSelected(mc.Mod))).OrderBy(m => m.Name).ToList();
+            _mods = _modConflicts.Select(mc => newModVM(mc, IsSelected(mc.Mod))).OrderBy(m => m.Name).ToList();
             _mods.ForEach(mvm => mvm.PropertyChanged += ModOnPropertyChanged);
+
+			await steamIntegration.DownloadDescriptors(new Subject<string>());
 
             this.RaisePropertyChanged(nameof(Mods));
 
@@ -256,7 +263,7 @@ namespace SCModManager.Avalonia
 				}
 
 				_gameContext.LoadMods();
-				SortAndCreateViewModels();
+				await SortAndCreateViewModels();
 			}
 
         }

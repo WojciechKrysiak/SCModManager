@@ -21,11 +21,12 @@ namespace SCModManager.Avalonia.ViewModels
 		private IBitmap _remoteImage;
 		bool isLoading;
 
-		public ModVM(ModConflictDescriptor modConflict, bool selected)
+		public ModVM(ISteamIntegration steamIntegration, ModConflictDescriptor modConflict, bool selected)
 		{
 			ModConflict = modConflict;
 			Selected = selected;
 			_conflictCount = ModConflict.ConflictingMods.Count();
+			steamIntegration.GetDescriptor(this);
 		}
 
 		public ModConflictDescriptor ModConflict { get; }

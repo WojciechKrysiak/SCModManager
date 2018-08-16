@@ -15,6 +15,7 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using SCModManager.Avalonia.DiffMerge;
 using PDXModLib.ModData;
+using SCModManager.Avalonia.SteamWorkshop;
 
 namespace SCModManager.Avalonia
 {
@@ -30,6 +31,9 @@ namespace SCModManager.Avalonia
 			builder.RegisterType<StellarisConfiguration>().Keyed<IDefaultGameConfiguration>("Stellaris");
 			builder.RegisterType<ModContext>().AsSelf();
 			builder.RegisterType<SteamService>().As<ISteamService>();
+			builder.RegisterType<SteamIntegration>().As<ISteamIntegration>();
+			builder.RegisterType<ModVM>().AsSelf();
+
 
 			builder.RegisterDialog<PreferencesWindow, PreferencesWindowViewModel, bool>();
 			builder.RegisterDialog<NameConfirm, NameConfirmVM, string>();

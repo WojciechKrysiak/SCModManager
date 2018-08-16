@@ -2,40 +2,68 @@
 using NLog;
 using SCModManager.Avalonia.ViewModels;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Reactive.Subjects;
 using System.Threading.Tasks;
 
 namespace SCModManager.Avalonia.SteamWorkshop
 {
-	static class SteamWebApiIntegration
+	public interface ISteamIntegration
+	{
+		void GetDescriptor(ModVM mod);
+
+		Task DownloadDescriptors(ISubject<string> onError);
+	}
+
+	internal class SteamIntegration : ISteamIntegration 
     {
-        static string requestPath = "/ISteamRemoteStorage/GetPublishedFileDetails/v1/";
+		private ConcurrentBag<ModVM> pendingRequests = new ConcurrentBag<ModVM>();
+		private ConcurrentDictionary<string, SteamWorkshopDescriptor> downloadedDescriptors = new ConcurrentDictionary<string, SteamWorkshopDescriptor>();
 
-        private static readonly Logger Log = LogManager.GetCurrentClassLogger();
+		static string requestPath = "/ISteamRemoteStorage/GetPublishedFileDetails/v1/";
 
-        static readonly HttpClient client = new HttpClient()
+		readonly ILogger logger;
+
+        readonly HttpClient client = new HttpClient()
         {
             BaseAddress = new Uri("https://api.steampowered.com/")
         };
 
-        static SteamWebApiIntegration()
+        public SteamIntegration(ILogger logger)
         {
             client.DefaultRequestHeaders.Accept.Clear();
             client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
         }
 
-        public static async Task LoadModDescriptors(IEnumerable<ModVM> mods, Action<string> onError)
-        {
-            var modDict = mods.Where(m => !String.IsNullOrEmpty(m.Mod.RemoteFileId)).ToDictionary(m => m.Mod.RemoteFileId, m => m);
+		public void GetDescriptor(ModVM mod)
+		{
+			if (string.IsNullOrWhiteSpace(mod.Mod.RemoteFileId))
+				return;
 
-            if (!modDict.Any())
-            {
-                return;
-            }
+			if (downloadedDescriptors.TryGetValue(mod.Mod.RemoteFileId, out var descriptor));
+				mod.RemoteDescriptor = descriptor;
+
+			pendingRequests.Add(mod);
+		}
+
+        public async Task DownloadDescriptors(ISubject<string> onError)
+        {
+			List<ModVM> toRetrieve = new List<ModVM>();
+
+			while (pendingRequests.TryTake(out var pending))
+				toRetrieve.Add(pending);
+
+			if (!toRetrieve.Any())
+			{
+				return;
+			}
+
+			var modDict = toRetrieve.ToDictionary(m => m.Mod.RemoteFileId, m => m);
 
             string[] modIds = modDict.Select(kvp => kvp.Key).ToArray();
 
@@ -52,10 +80,10 @@ namespace SCModManager.Avalonia.SteamWorkshop
             }
             catch (Exception ex)
             {
-                Log.Log(LogLevel.Warn, ex);
-                onError(ex.Message);
-                return;
-            }
+                logger.Log(LogLevel.Warn, ex);
+				onError.OnNext(ex.ToString());
+				return;
+			}
 
             if (response.IsSuccessStatusCode)
             {
@@ -73,7 +101,9 @@ namespace SCModManager.Avalonia.SteamWorkshop
 
                                 foreach (var descriptor in descriptors)
                                 {
-                                    if (modDict.ContainsKey(descriptor.PublishedFileId))
+									downloadedDescriptors.TryAdd(descriptor.PublishedFileId, descriptor);
+
+									if (modDict.ContainsKey(descriptor.PublishedFileId))
                                     {
                                         modDict[descriptor.PublishedFileId].RemoteDescriptor = descriptor;
                                     }
@@ -85,7 +115,7 @@ namespace SCModManager.Avalonia.SteamWorkshop
                 );
             } else
             {
-                onError(response.ToString());
+                onError.OnNext(response.ToString());
             }
         }
 

@@ -26,7 +26,7 @@ namespace SCModManager
 		public static AppBuilder BuildAvaloniaApp()
 			=> AppBuilder.Configure<App>()
 				.UseReactiveUI()
-				.UsePlatformDetect().LogToFile("log.txt", LogEventLevel.Verbose);
+				.UsePlatformDetect();
 
 
 		private static void OnUnhandledException(object sender, UnhandledExceptionEventArgs e)
