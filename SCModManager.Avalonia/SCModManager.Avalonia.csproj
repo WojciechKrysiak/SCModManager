@@ -19,6 +19,7 @@
     <None Remove="Views\NameConfirm.xaml" />
     <None Remove="Views\NotificationView.xaml" />
     <None Remove="Views\PreferencesWindow.xaml" />
+    <None Remove="Views\SaveModDialog.xaml" />
     <None Remove="Views\WorkshopPanel.xaml" />
   </ItemGroup>
 
@@ -52,6 +53,9 @@
       <SubType>Designer</SubType>
     </EmbeddedResource>
     <EmbeddedResource Include="Views\ModList.xaml">
+      <SubType>Designer</SubType>
+    </EmbeddedResource>
+    <EmbeddedResource Include="Views\SaveModDialog.xaml">
       <SubType>Designer</SubType>
     </EmbeddedResource>
     <EmbeddedResource Include="Views\NameConfirm.xaml">
@@ -109,6 +113,9 @@
     </Compile>
     <Compile Update="Views\LoadingScreen.xaml.cs">
       <DependentUpon>%(Filename)</DependentUpon>
+    </Compile>
+    <Compile Update="Views\SaveModDialog.xaml.cs">
+      <DependentUpon>SaveModDialog.xaml</DependentUpon>
     </Compile>
     <Compile Update="Views\NameConfirm.xaml.cs">
       <DependentUpon>%(Filename)</DependentUpon>

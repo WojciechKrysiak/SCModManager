@@ -40,7 +40,7 @@ namespace SCModManager.Avalonia
 		private readonly Func<ModConflictDescriptor, bool, ModVM> newModVM;
 		private readonly IShowDialog<PreferencesWindowViewModel, bool> _newPreferencesWindow;
 		private readonly IShowDialog<NameConfirmVM, string, string> newNameConfirmDialog;
-		private readonly IShowDialog<ModMergeViewModel, MergedMod, IEnumerable<ModConflictDescriptor>> newModMergeDialog;
+		private readonly IShowDialog<ModMergeViewModel,Tuple<MergedMod, bool>, IEnumerable<ModConflictDescriptor>> newModMergeDialog;
 		private readonly Subject<bool> _canMerge = new Subject<bool>();
         private readonly Subject<bool> _canDelete = new Subject<bool>();
         private ModConflictPreviewVm _conflictPreviewVm;
@@ -159,7 +159,7 @@ namespace SCModManager.Avalonia
 						  Func<ModConflictDescriptor, bool, ModVM> newModVM,
 						  IShowDialog<PreferencesWindowViewModel, bool> newPreferencesWindow,
 						  IShowDialog<NameConfirmVM, string, string> newNameConfirmDialog,
-						  IShowDialog<ModMergeViewModel, MergedMod, IEnumerable<ModConflictDescriptor>> newModMergeDialog
+						  IShowDialog<ModMergeViewModel, Tuple<MergedMod, bool>, IEnumerable<ModConflictDescriptor>> newModMergeDialog
 			
 			)
         {
@@ -252,11 +252,11 @@ namespace SCModManager.Avalonia
 
         private async void MergeMods()
         {
-			var result = await newModMergeDialog.Show(Mods.Where(m => m.Selected).Select(m => m.ModConflict.Filter(IsSelected)));
+			var (modFile, mergedFilesOnly) = await newModMergeDialog.Show(Mods.Where(m => m.Selected).Select(m => m.ModConflict.Filter(IsSelected)));
 
-			if (result != null)
+			if (modFile != null)
 			{
-				if (!await _gameContext.SaveMergedMod(result))
+				if (!await _gameContext.SaveMergedMod(modFile, mergedFilesOnly))
 				{
 					await _notificationService.ShowMessage("Error saving merged mod file. Please check the log file", "Error");
 					return;

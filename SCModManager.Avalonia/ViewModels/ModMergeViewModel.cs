@@ -16,7 +16,7 @@ using System.Windows.Input;
 
 namespace SCModManager.Avalonia.ViewModels
 {
-	public class ModMergeViewModel : DialogViewModel<MergedMod>
+	public class ModMergeViewModel : DialogViewModel<Tuple<MergedMod, bool>>
     {
         public List<Mod> BaseMods { get; }
         private ModFileEntry _selected;
@@ -24,7 +24,7 @@ namespace SCModManager.Avalonia.ViewModels
         private bool onlyConflicts;
 
         private readonly IEnumerable<ModFile> modFiles;
-		private readonly IShowDialog<NameConfirmVM, string, string> newNameConfirmDialog;
+		private readonly IShowDialog<SaveModDialogVM, Tuple<string, bool>, string> newNameConfirmDialog;
 
         private readonly Subject<bool> _canSave = new Subject<bool>();
 
@@ -36,7 +36,7 @@ namespace SCModManager.Avalonia.ViewModels
 
         private bool _ignoreWhiteSpace;
 
-        public ModDirectory RootDirectory => _rootDirectory;
+		public ModDirectory RootDirectory => _rootDirectory;
 
         public ModFileEntry SelectedModFile
         {
@@ -58,6 +58,8 @@ namespace SCModManager.Avalonia.ViewModels
                 this.RaisePropertyChanged(nameof(CurrentProcess));
             }
         }
+
+		
 
         private void CurrentProcess_FileResolved(object sender, EventArgs e)
         {
@@ -119,7 +121,7 @@ namespace SCModManager.Avalonia.ViewModels
 
         public ICommand Save { get; }
 
-        public ModMergeViewModel(IShowDialog<NameConfirmVM, string, string> newNameConfirmDialog,
+        public ModMergeViewModel(IShowDialog<SaveModDialogVM, Tuple<string, bool>, string> newNameConfirmDialog,
 								 IEnumerable<ModConflictDescriptor> source)
         {
             _result = new MergedMod("Merge result", source);
@@ -143,8 +145,9 @@ namespace SCModManager.Avalonia.ViewModels
 
         private async void DoSave()
         {
-			_result.Name = await newNameConfirmDialog.Show(_result.Name) ?? _result.Name;
-			Result = _result;
+			var (name, mergedOnly) = await newNameConfirmDialog.Show(_result.Name);
+			_result.Name = name ?? _result.Name;
+			Result = Tuple.Create(_result, mergedOnly);
 			OnClosing();
 		}
 
