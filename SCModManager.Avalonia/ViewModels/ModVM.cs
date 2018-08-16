@@ -33,6 +33,22 @@ namespace SCModManager.Avalonia.ViewModels
 
 		public Mod Mod => ModConflict.Mod;
 
+		public ModType ModType
+		{
+			get
+			{
+				if (Mod is MergedMod)
+					return ModType.Merged;
+
+				if (!string.IsNullOrWhiteSpace(Mod.FileName))
+					return ModType.Zip;
+
+				return ModType.Folder;
+			}
+
+		}
+
+
 		public string Id => Mod.Id;
 		public string Name => Mod.Name;
 

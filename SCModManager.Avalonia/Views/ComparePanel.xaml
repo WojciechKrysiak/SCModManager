@@ -32,6 +32,18 @@
       <Setter Property="BorderBrush" Value="Gray" />
       <Setter Property="BorderThickness" Value="1" />
     </Style>
+    
+    <Style Selector="fa|FontAwesome#Icon">
+      <Setter Property="VerticalAlignment" Value="Center"/>
+      <Setter Property="Margin" Value="0 0 3 0"/>
+    </Style>
+
+    <Style Selector="TreeViewItem[IsExpanded=true] > StackPanel > StackPanel fa|FontAwesome#Icon">
+      <Setter Property="Icon" Value="FolderOpen" />
+    </Style>
+    <Style Selector="TreeViewItem[IsExpanded=False] > StackPanel > StackPanel fa|FontAwesome#Icon">
+      <Setter Property="Icon" Value="Folder" />
+    </Style>
   </UserControl.Styles>
 
     <Grid ColumnDefinitions="*,10,*" RowDefinitions="Auto,*,Auto,*">
@@ -52,11 +64,7 @@
             <TreeDataTemplate DataType="{x:Type viewModels:ModDirectory}" ItemsSource="{Binding Files}" x:Key="Folder">
                <StackPanel Orientation="Vertical">
                 <StackPanel Orientation="Horizontal" Opacity="0.4">
-                  <fa:FontAwesome x:Name="FolderIcon"
-                                  VerticalAlignment="Center"
-                                  Icon="Folder"
-                                  Margin="0 0 3 0"
-                                  Name="Icon"
+                  <fa:FontAwesome Name="Icon"
                                                     />
                   <TextBlock x:Name="FolderName"
                              VerticalAlignment="Center"
@@ -73,17 +81,13 @@
             </TreeDataTemplate>
            <DataTemplate DataType="{x:Type viewModels:ModFileEntry}" x:Key="File">
               <StackPanel Orientation="Horizontal" Opacity="0.4">
-                <fa:FontAwesome x:Name="FileIcon"
-                                VerticalAlignment="Center"
+                <fa:FontAwesome VerticalAlignment="Center"
                                 Icon="File"
                                 Margin="0 0 3 0"
-                                
-                                Name="Icon"
-                                                />
-                <TextBlock x:Name="FileName"
-                           VerticalAlignment="Center"
+                                Name="FileIcon"/>
+                <TextBlock VerticalAlignment="Center"
                            Text="{Binding Filename}"
-                           Name="Name"
+                           Name="FileName"
                                            />
                 <i:Interaction.Behaviors>
                     <ia:DataTriggerBehavior Binding="{Binding HasConflicts}" Value="True">

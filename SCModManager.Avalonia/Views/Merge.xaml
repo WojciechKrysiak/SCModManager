@@ -78,17 +78,24 @@
             </Setter.Value>
           </Setter>
         </Style>
+        <Style Selector="fa|FontAwesome#Icon">
+          <Setter Property="VerticalAlignment" Value="Center"/>
+          <Setter Property="Margin" Value="0 0 3 0"/>
+        </Style>
+
+        <Style Selector="TreeViewItem[IsExpanded=true] > StackPanel > StackPanel fa|FontAwesome#Icon">
+          <Setter Property="Icon" Value="FolderOpen" />
+        </Style>
+        <Style Selector="TreeViewItem[IsExpanded=False] > StackPanel > StackPanel fa|FontAwesome#Icon">
+          <Setter Property="Icon" Value="Folder" />
+        </Style>
       </TreeView.Styles>
       <TreeView.DataTemplates>
         <TreeDataTemplate DataType="{x:Type viewModels:ModDirectory}" ItemsSource="{Binding Files}">
           <StackPanel Orientation="Vertical">
             <StackPanel Orientation="Horizontal"
                                 Opacity="0.4">
-              <fa:FontAwesome x:Name="FolderIcon"
-                              VerticalAlignment="Center"
-                              Icon="Folder"
-                              Margin="0 0 3 0"
-                                            />
+              <fa:FontAwesome Name="Icon" />
               <TextBlock x:Name="FolderName"
                          VerticalAlignment="Center"
                          Text="{Binding Filename}"

@@ -1,6 +1,9 @@
 ﻿<UserControl xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:fa="clr-namespace:SCModManager.Avalonia.Ui.FontAwesome">
+        xmlns:fa="clr-namespace:SCModManager.Avalonia.Ui.FontAwesome"
+        xmlns:i="clr-namespace:Avalonia.Xaml.Interactivity;assembly=Avalonia.Xaml.Interactivity"
+        xmlns:ia="clr-namespace:Avalonia.Xaml.Interactions.Core;assembly=Avalonia.Xaml.Interactions"
+        >
   <DockPanel Grid.Column="0"
            Grid.Row="1"
            Grid.RowSpan="2"
@@ -13,23 +16,35 @@
       <fa:FontAwesome Icon="Bolt" HorizontalAlignment="Center" Grid.Column="2"/>
       <fa:FontAwesome Icon="Steam" HorizontalAlignment="Center" Grid.Column="3"/>
     </Grid>
-    <ListBox 
+    <ListBox
          Items="{Binding Mods}"
          SelectedItem="{Binding SelectedMod}">
       <ListBox.ItemTemplate>
         <DataTemplate>
           <Grid>
-          <DockPanel LastChildFill="True">
-            <CheckBox DockPanel.Dock="Left" IsChecked="{Binding Selected}" />
- 
-            <fa:FontAwesome DockPanel.Dock="Right" Icon="Steam" HorizontalAlignment="Center" Width="15"/>
-            <TextBlock DockPanel.Dock="Right" Text="{Binding ConflictCount}" Margin="5,0" TextAlignment="Right" Width="20"/>
-            
-            <TextBlock Text="{Binding Name}" />
-          </DockPanel>
-          <Panel Background="Red" Opacity="0.3" IsVisible="{Binding HasConflictWithSelected}"/>
-        </Grid>
-      </DataTemplate>
+            <DockPanel LastChildFill="True">
+              <fa:FontAwesome DockPanel.Dock="Left" Icon="Folder" HorizontalAlignment="Center" Width="15" Margin ="2,0">
+                  <i:Interaction.Behaviors>
+                    <ia:DataTriggerBehavior Binding="{Binding ModType}" Value="Zip">
+                      <ia:ChangePropertyAction PropertyName="Icon" Value="FileArchive"/>
+                    </ia:DataTriggerBehavior>
+                    <ia:DataTriggerBehavior Binding="{Binding ModType}" Value="Folder">
+                      <ia:ChangePropertyAction PropertyName="Icon" Value="Folder"/>
+                    </ia:DataTriggerBehavior>
+                    <ia:DataTriggerBehavior Binding="{Binding ModType}" Value="Merged">
+                      <ia:ChangePropertyAction PropertyName="Icon" Value="Copy"/>
+                    </ia:DataTriggerBehavior>
+                  </i:Interaction.Behaviors>
+              </fa:FontAwesome>
+              <CheckBox DockPanel.Dock="Left" IsChecked="{Binding Selected}" />
+              <fa:FontAwesome DockPanel.Dock="Right" Icon="Steam" HorizontalAlignment="Center" Width="15"/>
+              <TextBlock DockPanel.Dock="Right" Text="{Binding ConflictCount}" Margin="5,0" TextAlignment="Right" Width="20"/>
+
+              <TextBlock Text="{Binding Name}" />
+            </DockPanel>
+            <Panel Background="Red" Opacity="0.3" IsVisible="{Binding HasConflictWithSelected}"/>
+          </Grid>
+        </DataTemplate>
       </ListBox.ItemTemplate>
     </ListBox>
   </DockPanel>
