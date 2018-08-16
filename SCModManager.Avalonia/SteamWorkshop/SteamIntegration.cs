@@ -45,7 +45,7 @@ namespace SCModManager.Avalonia.SteamWorkshop
 			if (string.IsNullOrWhiteSpace(mod.Mod.RemoteFileId))
 				return;
 
-			if (downloadedDescriptors.TryGetValue(mod.Mod.RemoteFileId, out var descriptor));
+			if (downloadedDescriptors.TryGetValue(mod.Mod.RemoteFileId, out var descriptor))
 				mod.RemoteDescriptor = descriptor;
 
 			pendingRequests.Add(mod);

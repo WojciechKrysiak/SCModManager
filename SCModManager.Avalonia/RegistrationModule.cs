@@ -31,7 +31,7 @@ namespace SCModManager.Avalonia
 			builder.RegisterType<StellarisConfiguration>().Keyed<IDefaultGameConfiguration>("Stellaris");
 			builder.RegisterType<ModContext>().AsSelf();
 			builder.RegisterType<SteamService>().As<ISteamService>();
-			builder.RegisterType<SteamIntegration>().As<ISteamIntegration>();
+			builder.RegisterType<SteamIntegration>().As<ISteamIntegration>().SingleInstance();
 			builder.RegisterType<ModVM>().AsSelf();
 
 
