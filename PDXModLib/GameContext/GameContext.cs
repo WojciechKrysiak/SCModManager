@@ -205,9 +205,9 @@ namespace PDXModLib.GameContext
             return true;
         }
 
-        public Task<bool> SaveMergedMod(MergedMod mod)
+        public Task<bool> SaveMergedMod(MergedMod mod, bool mergedFilesOnly)
         {
-            return _installedModManager.SaveMergedMod(mod);
+            return _installedModManager.SaveMergedMod(mod, mergedFilesOnly);
         }
 
         private void LoadSavedSelection()

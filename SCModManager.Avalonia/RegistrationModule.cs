@@ -35,7 +35,8 @@ namespace SCModManager.Avalonia
 
 			builder.RegisterDialog<PreferencesWindow, PreferencesWindowViewModel, bool>();
 			builder.RegisterDialog<NameConfirm, NameConfirmVM, string>();
-			builder.RegisterDialog<Merge, ModMergeViewModel, MergedMod>();
+			builder.RegisterDialog<SaveModDialog, SaveModDialogVM, Tuple<string, bool>>();
+			builder.RegisterDialog<Merge, ModMergeViewModel, Tuple<MergedMod, bool>>();
 			builder.RegisterDialog<NotificationView, NotificationViewModel, DialogResult, NotificationViewModel.Factory>();
 
 

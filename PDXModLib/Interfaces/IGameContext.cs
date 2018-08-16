@@ -16,7 +16,7 @@ namespace PDXModLib.Interfaces
 
 		bool SaveSettings();
 		bool SaveSelection();
-		Task<bool> SaveMergedMod(MergedMod mod);
+		Task<bool> SaveMergedMod(MergedMod mod, bool mergedFilesOnly);
 		void DeleteCurrentSelection();
 		void DuplicateCurrentSelection(string newName);
 		void LoadMods();

@@ -66,7 +66,7 @@ namespace PDXModLib.GameContext
             }
         }
 
-        public async Task<bool> SaveMergedMod(MergedMod mod)
+        public async Task<bool> SaveMergedMod(MergedMod mod, bool mergeResultOnly)
         {
             try
             {
@@ -96,9 +96,13 @@ namespace PDXModLib.GameContext
 
                 File.WriteAllText(descPath, contents);
 
+				var files = mod.Files.AsEnumerable();
+				if (mergeResultOnly)
+					files = files.OfType<MergedModFile>();
+
                 using (var saver = new DiskFileSaver(path))
                 {
-                    foreach (var modFile in mod.Files)
+                    foreach (var modFile in files)
                     {
                         modFile.Save(saver);
                     }
