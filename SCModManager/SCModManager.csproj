@@ -32,7 +32,5 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>
-  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Command="for /f &quot;usebackq tokens=1* delims=: &quot; %%i in (`&quot;%ProgramFiles%\Microsoft Visual Studio\Installer\vswhere.exe&quot; -latest -requires Microsoft.VisualStudio.Workload.NativeDesktop`) do (&#xD;&#xA;&#xD;&#xA;if /i &quot;%%i&quot;==&quot;installationPath&quot; set VSINSTALLDIR=%%j&#xD;&#xA;&#xD;&#xA;)&#xD;&#xA;&#xD;&#xA;set __VCVARS_DEFAULT_CONFIG_FILE=&quot;%VSINSTALLDIR%\VC\Auxiliary\Build\Microsoft.VCToolsVersion.default.txt&quot;&#xD;&#xA;&#xD;&#xA;&#xD;&#xA;if EXIST &quot;%__VCVARS_DEFAULT_CONFIG_FILE%&quot; (&#xD;&#xA;&#xD;&#xA;for /F &quot;usebackq&quot; %%A in (`type %__VCVARS_DEFAULT_CONFIG_FILE%`) do (&#xD;&#xA;echo     set __VCVARS_TOOLS_VERSION=%%A&#xD;&#xA;    set __VCVARS_TOOLS_VERSION=%%A&#xD;&#xA;)&#xD;&#xA;&#xD;&#xA;echo if EXIST &quot;%VSINSTALLDIR%\VC\Tools\MSVC\%__VCVARS_TOOLS_VERSION%bin\Hostx86\x86\&quot; (&#xD;&#xA;if EXIST &quot;%VSINSTALLDIR%\VC\Tools\MSVC\%__VCVARS_TOOLS_VERSION%&quot; (&#xD;&#xA;&#xD;&#xA;&quot;%VSINSTALLDIR%\VC\Tools\MSVC\%__VCVARS_TOOLS_VERSION%&quot;\bin\Hostx86\x86\editbin.exe /subsystem:windows &quot;$(TargetPath)&quot;&#xD;&#xA;   &#xD;&#xA;) else  (&#xD;&#xA;echo &quot;No tools dir&quot; &#xD;&#xA;) &#xD;&#xA;&#xD;&#xA;) else  (&#xD;&#xA;echo No tools config dir : %__VCVARS_DEFAULT_CONFIG_FILE%&#xD;&#xA;)&#xD;&#xA;&#xD;&#xA;" />
-  </Target>
+  
 </Project>
