@@ -53,10 +53,12 @@ namespace SCModManager.Avalonia
         private List<ModConflictDescriptor> _modConflicts = new List<ModConflictDescriptor>();
 
         public ICommand SaveSettingsCommand { get; }
-        public ICommand Duplicate { get; }
+		public ICommand Duplicate { get; }
         public ICommand Delete { get; }
         public ICommand MergeModsCommand { get; }
-        public ICommand ShowPreferences { get; }
+		public ICommand RunGameCommand { get; }
+
+		public ICommand ShowPreferences { get; }
 
         public IEnumerable<ModVM> Mods => _mods.Where(mvm => CurrentFilter(mvm.Mod));
         public IEnumerable<ModSelection> Selections => _gameContext.Selections.ToArray();
@@ -181,7 +183,7 @@ namespace SCModManager.Avalonia
             Duplicate = ReactiveCommand.Create(DoDuplicate);
             Delete = ReactiveCommand.Create(DoDelete, _canDelete);
 			ShowPreferences = ReactiveCommand.Create(DoShowPreferences);
-			
+			RunGameCommand = ReactiveCommand.Create(() => steamIntegration.Run(_gameConfiguration.AppId));
         }
 
         public async Task<bool> Initialize()

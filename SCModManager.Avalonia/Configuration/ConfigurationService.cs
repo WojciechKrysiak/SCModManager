@@ -37,6 +37,11 @@ namespace SCModManager.Avalonia.Configuration
 					section.Init(configuration);
 				_configuration.Save(ConfigurationSaveMode.Modified);
 			}
+			else if (configurations.TryGetValue(context, out var configuration) 
+				     && section.Update(configuration))
+			{
+				_configuration.Save(ConfigurationSaveMode.Modified);
+			}
 
 			return section;
 		}

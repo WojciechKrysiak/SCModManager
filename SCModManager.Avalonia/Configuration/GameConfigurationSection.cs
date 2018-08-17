@@ -34,6 +34,13 @@ namespace SCModManager.Avalonia.Configuration
 			}
 		}
 
+		[ConfigurationProperty("AppId")]
+		public int AppId
+		{
+			get { return (int)this["AppId"]; }
+			set { this["AppId"] = value; }
+		}
+
 		[ConfigurationProperty("BasePath")]
 		public string BasePath
 		{
@@ -63,7 +70,7 @@ namespace SCModManager.Avalonia.Configuration
 
 		public IReadOnlyCollection<string> WhiteListedFiles => WhiteListedFilesConfigSection;
 
-		[ConfigurationProperty("WhiteListedFiles")]
+		[ConfigurationProperty(WhiteListedFileCollection.WhiteListedFiles)]
 		public WhiteListedFileCollection WhiteListedFilesConfigSection
 		{
 			get { return (WhiteListedFileCollection)this[WhiteListedFileCollection.WhiteListedFiles]; }
@@ -94,6 +101,7 @@ namespace SCModManager.Avalonia.Configuration
 		public void Init(IDefaultGameConfiguration source)
 		{
 			_gameName = source.GameName;
+			AppId = source.AppId;
 			BasePath = source.BasePath;
 			GameInstallationDirectory = source.GameInstallationDirectory;
 			WhiteListedFilesConfigSection = new WhiteListedFileCollection();
@@ -101,6 +109,31 @@ namespace SCModManager.Avalonia.Configuration
 			{
 				WhiteListedFilesConfigSection.Add(file);
 			}
+		}
+
+		public bool Update(IDefaultGameConfiguration source)
+		{
+			var needsUpdate = false;
+			if (needsUpdate |= AppId == default)
+				AppId = source.AppId;
+			if (needsUpdate |= string.IsNullOrWhiteSpace(_gameName))
+				_gameName = source.GameName;
+			if (needsUpdate |= string.IsNullOrWhiteSpace(BasePath))
+				BasePath = source.BasePath;
+			if (needsUpdate |= string.IsNullOrWhiteSpace(GameInstallationDirectory))
+				GameInstallationDirectory = source.GameInstallationDirectory;
+
+			if (needsUpdate |= (this[WhiteListedFileCollection.WhiteListedFiles] == null ||
+								!WhiteListedFilesConfigSection.ElementInformation.IsPresent))
+			{
+				WhiteListedFilesConfigSection = new WhiteListedFileCollection();
+				foreach (var file in source.WhiteListedFiles)
+				{
+					WhiteListedFilesConfigSection.Add(file);
+				}
+			}
+
+			return needsUpdate;
 		}
 
 		public GameConfigurationSection()

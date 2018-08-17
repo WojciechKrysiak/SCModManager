@@ -30,10 +30,8 @@ namespace SCModManager.Avalonia
 			builder.RegisterType<ConfigurationService>().As<IConfigurationService>();
 			builder.RegisterType<StellarisConfiguration>().Keyed<IDefaultGameConfiguration>("Stellaris");
 			builder.RegisterType<ModContext>().AsSelf();
-			builder.RegisterType<SteamService>().As<ISteamService>();
-			builder.RegisterType<SteamIntegration>().As<ISteamIntegration>().SingleInstance();
+			builder.RegisterType<SteamIntegration>().As<ISteamService>().As<ISteamIntegration>().SingleInstance();
 			builder.RegisterType<ModVM>().AsSelf();
-
 
 			builder.RegisterDialog<PreferencesWindow, PreferencesWindowViewModel, bool>();
 			builder.RegisterDialog<NameConfirm, NameConfirmVM, string>();
@@ -42,11 +40,11 @@ namespace SCModManager.Avalonia
 
 
 			if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-				builder.RegisterType<PlatformWindows>().As<IPlatfomValues>();
+				builder.RegisterType<PlatformWindows>().As<IPlatfomInterface>();
 			if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-				builder.RegisterType<PlatformLinux>().As<IPlatfomValues>();
+				builder.RegisterType<PlatformLinux>().As<IPlatfomInterface>();
 			if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-				builder.RegisterType<PlatformOSX>().As<IPlatfomValues>();
+				builder.RegisterType<PlatformOSX>().As<IPlatfomInterface>();
 		}
 
 		protected override void AttachToComponentRegistration(IComponentRegistry componentRegistry, IComponentRegistration registration)

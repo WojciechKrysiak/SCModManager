@@ -12,6 +12,11 @@ namespace PDXModLib.Interfaces
     public interface IDefaultGameConfiguration
     {
 		/// <summary>
+		/// Gets the steam app id for the game
+		/// </summary>
+		int AppId { get; }
+
+		/// <summary>
 		/// Gets the game name
 		/// </summary>
 		string GameName { get; }

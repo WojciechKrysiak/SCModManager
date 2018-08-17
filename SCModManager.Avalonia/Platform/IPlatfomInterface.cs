@@ -4,10 +4,12 @@ using System.Text;
 
 namespace SCModManager.Avalonia.Platform
 {
-    public interface IPlatfomValues
+    public interface IPlatfomInterface
     {
 		string DefaultSteamInstallDir { get; }
 		string SteamConfigPath { get; }
 		string SettingsBasePath { get; }
+
+		void LaunchUrl(string url);
 	}
 }

@@ -13,9 +13,9 @@
   <Grid
    ColumnDefinitions="400,*" RowDefinitions="Auto,*,*">
 
-    <Grid Grid.ColumnSpan="2" ColumnDefinitions="Auto,Auto,Auto,Auto,*,Auto,Auto,Auto" >
+    <Grid Grid.ColumnSpan="2" ColumnDefinitions="Auto,Auto,Auto,Auto,Auto,*,Auto,Auto,Auto" >
 
-      <Button Grid.Column="0" Command="{Binding SaveSettingsCommand}" Margin="5,0">Save To Stellaris</Button>
+      <Button Grid.Column="0" Command="{Binding SaveSettingsCommand}" Margin="5,0">Save To Game</Button>
       <Button Grid.Column="1" Command="{Binding MergeModsCommand}" Margin="5,0">Merge Selected</Button>
       <ToggleButton Grid.Column="2" Name="MergeMode" Margin="5,0"
                     IsChecked="{Binding ConflictMode}"
@@ -26,10 +26,11 @@
       <ToggleButton Grid.Column="3" IsChecked="{Binding FilterSelection}" Margin="5,0">
         Selection only
       </ToggleButton>
+      <Button Grid.Column="4" Command="{Binding RunGameCommand}" Margin="5,0">Run Game</Button>
 
 
       <StackPanel x:Name="CommsError"
-                Grid.Column="5"
+                Grid.Column="6"
                 HorizontalAlignment="Right"
                 Orientation="Horizontal"
                 ToolTip.Tip="{Binding ErrorReason}"
@@ -42,7 +43,7 @@
                                     />
         <TextBlock Text="Can't download mod data!"/>
       </StackPanel>
-      <Button HorizontalAlignment="Right" Grid.Column="6" Command="{Binding ShowPreferences}">
+      <Button HorizontalAlignment="Right" Grid.Column="7" Command="{Binding ShowPreferences}">
         <fa:FontAwesome VerticalAlignment="Center"
                         Icon="Cogs"
                         Margin="10,0"

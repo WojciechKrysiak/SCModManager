@@ -2,12 +2,13 @@
 using NLog;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Text;
 
 namespace SCModManager.Avalonia.Platform
 {
-	class PlatformWindows : IPlatfomValues
+	class PlatformWindows : IPlatfomInterface
 	{
 		private string fallbackSteamPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFilesX86), @"Steam\");
 
@@ -54,6 +55,11 @@ namespace SCModManager.Avalonia.Platform
 				logger.Error(e, "Exception caught while trying to read registry");
 				DefaultSteamInstallDir = fallbackSteamPath;
 			}
+		}
+
+		public void LaunchUrl(string url)
+		{
+			Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
 		}
 	}
 }
