@@ -236,18 +236,23 @@ namespace SCModManager.Avalonia
             }
         }
 
-        private async void DoDuplicate()
-        {
-            int cnt = _gameContext.Selections.Count();
+		private async void DoDuplicate()
+		{
+			int cnt = _gameContext.Selections.Count();
 
-            var name = $"Selection {cnt + 1}";
+			var name = $"Selection {cnt + 1}";
 
-			name = await newNameConfirmDialog.Show(name) ?? name;
+			name = await newNameConfirmDialog.Show(name);
 
-            _gameContext.DuplicateCurrentSelection(name);
+			if (name != null)
+			{
+				_gameContext.DuplicateCurrentSelection(name);
 
-            this.RaisePropertyChanged(nameof(Selections));
-            this.RaisePropertyChanged(nameof(CurrentSelection));
+				_canDelete.OnNext(_gameContext.Selections.Count > 1);
+
+				this.RaisePropertyChanged(nameof(Selections));
+				this.RaisePropertyChanged(nameof(CurrentSelection));
+			}
         }
 
         private async void MergeMods()
