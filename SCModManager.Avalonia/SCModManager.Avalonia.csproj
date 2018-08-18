@@ -81,6 +81,7 @@
     <PackageReference Include="Avalonia.Desktop" Version="0.6.2-build5927-beta" />
     <PackageReference Include="Avalonia.ReactiveUI" Version="0.6.2-build5927-beta" />
     <PackageReference Include="Avalonia.Xaml.Interactions" Version="0.6.2-build533" />
+    <PackageReference Include="CodeKicker.BBCode-NETStandard" Version="5.0.0" />
     <PackageReference Include="Diff.Match.Patch" Version="2.1.0" />
     <PackageReference Include="Gameloop.Vdf" Version="0.5.0" />
     <PackageReference Include="Microsoft.Win32.Registry" Version="4.5.0" />
@@ -97,7 +98,6 @@
   <ItemGroup>
     <ProjectReference Include="..\Avalonia.HtmlRenderer\Avalonia.HtmlRenderer.csproj" />
     <ProjectReference Include="..\AvaloniaEdit\src\AvaloniaEdit\AvaloniaEdit.csproj" />
-    <ProjectReference Include="..\CodeKicker.BBCode-Mod\CodeKicker.BBCode\CodeKicker.BBCode.csproj" />
     <ProjectReference Include="..\PDXModLib\PDXModLib.csproj" />
   </ItemGroup>
 

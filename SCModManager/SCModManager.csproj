@@ -18,13 +18,13 @@
     <PackageReference Include="Avalonia" Version="0.6.2-build5927-beta" />
     <PackageReference Include="Avalonia.Desktop" Version="0.6.2-build5927-beta" />
     <PackageReference Include="Avalonia.Xaml.Interactions" Version="0.6.2-build533" />
+    <PackageReference Include="CodeKicker.BBCode-NETStandard" Version="5.0.0" />
     <PackageReference Include="NSubsys" Version="0.7.0-build20180604-0047" />
     <PackageReference Include="System.Diagnostics.Tracing" Version="4.3.0" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Avalonia.HtmlRenderer\Avalonia.HtmlRenderer.csproj" />
     <ProjectReference Include="..\AvaloniaEdit\src\AvaloniaEdit\AvaloniaEdit.csproj" />
-    <ProjectReference Include="..\CodeKicker.BBCode-Mod\CodeKicker.BBCode\CodeKicker.BBCode.csproj" />
     <ProjectReference Include="..\SCModManager.Avalonia\SCModManager.Avalonia.csproj" />
   </ItemGroup>
   <ItemGroup>
