@@ -150,6 +150,16 @@ namespace PDXModLib.ModData
         {
             _zipFile?.Dispose();
         }
+
+        public override int GetHashCode()
+        {
+            return Id.GetHashCode();
+        }
+
+        public override bool Equals(object obj)
+        {
+            return (obj as Mod)?.Id == Id;
+        }
     }
 
     public class SupportedVersion
@@ -222,7 +232,7 @@ namespace PDXModLib.ModData
     public class MergedMod : Mod
     {
         public MergedMod(string name, IEnumerable<ModConflictDescriptor> source)
-            : base($"Merged")
+            : base($"Merge result")
         {
             Name = name;
 

@@ -46,15 +46,23 @@
             <ColumnDefinition Width="8*" />
         </Grid.ColumnDefinitions>
         <Button Command="{Binding Save}">Save</Button>
-        <CheckBox x:Name="ShowOnlyConflicts"
-                  Grid.Column="0"
-                  Grid.Row="1"
+        <StackPanel 
+                Grid.Column="0"
+                Grid.Row="1"
+                Orientation="Horizontal">
+            <CheckBox x:Name="ShowOnlyConflicts"
                   IsChecked="{Binding OnlyConflicts}"
                   Margin="5 7"
                   >
-            Show only conflicts
-        </CheckBox>
-
+                Show only conflicts
+            </CheckBox>
+            <CheckBox x:Name="HideWhiteSpace"
+                  IsChecked="{Binding IgnoreWhiteSpace}"
+                  Margin="5 7"
+                  >
+                Hide whitespace
+            </CheckBox>
+        </StackPanel>
         <ui:MVVMTreeView Grid.Column="0"
                          Grid.Row="2"
                          VerticalAlignment="Stretch"
@@ -128,7 +136,7 @@
                 </DataTemplate>
             </TreeView.Resources>
         </ui:MVVMTreeView>
-        
+
         <Grid Grid.Column="1"
               Grid.Row="0"
               Grid.RowSpan="3"
@@ -154,7 +162,7 @@
                        LastChildFill="True"
                        >
                 <Label>Left file</Label>
-                <ComboBox DisplayMemberPath="SourceMod.Name"
+                <ComboBox DisplayMemberPath="ModName"
                           ItemsSource="{Binding LeftSelection}"
                           SelectedItem="{Binding Left}"
                           />
@@ -174,7 +182,7 @@
                        LastChildFill="True"
                        >
                 <Label>Right file</Label>
-                <ComboBox DisplayMemberPath="SourceMod.Name"
+                <ComboBox DisplayMemberPath="ModName"
                           ItemsSource="{Binding RightSelection}"
                           SelectedItem="{Binding Right}"
                           />
@@ -187,6 +195,7 @@
                               FontFamily="Consolas"
                               IsReadOnly="True"
                               ScrollOffset="{Binding ScrollOffset}"
+                              HideWhiteSpace="{Binding HideWhiteSpace}"
                               ShowLineNumbers="True"
                               Side="Left"
                               />
@@ -198,6 +207,7 @@
                               FontFamily="Consolas"
                               IsReadOnly="True"
                               ScrollOffset="{Binding ScrollOffset}"
+                              HideWhiteSpace="{Binding HideWhiteSpace}"
                               ShowLineNumbers="True"
                               Side="Right"
                               />
@@ -230,6 +240,7 @@
                               Document="{Binding ResultDocument}"
                               FontFamily="Consolas"
                               ScrollOffset="{Binding ScrollOffset}"
+                              HideWhiteSpace="{Binding HideWhiteSpace}"
                               ShowLineNumbers="True"
                               Side="Result"
                               />

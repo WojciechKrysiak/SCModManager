@@ -1,4 +1,6 @@
 ﻿using ICSharpCode.AvalonEdit;
+using ICSharpCode.AvalonEdit.Editing;
+using ICSharpCode.AvalonEdit.Rendering;
 using System;
 using System.Linq;
 using System.Windows;
@@ -25,7 +27,7 @@ namespace SCModManager.DiffMerge
             var rect = new Rect(v.X, v.Y, mv.TextArea.TextView.ActualWidth, mv.TextArea.TextView.ActualHeight);
             mv.suspendScroll = true;
             mv.TextArea.TextView.MakeVisible(rect);
-        }
+        } 
 
         public static DependencyProperty ContentsProperty = DependencyProperty.Register("Contents", typeof(Comparison), typeof(MergeViewer), new FrameworkPropertyMetadata(null, ContentsChanged));
 
@@ -40,6 +42,7 @@ namespace SCModManager.DiffMerge
             var nv = (Comparison)e.NewValue;
             var ov = (Comparison)e.OldValue;
             var mv = d as MergeViewer;
+            bool needsRedraw = true;
 
             if (mv.colorizer == null)
             {
@@ -47,11 +50,14 @@ namespace SCModManager.DiffMerge
                 mv.TextArea.TextView.LineTransformers.Add(mv.colorizer);
             }
             mv.colorizer.Comparison = nv;
+            mv.colorizer.Side = mv.Side;
+            mv.colorizer.HideWhiteSpace = mv.HideWhiteSpace;
 
             if (mv.readonlyProvider == null && mv.Side == Side.Result)
             {
                 mv.readonlyProvider = new ReadOnlyProvider();
                 mv.TextArea.ReadOnlySectionProvider = mv.readonlyProvider;
+                needsRedraw = false;
             }
 
             if (mv.readonlyProvider != null)
@@ -67,6 +73,8 @@ namespace SCModManager.DiffMerge
                 nv.RedrawRequested += mv.RedrawRequested;
             }
 
+            if (needsRedraw)
+                mv.TextArea.TextView.Redraw();
         }
 
         public static DependencyProperty SideProperty = DependencyProperty.Register("Side", typeof(Side), typeof(MergeViewer), new PropertyMetadata(Side.Left, SideChanged));
@@ -82,13 +90,17 @@ namespace SCModManager.DiffMerge
         {
             var v = (Side)e.NewValue;
             var mv = d as MergeViewer;
+            bool needsRedraw = true;
 
             if (mv.colorizer == null)
             {
                 mv.colorizer = new Colorizer();
                 mv.TextArea.TextView.LineTransformers.Add(mv.colorizer);
+                needsRedraw = false;
             }
             mv.colorizer.Side = v;
+            mv.colorizer.HideWhiteSpace = mv.HideWhiteSpace;
+            mv.colorizer.Comparison = mv.Contents;
 
             if (mv.readonlyProvider == null && v == Side.Result)
             {
@@ -98,6 +110,38 @@ namespace SCModManager.DiffMerge
 
             if (mv.readonlyProvider != null)
                 mv.readonlyProvider.Side = v;
+            if (needsRedraw)
+                mv.TextArea.TextView.Redraw();
+        }
+
+
+        public static DependencyProperty HideWhitespaceProperty = DependencyProperty.Register("HideWhiteSpace", typeof(bool), typeof(MergeViewer), new FrameworkPropertyMetadata(false, FrameworkPropertyMetadataOptions.AffectsRender, HideWhitespaceChanged));
+
+        public bool HideWhiteSpace
+        {
+            get { return (bool)GetValue(HideWhitespaceProperty); }
+            set { SetValue(HideWhitespaceProperty, value); }
+        }
+
+
+        private static void HideWhitespaceChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            var v = (bool)e.NewValue;
+            var mv = d as MergeViewer;
+
+            bool needsRedraw = true;
+            if (mv.colorizer == null)
+            {
+                mv.colorizer = new Colorizer();
+                mv.TextArea.TextView.LineTransformers.Add(mv.colorizer);
+                needsRedraw = false;
+            }
+            mv.colorizer.HideWhiteSpace = v;
+            mv.colorizer.Side = mv.Side;
+            mv.colorizer.Comparison = mv.Contents;
+            if (needsRedraw)
+                mv.TextArea.TextView.Redraw();
+
         }
 
         ResultBlock selectedBlock;
@@ -107,7 +151,7 @@ namespace SCModManager.DiffMerge
 
         public MergeViewer()
         {
-            TextArea.TextView.ScrollOffsetChanged += TextView_ScrollOffsetChanged; ;
+            TextArea.TextView.ScrollOffsetChanged += TextView_ScrollOffsetChanged;
         }
 
         private void TextView_ScrollOffsetChanged(object sender, EventArgs e)
@@ -134,12 +178,12 @@ namespace SCModManager.DiffMerge
             }
 
             var pos = this.GetPositionFromPoint(new Point(e.CursorLeft + delta, e.CursorTop));
-            
+
             if (pos != null)
             {
                 var offs = Document.GetOffset(pos.Value.Location);
                 var block = Contents.GetBlockContainingOffset(offs, Side);
-                if (block != null && !block.Block.IsEqual) 
+                if (block != null && !block.Block.IsEqual)
                 {
                     ContextMenu = new ContextMenu();
 
@@ -149,6 +193,7 @@ namespace SCModManager.DiffMerge
                     ContextMenu.Items.Add(new MenuItem { Header = "Take right then left", Command = block.Block.TakeRightThenLeft });
                 }
             }
+
             base.OnContextMenuOpening(e);
         }
 

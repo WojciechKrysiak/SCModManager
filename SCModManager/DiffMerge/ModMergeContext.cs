@@ -28,6 +28,8 @@ namespace SCModManager.DiffMerge
 
         private readonly ModDirectory _rootDirectory;
 
+        private bool _ignoreWhiteSpace;
+
         public ModDirectory RootDirectory => _rootDirectory;
 
         public ModFile SelectedModFile
@@ -77,12 +79,14 @@ namespace SCModManager.DiffMerge
         {
             get
             {
-                if (ReferenceHasConflicts(_selected))
+                if (_selected != null && ReferenceHasConflicts(_selected))
                 {
                     if (!_currentProcesses.ContainsKey(_selected))
                     {
                         _currentProcesses.Add(_selected, new MergeProcess(_selected as MergedModFile));
                     }
+
+                    _currentProcesses[_selected].HideWhiteSpace = IgnoreWhiteSpace;
 
                     return _currentProcesses[_selected];
                 }
@@ -97,6 +101,16 @@ namespace SCModManager.DiffMerge
             set { this.RaiseAndSetIfChanged(ref onlyConflicts, value); }
         }
 
+        public bool IgnoreWhiteSpace
+        {
+            get { return _ignoreWhiteSpace; }
+            set {
+                this.RaiseAndSetIfChanged(ref _ignoreWhiteSpace, value);
+                if (CurrentProcess != null)
+                    CurrentProcess.HideWhiteSpace = _ignoreWhiteSpace;
+            }
+        }
+
         public MergedMod Result { get; }
 
         public ICommand Save { get; }
@@ -107,10 +121,10 @@ namespace SCModManager.DiffMerge
 
             modFiles = Result.Files;
 
-            LeftBefore = ReactiveCommand.Create<ModFile>(DoBefore);
-            LeftAfter = ReactiveCommand.Create<ModFile>(DoAfter);
-            RightBefore = ReactiveCommand.Create<ModFile>(DoBefore);
-            RightAfter = ReactiveCommand.Create<ModFile>(DoAfter);
+            LeftBefore = ReactiveCommand.Create<ModFileToMerge>(DoBefore);
+            LeftAfter = ReactiveCommand.Create<ModFileToMerge>(DoAfter);
+            RightBefore = ReactiveCommand.Create<ModFileToMerge>(DoBefore);
+            RightAfter = ReactiveCommand.Create<ModFileToMerge>(DoAfter);
 
             saveAction = save;
             Save = ReactiveCommand.Create(DoSave, _canSave);
@@ -120,7 +134,7 @@ namespace SCModManager.DiffMerge
 
         private static bool ReferenceHasConflicts(ModFile mf)
         {
-            return (mf as MergedModFile)?.SourceFileCount > 1;
+            return !((mf as MergedModFile)?.Resolved ?? true);
         }
 
         private void DoSave()
@@ -148,8 +162,9 @@ namespace SCModManager.DiffMerge
 
         public ICommand LeftBefore { get; }
 
-        private void DoBefore(ModFile modFile)
+        private void DoBefore(ModFileToMerge modFileToMerge)
         {
+            var modFile = modFileToMerge.Source;
             var match = ModNameParse.Parse(modFile);
 
             if (match?.Filename == null)
@@ -200,8 +215,9 @@ namespace SCModManager.DiffMerge
 
         public ICommand LeftAfter { get; }
 
-        private void DoAfter(ModFile modFile)
+        private void DoAfter(ModFileToMerge modFileToMerge)
         {
+            var modFile = modFileToMerge.Source;
             var match = ModNameParse.Parse(modFile);
 
             if (match?.Filename == null)
@@ -265,6 +281,12 @@ namespace SCModManager.DiffMerge
             
             var newContents = Result.ToModConflictDescriptor().FileConflicts.Where(fc => fc.File.Path.StartsWith(directory)).ToList();
             _rootDirectory.UpdateDirectoryContents(directory, newContents);
+
+            var file = _rootDirectory.GetFile(path);
+            if (file?.HasConflicts ?? false)
+            {
+                SelectedModFile = file.File;
+            }
         }
 
         private class ModNameParse

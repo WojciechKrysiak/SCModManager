@@ -11,6 +11,8 @@ namespace SCModManager.DiffMerge
 
         public Side Side { get; set; }
 
+        public bool HideWhiteSpace { get; set; }
+
         protected override void ColorizeLine(DocumentLine line)
         {
             var current = Comparison.GetBlockContainingOffset(line.Offset, Side);
@@ -31,7 +33,8 @@ namespace SCModManager.DiffMerge
                         vle.TextRunProperties.SetForegroundBrush(Brushes.White);
                     });
                 }
-                else if(!current.Block.IsEqual)
+                else if(!(current.Block.IsEqual || 
+                         HideWhiteSpace && current.Block.IsWhiteSpace))
                 {
                     if (current.Block.IsConflict)
                     {
