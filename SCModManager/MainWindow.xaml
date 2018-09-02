@@ -1,13 +1,12 @@
-﻿<Window x:Class="SCModManager.MainWindow"
+﻿<Window
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:fa="http://schemas.fontawesome.io/icons/"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:SCModManager"
         xmlns:ui="clr-namespace:SCModManager.Ui"
-        xmlns:modData="clr-namespace:PDXModLib.ModData;assembly=PDXModLib"
-        xmlns:viewModels="clr-namespace:SCModManager.ViewModels"
+        xmlns:Concurrency="clr-namespace:System.Reactive.Concurrency;assembly=System.Reactive.Core" x:Class="SCModManager.MainWindow"
         mc:Ignorable="d"
         Title="SC Mod Manager"
         d:DataContext="{d:DesignInstance Type={x:Type local:ModContext}}"
@@ -16,14 +15,14 @@
         >
     <Window.Resources>
         <ResourceDictionary>
-            <ui:NullToVisibilityConverter x:Key="NullToVisibilityConverter" />
-            <ui:BooleanToVisibilityConverter x:Key="BoolToVisConverter" />
-            <ui:BooleanToVisibilityConverter x:Key="BoolToVisConverterInverse" Inverse="true" />
-            <ui:BoolNegatingConverter x:Key="NegateValue" />
             <ResourceDictionary.MergedDictionaries>
                 <ResourceDictionary Source="Views/WorkshopPanel.xaml" />
                 <ResourceDictionary Source="Views/ComparePanel.xaml" />
             </ResourceDictionary.MergedDictionaries>
+            <ui:NullToVisibilityConverter x:Key="NullToVisibilityConverter" />
+            <ui:BooleanToVisibilityConverter x:Key="BoolToVisConverter" />
+            <ui:BooleanToVisibilityConverter x:Key="BoolToVisConverterInverse" Inverse="true" />
+            <ui:BoolNegatingConverter x:Key="NegateValue" />
         </ResourceDictionary>
     </Window.Resources>
     <Grid>
@@ -48,19 +47,21 @@
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
-            <Button Grid.Column="0" Command="{Binding SaveSettingsCommand}" Margin="5,0">Save To Stellaris</Button>
-            <Button Grid.Column="1" Command="{Binding MergeModsCommand}" Margin="5,0">Merge Selected</Button>
+            <Button Grid.Column="0" Command="{Binding SaveSettingsCommand}" Margin="5,0" Content="Save To Stellaris"/>
+            <Button Grid.Column="1" Command="{Binding MergeModsCommand}" Margin="5,0" Content="Merge Selected"/>
             <ToggleButton Grid.Column="2" x:Name="MergeMode" Margin="5,0"
                           IsChecked="{Binding ConflictMode}"
-                          IsEnabled="{Binding IsVisible,
-                                              ElementName=CommsError,
-                                              Converter={StaticResource NegateValue}}"
-                          >
-                Preview conflicts
-            </ToggleButton >
-            <ToggleButton Grid.Column="3" IsChecked="{Binding FilterSelection}" Margin="5,0">
-                Selection only
-            </ToggleButton>
+                          IsEnabled="{Binding IsVisible, Converter={StaticResource NegateValue}, ElementName=CommsError}"
+                          Content="Preview conflicts"
+                          />
+            <DockPanel HorizontalAlignment="Left" Height="25" LastChildFill="True" VerticalAlignment="Top" Width="150" Grid.Column="4" MinWidth="100">
+                <Label Content="Filter Mode:" DockPanel.Dock="Left"/>
+                <ComboBox x:Name="Filter_Mode" SelectedIndex="{Binding Custom_Filter_Selection}">
+                    <ComboBoxItem Content="All"/>
+                    <ComboBoxItem Content="Selected"/>
+                    <ComboBoxItem Content="Unselected"/>
+                </ComboBox>
+            </DockPanel>
 
 
             <StackPanel x:Name="CommsError"
@@ -68,16 +69,15 @@
                       HorizontalAlignment="Right"
                       Orientation="Horizontal"
                       ToolTip="{Binding ErrorReason}"
-                      Visibility="{Binding ErrorReason,
-                                           Converter={StaticResource NullToVisibilityConverter}}"
+                      Visibility="{Binding ErrorReason, Converter={StaticResource NullToVisibilityConverter}}"
                         Margin="5,0"
                       >
-                
-                    <fa:FontAwesome VerticalAlignment="Center"
+
+                <fa:FontAwesome VerticalAlignment="Center"
                                     Foreground="Red"
                                     Icon="Warning"
                                     />
-                    <TextBlock Text="Can't download mod data!"/>
+                <TextBlock Text="Can't download mod data!"/>
             </StackPanel>
             <Button HorizontalAlignment="Right" Grid.Column="6" Command="{Binding ShowPreferences}">
                 <fa:FontAwesome VerticalAlignment="Center"
@@ -96,7 +96,7 @@
                    LastChildFill="True"
                    >
             <DockPanel DockPanel.Dock="Top" LastChildFill="True">
-                <Label DockPanel.Dock="Left">Mod list:</Label>
+                <Label DockPanel.Dock="Left" Content="Mod list:"/>
                 <Button MinWidth="20"
                         Command="{Binding Duplicate}"
                         DockPanel.Dock="Right"
@@ -129,7 +129,7 @@
                       IsReadOnly="True"
                       ColumnWidth="*">
                 <DataGrid.RowStyle>
-                    <Style TargetType="DataGridRow">
+                    <Style TargetType="{x:Type DataGridRow}">
                         <Style.Triggers>
                             <DataTrigger Binding="{Binding HasConflictWithSelected}" Value="true">
                                 <Setter Property="Background" Value="PaleVioletRed"/>
@@ -150,7 +150,7 @@
                     </DataGridTemplateColumn>
                     <DataGridTextColumn Binding="{Binding Name}" Header="Name">
                         <DataGridTextColumn.ElementStyle>
-                            <Style TargetType="TextBlock">
+                            <Style TargetType="{x:Type TextBlock}">
                                 <Setter Property="Padding" Value="2,0" />
                                 <Setter Property="TextTrimming" Value="CharacterEllipsis" />
                             </Style>
@@ -166,7 +166,7 @@
                             </Style>
                         </DataGridTextColumn.HeaderStyle>
                         <DataGridTextColumn.ElementStyle>
-                            <Style TargetType="TextBlock">
+                            <Style TargetType="{x:Type TextBlock}">
                                 <Setter Property="HorizontalAlignment" Value="Right" />
                                 <Setter Property="Padding" Value="2,0" />
                             </Style>
@@ -186,8 +186,7 @@
                                 <fa:FontAwesome Margin="2,0" 
                                                 HorizontalAlignment="Center"
                                                 Icon="Steam"
-                                                Visibility="{Binding RemoteDescriptor,
-                                                                     Converter={StaticResource NullToVisibilityConverter}}"
+                                                Visibility="{Binding RemoteDescriptor, Converter={StaticResource NullToVisibilityConverter}}"
                                                 ToolTip="Workshop page available"/>
                             </DataTemplate>
                         </DataGridTemplateColumn.CellTemplate>
@@ -202,9 +201,7 @@
                         Grid.RowSpan="2"
                         Content="{Binding ConflictPreviewVm}"
                         ContentTemplate="{StaticResource WokrshopConflictView}"
-                        Visibility="{Binding IsChecked,
-                                             ElementName=MergeMode,
-                                             Converter={StaticResource BoolToVisConverter}}"
+                        Visibility="{Binding IsChecked, Converter={StaticResource BoolToVisConverter}, ElementName=MergeMode}"
                         />
 
         <Border Grid.Column="1"
@@ -212,9 +209,7 @@
                 Grid.RowSpan="2"
                 HorizontalAlignment="Stretch"
                 VerticalAlignment="Stretch"
-                Visibility="{Binding IsChecked,
-                                     ElementName=MergeMode,
-                                     Converter={StaticResource BoolToVisConverterInverse}}"
+                Visibility="{Binding IsChecked, Converter={StaticResource BoolToVisConverterInverse}, ElementName=MergeMode}"
                 >
             <ScrollViewer HorizontalAlignment="Stretch"
                           Background="#262626"
