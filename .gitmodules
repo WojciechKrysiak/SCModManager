@@ -7,3 +7,6 @@
 [submodule "CWTools"]
 	path = CWTools
 	url = https://github.com/WojciechKrysiak/cwtools.git
+[submodule "Avalonia.HamburgerMenu"]
+	path = Avalonia.HamburgerMenu
+	url = https://github.com/WojciechKrysiak/Avalonia.HanburgerMenu.git
