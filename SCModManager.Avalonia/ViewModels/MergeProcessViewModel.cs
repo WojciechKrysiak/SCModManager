@@ -10,6 +10,7 @@ using System.Windows;
 using System.Windows.Input;
 using PDXModLib.ModData;
 using ReactiveUI;
+using ReactiveUI.Legacy;
 using System.Text.RegularExpressions;
 using SCModManager.Avalonia.DiffMerge;
 

@@ -124,7 +124,9 @@ namespace SCModManager.Avalonia.ViewModels
         public ModMergeViewModel(IShowDialog<SaveModDialogVM, Tuple<string, bool>, string> newNameConfirmDialog,
 								 IEnumerable<ModConflictDescriptor> source)
         {
-            _result = new MergedMod("Merge result", source);
+			Result = Tuple.Create(_result, false);
+
+			_result = new MergedMod("Merge result", source);
 
             modFiles = _result.Files;
 

@@ -73,7 +73,7 @@ namespace SCModManager.Avalonia.SteamWorkshop
 				return;
 			}
 
-			var modDict = toRetrieve.ToDictionary(m => m.Mod.RemoteFileId, m => m);
+			var modDict = toRetrieve.GroupBy(m => m.Mod.RemoteFileId).ToDictionary(g => g.Key);
 
 			string[] modIds = modDict.Select(kvp => kvp.Key).ToArray();
 
@@ -113,9 +113,10 @@ namespace SCModManager.Avalonia.SteamWorkshop
 								{
 									downloadedDescriptors.TryAdd(descriptor.PublishedFileId, descriptor);
 
-									if (modDict.ContainsKey(descriptor.PublishedFileId))
+									if (modDict.TryGetValue(descriptor.PublishedFileId, out var mods))
 									{
-										modDict[descriptor.PublishedFileId].RemoteDescriptor = descriptor;
+										foreach (var mod in mods)
+											mod.RemoteDescriptor = descriptor;
 									}
 								}
 							}

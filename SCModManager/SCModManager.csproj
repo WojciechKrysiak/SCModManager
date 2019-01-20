@@ -15,8 +15,8 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Autofac" Version="4.8.1" />
-    <PackageReference Include="Avalonia" Version="0.6.2-build5977-beta" />
-    <PackageReference Include="Avalonia.Desktop" Version="0.6.2-build5977-beta" />
+    <PackageReference Include="Avalonia" Version="0.7.0" />
+    <PackageReference Include="Avalonia.Desktop" Version="0.7.0" />
     <PackageReference Include="Avalonia.Xaml.Interactions" Version="0.6.2-build536" />
     <PackageReference Include="CodeKicker.BBCode-NETStandard" Version="5.0.0" />
     <PackageReference Include="NSubsys" Version="0.7.0-build20180604-0047" />

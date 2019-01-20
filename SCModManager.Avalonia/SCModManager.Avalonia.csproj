@@ -77,21 +77,22 @@
 
   <ItemGroup>
     <PackageReference Include="Autofac" Version="4.8.1" />
-    <PackageReference Include="Avalonia" Version="0.6.2-build5977-beta" />
-    <PackageReference Include="Avalonia.Desktop" Version="0.6.2-build5977-beta" />
-    <PackageReference Include="Avalonia.ReactiveUI" Version="0.6.2-build5977-beta" />
+    <PackageReference Include="Avalonia" Version="0.7.0" />
+    <PackageReference Include="Avalonia.Desktop" Version="0.7.0" />
+    <PackageReference Include="Avalonia.ReactiveUI" Version="0.7.0" />
     <PackageReference Include="Avalonia.Xaml.Interactions" Version="0.6.2-build536" />
     <PackageReference Include="CodeKicker.BBCode-NETStandard" Version="5.0.0" />
     <PackageReference Include="Diff.Match.Patch" Version="2.1.0" />
     <PackageReference Include="Gameloop.Vdf" Version="0.5.0" />
     <PackageReference Include="Microsoft.Win32.Registry" Version="4.5.0" />
     <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
-    <PackageReference Include="ReactiveUI" Version="8.3.1" />
+    <PackageReference Include="ReactiveUI" Version="9.0.1" />
     <PackageReference Include="System.Collections" Version="4.3.0" />
     <PackageReference Include="System.Collections.Immutable" Version="1.5.0" />
     <PackageReference Include="System.Configuration.ConfigurationManager" Version="4.5.0" />
     <PackageReference Include="System.Diagnostics.Debug" Version="4.3.0" />
     <PackageReference Include="System.Diagnostics.Tracing" Version="4.3.0" />
+    <PackageReference Include="System.Reactive" Version="4.0.0" />
     <PackageReference Include="System.Threading" Version="4.3.0" />
   </ItemGroup>
 

@@ -1,4 +1,4 @@
-﻿using ReactiveUI;
+﻿using ReactiveUI.Legacy;
 using System;
 using System.Reactive.Linq;
 using System.Collections.Generic;

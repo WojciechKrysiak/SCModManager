@@ -1,4 +1,5 @@
 ﻿using ReactiveUI;
+using ReactiveUI.Legacy;
 using SCModManager.Avalonia.Configuration;
 using System;
 using System.Collections.Generic;
@@ -14,7 +15,6 @@ using Avalonia;
 using System.Windows.Input;
 using Avalonia.Controls;
 using PDXModLib.Interfaces;
-using SCModManager.Avalonia.Configuration;
 using SCModManager.Avalonia.ViewModels;
 
 namespace SCModManager.Avalonia.ViewModels
