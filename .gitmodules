@@ -1,6 +1,6 @@
 [submodule "AvaloniaEdit"]
 	path = AvaloniaEdit
-	url = https://github.com/WojciechKrysiak/AvaloniaEdit.git
+	url = https://github.com/AvaloniaUI/AvaloniaEdit.git
 [submodule "Avalonia.HtmlRenderer"]
 	path = Avalonia.HtmlRenderer
 	url = https://github.com/WojciechKrysiak/Avalonia.HtmlRenderer.git
