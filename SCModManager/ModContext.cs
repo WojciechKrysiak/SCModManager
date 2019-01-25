@@ -38,7 +38,10 @@ namespace SCModManager
         private readonly Subject<bool> _canMerge = new Subject<bool>();
         private readonly Subject<bool> _canDelete = new Subject<bool>();
         private ModConflictPreviewVm _conflictPreviewVm;
-        private bool _filterSelection;
+
+        public enum Filter_Type { All, Selected, Unselected };
+
+        private Filter_Type _current_filter_type;
 
         private readonly string product;
 
@@ -52,7 +55,7 @@ namespace SCModManager
         public ICommand MergeModsCommand { get; }
         public ICommand ShowPreferences { get; }
 
-        public IEnumerable<ModVM> Mods => _mods.Where(mvm => CurrentFilter(mvm.Mod));
+        public IEnumerable<ModVM> Mods => _mods.Where(mvm => Custom_Current_Filter(mvm.Mod));
         public IEnumerable<ModSelection> Selections => _gameContext.Selections.ToArray();
 
         private Window mergeWindow;
@@ -60,16 +63,20 @@ namespace SCModManager
         private bool _conflictsMode;
         private ModVM _selectedMod;
 
-        private Func<Mod, bool> CurrentFilter
-        {
-            get
-            {
-                if (_filterSelection)
-                    return IsSelected;
-                return IncludeAll;
+        private Func<Mod, bool> Custom_Current_Filter {
+            get {
+                switch (_current_filter_type) {
+                    case Filter_Type.All:
+                        return IncludeAll;
+                    case Filter_Type.Selected:
+                        return IsSelected;
+                    case Filter_Type.Unselected:
+                        return IsUnselected;
+                    default:
+                        return IncludeAll;
+                }
             }
         }
-
 
         public ModSelection CurrentSelection
         {
@@ -80,7 +87,7 @@ namespace SCModManager
                 {
                     _gameContext.CurrentSelection = value;
                     UpdateSelections();
-                    _conflictPreviewVm?.ApplyModFilter(CurrentFilter);
+                    _conflictPreviewVm?.ApplyModFilter(Custom_Current_Filter);
                     this.RaisePropertyChanged();
                 }
             }
@@ -101,7 +108,7 @@ namespace SCModManager
                 else
                 {
                     _mods.ForEach(m => m.HasConflictWithSelected = value.ModConflict.ConflictingMods.Contains(m.Mod));
-                    ConflictPreviewVm = new ModConflictPreviewVm(value.ModConflict, CurrentFilter);
+                    ConflictPreviewVm = new ModConflictPreviewVm(value.ModConflict, Custom_Current_Filter);
                 }
                 
             }
@@ -132,14 +139,12 @@ namespace SCModManager
             }
         }
 
-        public bool FilterSelection
-        {
-            get { return _filterSelection; }
-            set
-            {
-                this.RaiseAndSetIfChanged(ref _filterSelection, value);
-                _mods.ForEach(m => m.UpdateModFilter(CurrentFilter));
-                _conflictPreviewVm?.ApplyModFilter(CurrentFilter);
+        public Filter_Type Custom_Filter_Selection {
+            get { return _current_filter_type; }
+            set {
+                this.RaiseAndSetIfChanged(ref _current_filter_type, value);
+                _mods.ForEach(m => m.UpdateModFilter(Custom_Current_Filter));
+                _conflictPreviewVm?.ApplyModFilter(Custom_Current_Filter);
                 this.RaisePropertyChanged(nameof(Mods));
             }
         }
@@ -273,6 +278,10 @@ namespace SCModManager
             return CurrentSelection.Contents.Contains(mod);
         }
 
+        private bool IsUnselected(Mod mod) {
+            return !CurrentSelection.Contents.Contains(mod);
+        }
+
         private static bool IncludeAll(Mod mod) => true;
 
         private void ModOnPropertyChanged(object sender, PropertyChangedEventArgs propertyChangedEventArgs)
@@ -292,20 +301,14 @@ namespace SCModManager
                 }
                 _gameContext.SaveSelection();
                 _canMerge.OnNext(DoModsNeedToBeMerged());
-                if (_filterSelection)
-                {
-                    this.RaisePropertyChanged(nameof(Mods));
-                }
+                this.RaisePropertyChanged(nameof(Mods));
             }
         }
 
         private void UpdateSelections()
         {
             _mods.ForEach(modVm => modVm.Selected = IsSelected(modVm.Mod));
-            if (_filterSelection)
-            {
-                this.RaisePropertyChanged(nameof(Mods));
-            }
+            this.RaisePropertyChanged(nameof(Mods));
         }
 
         private void DoShowPreferences()
