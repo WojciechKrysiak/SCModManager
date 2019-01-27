@@ -20,7 +20,7 @@ namespace SCModManager.Avalonia.Configuration.Defaults
         public string SettingsPath { get; }
         public string BackupPath { get; }
         public string SavedSelections { get; }
-        public IReadOnlyCollection<string> WhiteListedFiles { get; } = new[] {"description.txt", "modinfo.lua", "descriptor.mod", "readme.txt"};
+        public IReadOnlyCollection<string> WhiteListedFiles { get; } = new[] {"description.txt", "modinfo.lua", "descriptor.mod", "readme.txt", "changelog.txt"};
 
 		private string _gameInstallationDirectory;
 		public string GameInstallationDirectory => _gameInstallationDirectory ?? (_gameInstallationDirectory = steamService.LocateAppInstalationDirectory(AppId));
